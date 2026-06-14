@@ -603,62 +603,47 @@ function showPage(page) {
   document.getElementById('page-' + page).classList.add('active');
   document.getElementById('nav-' + page).classList.add('active');
   
-  if (page === 'scanner') {
-    // Automatically attempt starting camera if class is chosen
-    if (currentClassId) startCamera();
-  } else {
+  if (page !== 'scanner') {
     stopCamera();
   }
   
   if (page === 'students') renderStudents();
   if (page === 'classes') renderClasses();
-  if (page === 'log') renderLog();
-  if (page === 'summary') renderSummary();
+  if (page === 'log') renderLogs();
+  if (page === 'summary') {
+    if (!document.getElementById('summary-date').value) {
+      document.getElementById('summary-date').value = new Date().toISOString().slice(0, 10);
+    }
+    renderSummary();
+  }
 }
 
-// ===== MODE =====
-function setMode(mode) {
-  currentMode = mode;
-  document.getElementById('btn-checkin').classList.toggle('active', mode === 'checkin');
-  document.getElementById('btn-checkout').classList.toggle('active', mode === 'checkout');
-  const badge = document.getElementById('scan-badge');
-  const frameBox = document.getElementById('scan-frame-box');
-  
-  badge.textContent = mode === 'checkin' ? 'CHECK-IN' : 'CHECK-OUT';
-  badge.className = 'scan-mode-badge' + (mode === 'checkout' ? ' checkout' : '');
-  frameBox.className = 'scan-frame' + (mode === 'checkout' ? ' checkout' : '');
-  
-  document.getElementById('topbar').className = 'topbar ' + (mode === 'checkin' ? 'checkin-mode' : 'checkout-mode');
-  document.getElementById('topbar-sub').textContent = mode === 'checkin' ? 'Mode: Check-In ✅' : 'Mode: Check-Out 🚪';
-  resetScanResult();
-}
-
-// ===== OPTION A: HTML5 WEBCAM QR SCANNER LOOP =====
-async function startCamera() {
-  if (!currentClassId) {
-    showToast('Please select a class/section first!');
+// ===== SCANNER LIVE CAMERA RUNNER =====
+function startCamera() {
+  const clsSelect = document.getElementById('scanner-class-select').value;
+  if (!clsSelect) {
+    showToast('⚠️ Please choose a class/section first!');
     return;
   }
-  if (cameraStream) return; // Camera is already open
 
+  document.getElementById('cam-idle').style.display = 'none';
   const video = document.getElementById('webcam-video');
-  const idleBtn = document.getElementById('cam-idle');
+  video.style.display = 'block';
 
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 640 } },
-      audio: false
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    .then(function(stream) {
+      cameraStream = stream;
+      video.srcObject = stream;
+      video.setAttribute('playsinline', true);
+      video.play();
+      scanningActive = true;
+      requestAnimationFrame(tickScanLoop);
+    })
+    .catch(function(err) {
+      console.error(err);
+      showScanResult('error', '❌', 'Camera access denied or unsupported.');
+      document.getElementById('cam-idle').style.display = 'flex';
     });
-    
-    cameraStream = stream;
-    video.srcObject = stream;
-    idleBtn.style.display = 'none'; // Hide "Tap to Scan" mask overlay
-    scanningActive = true;
-    requestAnimationFrame(scanFrameLoop);
-  } catch (err) {
-    console.error("Camera Access Error: ", err);
-    showScanResult('error', '⚠️', 'Camera access denied. Ensure HTTPS or check settings.');
-  }
 }
 
 function stopCamera() {
@@ -668,241 +653,251 @@ function stopCamera() {
     cameraStream = null;
   }
   const video = document.getElementById('webcam-video');
-  video.srcObject = null;
-  document.getElementById('cam-idle').style.display = 'flex'; // Show mask back
+  if (video) {
+    video.pause();
+    video.srcObject = null;
+    video.style.display = 'none';
+  }
+  document.getElementById('cam-idle').style.display = 'flex';
 }
 
-function scanFrameLoop() {
+function tickScanLoop() {
   if (!scanningActive) return;
 
   const video = document.getElementById('webcam-video');
-  const canvas = document.getElementById('qr-canvas');
-
-  if (video.readyState === video.HAVE_CURRENT_DATA) {
+  if (video && video.readyState === video.HAVE_ENOUGH_DATA) {
+    const canvas = document.getElementById('qr-canvas');
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
+    
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
 
-    if (code && code.data) {
+    if (code && code.data.trim() !== "") {
       const now = Date.now();
-      // Debounce: Prevent double scanning the exact same student code within 3 seconds
+      // Avoid scanning the same code multiple times within 3 seconds
       if (code.data !== lastScannedData || (now - lastScannedTimestamp > 3000)) {
         lastScannedData = code.data;
         lastScannedTimestamp = now;
-        handleQRScan(code.data);
+        handleQRScanResult(code.data);
       }
     }
   }
-  requestAnimationFrame(scanFrameLoop);
+  
+  if (scanningActive) {
+    requestAnimationFrame(tickScanLoop);
+  }
 }
 
-function handleQRScan(data) {
-  let parsed;
-  try { 
-    parsed = JSON.parse(data); 
-  } catch(e) { 
-    showScanResult('error', '❌', 'Invalid QR code signature'); 
-    return; 
-  }
-  
-  if (!parsed.eduscan) { 
-    showScanResult('error', '❌', 'Not an EduScan QR code'); 
-    return; 
-  }
-  
-  const student = students.find(s => s.id === parsed.id);
-  if (!student) { 
-    showScanResult('error', '❌', 'Student not registered on this device'); 
-    return; 
+function handleQRScanResult(scannedValue) {
+  const selectedClassId = document.getElementById('scanner-class-select').value;
+  if (!selectedClassId) return;
+
+  let student = students.find(s => s.id === scannedValue || s.name === scannedValue);
+
+  if (!student) {
+    showScanResult('error', '🔍', `Unknown QR Code parsed: "${scannedValue}"`);
+    return;
   }
 
-  const cls = classes.find(c => c.id === currentClassId);
-  const log = {
-    id: Date.now().toString(),
+  if (student.classId !== selectedClassId) {
+    const targetClass = classes.find(c => c.id === student.classId);
+    const targetClassName = targetClass ? targetClass.name : 'another class';
+    showScanResult('error', '🚷', `${student.name} belongs to ${targetClassName}!`);
+    return;
+  }
+
+  // Create Log entry
+  const newLog = {
+    id: 'log_' + Date.now(),
     studentId: student.id,
     studentName: student.name,
-    classId: currentClassId,
-    className: cls ? cls.name : 'No class',
+    classId: student.classId,
+    className: classes.find(c => c.id === student.classId).name,
     mode: currentMode,
     time: new Date().toISOString()
   };
-  
-  logs.unshift(log);
+
+  logs.unshift(newLog);
   save();
 
-  const icon = currentMode === 'checkin' ? '✅' : '🚪';
-  const type = currentMode === 'checkin' ? 'success' : 'checkout-success';
-  const timeStr = new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  // Send payload to Google Sheets Webhook asynchronously
+  const activeClass = classes.find(c => c.id === selectedClassId);
+  if (activeClass && activeClass.webhook) {
+    const url = `${activeClass.webhook}?student=${encodeURIComponent(student.name)}&studentId=${encodeURIComponent(student.id)}&mode=${encodeURIComponent(currentMode)}&className=${encodeURIComponent(activeClass.name)}`;
+    fetch(url, { mode: 'no-cors' })
+      .then(() => console.log('Webhook dispatched successfully'))
+      .catch(e => console.error('Webhook payload failed to dispatch', e));
+  }
+
+  // Alert Success indicators
+  if (currentMode === 'checkin') {
+    showScanResult('success', '✅', `Checked-In: ${student.name}`);
+    showToast(`Checked-In: ${student.name}`);
+  } else {
+    showScanResult('checkout-success', '🚪', `Checked-Out: ${student.name}`);
+    showToast(`Checked-Out: ${student.name}`);
+  }
+}
+
+function showScanResult(statusClass, icon, text) {
+  const resBox = document.getElementById('scan-result');
+  resBox.className = `scan-result ${statusClass}`;
+  resBox.innerHTML = `<span class="res-icon">${icon}</span><span>${text}</span>`;
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('btn-checkin').classList.toggle('active', mode === 'checkin');
+  document.getElementById('btn-checkout').classList.toggle('active', mode === 'checkout');
   
-  showScanResult(type, icon, `${student.name} — ${currentMode === 'checkin' ? 'Checked in' : 'Checked out'} at ${timeStr}`);
-
-  if (cls && cls.webhook) sendToSheet(cls.webhook, log);
-}
-
-function showScanResult(type, icon, text) {
-  const el = document.getElementById('scan-result');
-  el.className = 'scan-result ' + type;
-  el.querySelector('.res-icon').textContent = icon;
-  document.getElementById('scan-result-text').textContent = text;
-}
-
-function resetScanResult() {
-  showScanResult('', '📷', 'Point the camera at a student\'s QR code');
+  const frameBox = document.getElementById('scan-frame-box');
+  const badge = document.getElementById('scan-badge');
+  const topbar = document.getElementById('topbar');
+  
+  if (mode === 'checkout') {
+    frameBox.classList.add('checkout');
+    badge.classList.add('checkout');
+    badge.innerText = 'CHECK-OUT';
+    topbar.classList.add('checkout-mode');
+  } else {
+    frameBox.classList.remove('checkout');
+    badge.classList.remove('checkout');
+    badge.innerText = 'CHECK-IN';
+    topbar.classList.remove('checkout-mode');
+  }
 }
 
 function onClassChange() {
-  currentClassId = document.getElementById('scanner-class-select').value || null;
-  resetScanResult();
-  lastScannedData = ''; // clear track history memory
-  if (cameraStream) stopCamera();
-  if (currentClassId) startCamera();
+  stopCamera();
+  showScanResult('', '📷', "Point the camera at a student's QR code");
 }
 
-// ===== SEND TO SHEETS =====
-async function sendToSheet(webhookUrl, log) {
-  const url = `${webhookUrl}?student=${encodeURIComponent(log.studentName)}&studentId=${encodeURIComponent(log.studentId)}&mode=${log.mode}&className=${encodeURIComponent(log.className)}`;
-  try {
-    await fetch(url, { method: 'GET', mode: 'no-cors' });
-  } catch(e) { /* silent fail when offline, logs remain secure safely inside localStorage */ }
-}
-
-// ===== STUDENTS =====
+// ===== STUDENTS MANIPULATION =====
 function renderStudents() {
-  const list = document.getElementById('student-list');
+  const container = document.getElementById('student-list');
   if (!students.length) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-icon">🎒</div><div class="empty-title">No students yet</div><div class="empty-sub">Add students and generate their QR cards to get started.</div></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">No students registered</div><div class="empty-sub">Add manually or import CSV data files.</div></div>`;
     return;
   }
-  list.innerHTML = students.map(s => {
-    const initials = s.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  
+  container.innerHTML = students.map(s => {
     const cls = classes.find(c => c.id === s.classId);
-    return `<div class="student-card">
-      <div class="student-avatar">${initials}</div>
-      <div class="student-info">
-        <div class="student-name">${s.name}</div>
-        <div class="student-meta">ID: ${s.studentId || 'N/A'} · ${cls ? cls.name : 'No class'}</div>
+    const initials = s.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+    return `
+      <div class="student-card">
+        <div class="student-avatar">${initials}</div>
+        <div class="student-info">
+          <div class="student-name">${s.name}</div>
+          <div class="student-meta">ID: ${s.id || 'N/A'} • ${cls ? cls.name : 'Unassigned'}</div>
+        </div>
+        <div class="student-actions">
+          <button class="icon-btn view" onclick="viewStudentQR('${s.id}')">🔍</button>
+          <button class="icon-btn del" onclick="deleteStudent('${s.id}')">🗑️</button>
+        </div>
       </div>
-      <div class="student-actions">
-        <button class="icon-btn view" onclick="showQR('${s.id}')">🔳</button>
-        <button class="icon-btn del" onclick="deleteStudent('${s.id}')">🗑</button>
-      </div>
-    </div>`;
+    `;
   }).join('');
 }
 
 function openAddStudent() {
+  const select = document.getElementById('inp-student-class');
+  select.innerHTML = '<option value="">— No class assigned —</option>' + 
+    classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  
   document.getElementById('inp-student-name').value = '';
   document.getElementById('inp-student-id').value = '';
-  populateClassSelects();
   openModal('modal-student');
 }
 
 function saveStudent() {
   const name = document.getElementById('inp-student-name').value.trim();
-  const sid = document.getElementById('inp-student-id').value.trim();
+  const id = document.getElementById('inp-student-id').value.trim();
   const classId = document.getElementById('inp-student-class').value;
-  if (!name) { showToast('Please enter student name'); return; }
-  const student = { id: Date.now().toString(), name, studentId: sid, classId };
-  students.push(student);
+  
+  if (!name || !id) { showToast('Name and ID are required'); return; }
+  if (students.some(s => s.id === id)) { showToast('Student ID already exists'); return; }
+  
+  const newStudent = { name, id, classId };
+  students.push(newStudent);
   save();
   closeModal('modal-student');
-  showPage('students');
-  setTimeout(() => showQR(student.id), 200);
+  renderStudents();
+  viewStudentQR(id);
 }
 
 function deleteStudent(id) {
-  if (!confirm('Remove this student?')) return;
-  students = students.filter(s => s.id !== id);
-  save(); renderStudents();
+  if (confirm('Are you sure you want to delete this student profile?')) {
+    students = students.filter(s => s.id !== id);
+    save();
+    renderStudents();
+  }
 }
 
-let currentQRStudent = null;
-
-function showQR(id) {
-  const s = students.find(st => st.id === id);
-  if (!s) return;
-  currentQRStudent = s;
-  document.getElementById('qr-student-name').textContent = s.name;
-  const cls = classes.find(c => c.id === s.classId);
-  document.getElementById('qr-student-meta').textContent = (s.studentId ? `ID: ${s.studentId}` : '') + (cls ? ` · ${cls.name}` : '');
-  const wrap = document.getElementById('qr-render');
-  wrap.innerHTML = '';
-  const qrData = JSON.stringify({ eduscan: true, id: s.id, name: s.name, studentId: s.studentId });
-  new QRCode(wrap, { text: qrData, width: 220, height: 220, colorDark: '#1B2B4B', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
+function viewStudentQR(id) {
+  const student = students.find(s => s.id === id);
+  if (!student) return;
+  
+  const cls = classes.find(c => c.id === student.classId);
+  document.getElementById('qr-student-name').innerText = student.name;
+  document.getElementById('qr-student-meta').innerText = `ID: ${student.id} • ${cls ? cls.name : 'No Class'}`;
+  
+  const qrContainer = document.getElementById('qr-render');
+  qrContainer.innerHTML = '';
+  
+  new QRCode(qrContainer, {
+    text: student.id,
+    width: 180,
+    height: 180,
+    colorDark: "#1B2B4B",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.H
+  });
+  
   openModal('modal-qr');
 }
 
 function printQR() {
-  if (!currentQRStudent) return;
-  setTimeout(() => {
-    const wrap = document.getElementById('qr-render');
-    const img = wrap.querySelector('img');
-    const canvas = wrap.querySelector('canvas');
-    let qrSrc = '';
-    if (img && img.src) {
-      qrSrc = img.src;
-    } else if (canvas) {
-      qrSrc = canvas.toDataURL('image/png');
-    }
-    if (!qrSrc) { showToast('QR not ready, try again'); return; }
-
-    const s = currentQRStudent;
-    const cls = classes.find(c => c.id === s.classId);
-    const clsName = cls ? cls.name : '';
-    const win = window.open('', '_blank');
-    win.document.write(`<!DOCTYPE html><html><head><title>QR Card - ${s.name}</title>
-    <style>
-      body { font-family: Arial, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #fff; }
-      .card { text-align: center; border: 2px solid #1B2B4B; border-radius: 16px; padding: 24px 32px; display: inline-block; }
-      .school { font-size: 12px; color: #94A3B8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-      img { width: 220px; height: 220px; display: block; margin: 0 auto; }
-      .name { font-size: 20px; font-weight: 700; color: #1B2B4B; margin-top: 14px; }
-      .meta { font-size: 13px; color: #475569; margin-top: 4px; }
-      .badge { display: inline-block; margin-top: 12px; background: #1B2B4B; color: #00BFA5; padding: 4px 16px; border-radius: 100px; font-size: 11px; font-weight: 700; letter-spacing: 1px; }
-    </style></head><body>
-    <div class="card">
-      <div class="school">EduScan PH · Student QR Card</div>
-      <img src="${qrSrc}" alt="QR Code">
-      <div class="name">${s.name}</div>
-      <div class="meta">${s.studentId ? 'ID: ' + s.studentId : ''}${clsName ? ' · ' + clsName : ''}</div>
-      <div class="badge">SCAN TO RECORD ATTENDANCE</div>
-    </div>
-    <script>window.onload = function(){ window.print(); }<\/script>
-    </body></html>`);
-    win.document.close();
-  }, 300);
+  window.print();
 }
 
-// ===== CLASSES =====
+// ===== CLASSES MANIPULATION =====
 function renderClasses() {
-  const list = document.getElementById('class-list');
+  const container = document.getElementById('class-list');
+  const selector = document.getElementById('scanner-class-select');
+  
+  // Update scanner dropdown choice
+  const selectedVal = selector.value;
+  selector.innerHTML = '<option value="">— Choose a class —</option>' + 
+    classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  selector.value = selectedVal;
+  
   if (!classes.length) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-icon">🏫</div><div class="empty-title">No classes yet</div><div class="empty-sub">Add a class and connect it to a Google Sheet to start recording attendance.</div></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">🏫</div><div class="empty-title">No classes configured</div><div class="empty-sub">Create layouts to categorize log metrics.</div></div>`;
     return;
   }
-  list.innerHTML = classes.map(c => {
-    const count = students.filter(s => s.classId === c.id).length;
-    const todayLogs = logs.filter(l => l.classId === c.id && new Date(l.time).toDateString() === new Date().toDateString());
-    const checkins = todayLogs.filter(l => l.mode === 'checkin').length;
-    return `<div class="class-card">
-      <div class="class-card-header">
-        <div>
-          <div class="class-name">${c.name}</div>
-          <div class="class-meta">👩‍🏫 ${c.teacher || 'No teacher assigned'}</div>
-          <div class="class-webhook ${c.webhook ? 'ok' : ''}">${c.webhook ? '✅ Google Sheet connected' : '⚠️ No Google Sheet connected'}</div>
+  
+  container.innerHTML = classes.map(c => {
+    const totalCount = students.filter(s => s.classId === c.id).length;
+    const webhookStatus = c.webhook ? '<span class="class-webhook ok">🔗 Connected to Sheet</span>' : '<span class="class-webhook">⚠️ No remote sync configured</span>';
+    return `
+      <div class="class-card">
+        <div class="class-card-header">
+          <div>
+            <div class="class-name">${c.name}</div>
+            <div class="class-meta">Teacher: ${c.teacher || 'Unassigned'}</div>
+            ${webhookStatus}
+          </div>
+          <button class="icon-btn del" onclick="deleteClass('${c.id}')">🗑️</button>
         </div>
-        <button class="icon-btn del" onclick="deleteClass('${c.id}')">🗑</button>
+        <div class="class-stats">
+          <div class="stat-pill"><div class="val">${totalCount}</div><div class="lbl">Students</div></div>
+        </div>
       </div>
-      <div class="class-stats">
-        <div class="stat-pill"><div class="val">${count}</div><div class="lbl">Students</div></div>
-        <div class="stat-pill"><div class="val">${checkins}</div><div class="lbl">Today's Check-ins</div></div>
-        <div class="stat-pill"><div class="val">${todayLogs.length}</div><div class="lbl">Today's Records</div></div>
-      </div>
-    </div>`;
+    `;
   }).join('');
 }
 
@@ -913,235 +908,244 @@ function openAddClass() {
   openModal('modal-class');
 }
 
+// Fixed function structure mismatch
 function saveClass() {
   const name = document.getElementById('inp-class-name').value.trim();
   const teacher = document.getElementById('inp-class-teacher').value.trim();
   const webhook = document.getElementById('inp-class-webhook').value.trim();
-  if (!name) { showToast('Please enter class name'); return; }
-  classes.push({ id: Date.now().toString(), name, teacher, webhook });
+  
+  if (!name) { showToast('Class name layout is required'); return; }
+  
+  const newClass = {
+    id: 'class_' + Date.now(),
+    name, teacher, webhook
+  };
+  classes.push(newClass);
   save();
   closeModal('modal-class');
-  populateClassSelects();
   renderClasses();
-  showToast('Class added!');
 }
 
 function deleteClass(id) {
-  if (!confirm('Remove this class?')) return;
-  classes = classes.filter(c => c.id !== id);
-  save(); renderClasses(); populateClassSelects();
+  if (confirm('Deleting this class layout leaves assigned records intact. Confirm?')) {
+    classes = classes.filter(c => c.id !== id);
+    save();
+    renderClasses();
+  }
 }
 
-function populateClassSelects() {
-  const opts = classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-  document.getElementById('inp-student-class').innerHTML = '<option value="">— No class assigned —</option>' + opts;
-  document.getElementById('scanner-class-select').innerHTML = '<option value="">— Choose a class —</option>' + opts;
-}
-
-// ===== LOG =====
-function renderLog() {
-  const list = document.getElementById('log-list');
-  const filtered = logFilter === 'all' ? logs : logs.filter(l => l.mode === logFilter);
+// ===== ATTENDANCE LOG GENERATION =====
+function renderLogs() {
+  const container = document.getElementById('log-list');
+  let filtered = logs;
+  if (logFilter !== 'all') filtered = logs.filter(l => l.mode === logFilter);
+  
   if (!filtered.length) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No records yet</div><div class="empty-sub">Scanned attendance will appear here.</div></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📜</div><div class="empty-title">No transactions caught</div></div>`;
     return;
   }
-  list.innerHTML = filtered.map(l => {
-    const t = new Date(l.time);
-    const dateStr = t.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' });
-    const timeStr = t.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
-    return `<div class="log-item">
-      <div class="log-badge ${l.mode === 'checkin' ? 'in' : 'out'}">${l.mode === 'checkin' ? '✅' : '🚪'}</div>
-      <div class="log-info">
-        <div class="log-name">${l.studentName}</div>
-        <div class="log-detail">${l.className} · ${l.mode === 'checkin' ? 'Checked In' : 'Checked Out'}</div>
+  
+  container.innerHTML = filtered.map(l => {
+    const timeStr = new Date(l.time).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const isIn = l.mode === 'checkin';
+    return `
+      <div class="log-item">
+        <div class="log-badge ${isIn ? 'in' : 'out'}">${isIn ? '✅' : '🚪'}</div>
+        <div class="log-info">
+          <div class="log-name">${l.studentName}</div>
+          <div class="log-detail">${l.className} • ID: ${l.studentId || 'N/A'}</div>
+        </div>
+        <div class="log-time">${timeStr}</div>
       </div>
-      <div class="log-time">${dateStr}<br>${timeStr}</div>
-    </div>`;
+    `;
   }).join('');
 }
 
-function filterLog(f, btn) {
-  logFilter = f;
+function filterLog(type, el) {
+  logFilter = type;
   document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-  btn.classList.add('active');
-  renderLog();
+  el.classList.add('active');
+  renderLogs();
 }
 
 function exportLog() {
-  if (!logs.length) { showToast('No records to export'); return; }
-  const rows = [['Date','Time','Student','Student ID','Class','Mode']];
-  logs.forEach(l => {
-    const t = new Date(l.time);
-    rows.push([
-      t.toLocaleDateString('en-PH'),
-      t.toLocaleTimeString('en-PH'),
-      l.studentName, l.studentId || '', l.className,
-      l.mode === 'checkin' ? 'Check-In' : 'Check-Out'
-    ]);
-  });
-  const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `eduscan_log_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-  showToast('Log exported!');
+  if (!logs.length) { showToast('No records exist to compile raw metrics'); return; }
+  const rows = [['Timestamp', 'Student ID', 'Student Name', 'Class / Section', 'Transaction Mode']];
+  logs.forEach(l => rows.push([new Date(l.time).toLocaleString('en-PH'), l.studentId, l.studentName, l.className, l.mode]));
+  
+  const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.map(val => `"${val}"`).join(",")).join("\n");
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", `eduscan_raw_logs_${new Date().toISOString().slice(0,10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
-// ===== MODAL =====
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-document.querySelectorAll('.modal-backdrop').forEach(b => {
-  b.addEventListener('click', e => { if (e.target === b) b.classList.remove('open'); });
-});
-
-// ===== TOAST =====
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
-
-// ===== CSV IMPORT =====
-let importPreviewData = [];
-
-function handleCSVDrop(e) {
-  e.preventDefault();
-  document.getElementById('import-drop').classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if (file) parseCSV(file);
-}
-
-function handleCSVFile(e) {
-  const file = e.target.files[0];
-  if (file) parseCSV(file);
-  e.target.value = '';
-}
-
-function parseCSV(file) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const lines = e.target.result.split('\n').map(l => l.trim()).filter(l => l);
-    importPreviewData = [];
-    const start = lines[0].toLowerCase().includes('name') ? 1 : 0;
-    for (let i = start; i < lines.length; i++) {
-      const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
-      if (cols[0]) importPreviewData.push({ name: cols[0], studentId: cols[1] || '', className: cols[2] || '' });
-    }
-    renderImportPreview();
-  };
-  reader.readAsText(file);
-}
-
-function renderImportPreview() {
-  const wrap = document.getElementById('import-preview');
-  if (!importPreviewData.length) { wrap.innerHTML = ''; return; }
-  wrap.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <div style="font-size:13px;font-weight:700;color:var(--gray-800)">${importPreviewData.length} students found</div>
-      <button class="btn-primary" onclick="confirmImport()" style="padding:8px 16px;font-size:12px">Import All</button>
-    </div>
-    <table class="import-preview-table">
-      <tr><th>Name</th><th>ID</th><th>Class</th></tr>
-      ${importPreviewData.slice(0,8).map(r => `<tr><td>${r.name}</td><td>${r.studentId||'—'}</td><td>${r.className||'—'}</td></tr>`).join('')}
-      ${importPreviewData.length > 8 ? `<tr><td colspan="3" style="color:var(--gray-400);text-align:center;padding:10px">...and ${importPreviewData.length-8} more</td></tr>` : ''}
-    </table>`;
-}
-
-function confirmImport() {
-  let added = 0, skipped = 0;
-  importPreviewData.forEach(row => {
-    if (students.find(s => s.name === row.name && s.studentId === row.studentId)) { skipped++; return; }
-    let classId = '';
-    if (row.className) {
-      const match = classes.find(c => c.name.toLowerCase() === row.className.toLowerCase());
-      classId = match ? match.id : '';
-    }
-    students.push({ id: Date.now().toString() + Math.random(), name: row.name, studentId: row.studentId, classId });
-    added++;
-  });
-  save();
-  importPreviewData = [];
-  document.getElementById('import-preview').innerHTML = '';
-  showToast(`✅ Imported ${added} students${skipped ? `, ${skipped} skipped (duplicates)` : ''}`);
-  renderStudents();
-}
-
-// ===== DAILY SUMMARY =====
-function initSummaryDate() {
-  const inp = document.getElementById('summary-date');
-  inp.value = new Date().toISOString().slice(0, 10);
-}
-
-function shiftSummaryDate(delta) {
-  const inp = document.getElementById('summary-date');
-  const d = new Date(inp.value + 'T00:00:00');
-  d.setDate(d.getDate() + delta);
-  inp.value = d.toISOString().slice(0, 10);
-  renderSummary();
-}
-
+// ===== COMPREHENSIVE DAILY ANALYTICS =====
 function renderSummary() {
   const dateStr = document.getElementById('summary-date').value;
-  const dayLogs = logs.filter(l => l.time.slice(0, 10) === dateStr);
-  const totalCheckin = dayLogs.filter(l => l.mode === 'checkin').length;
-  const totalCheckout = dayLogs.filter(l => l.mode === 'checkout').length;
-  const uniqueStudents = new Set(dayLogs.map(l => l.studentId)).size;
-
+  if (!dateStr) return;
+  
+  const targetedLogs = logs.filter(l => l.time.slice(0, 10) === dateStr);
+  const checkedInIds = new Set(targetedLogs.filter(l => l.mode === 'checkin').map(l => l.studentId));
+  const checkedOutIds = new Set(targetedLogs.filter(l => l.mode === 'checkout').map(l => l.studentId));
+  
   document.getElementById('summary-cards').innerHTML = `
-    <div class="summary-card teal"><div class="sc-val">${totalCheckin}</div><div class="sc-lbl">Check-Ins</div></div>
-    <div class="summary-card amber"><div class="sc-val">${totalCheckout}</div><div class="sc-lbl">Check-Outs</div></div>
-    <div class="summary-card"><div class="sc-val">${uniqueStudents}</div><div class="sc-lbl">Students Present</div></div>
-    <div class="summary-card"><div class="sc-val">${students.length - uniqueStudents}</div><div class="sc-lbl">Absent</div></div>`;
-
-  if (!classes.length) { document.getElementById('summary-body').innerHTML = `<div class="empty-state"><div class="empty-icon">🏫</div><div class="empty-title">No classes set up</div></div>`; return; }
-
+    <div class="summary-card teal"><div class="sc-val">${checkedInIds.size}</div><div class="sc-lbl">Total Checked In</div></div>
+    <div class="summary-card amber"><div class="sc-val">${checkedOutIds.size}</div><div class="sc-lbl">Total Checked Out</div></div>
+  `;
+  
   let html = '';
-  classes.forEach(cls => {
-    const clsStudents = students.filter(s => s.classId === cls.id);
-    const clsLogs = dayLogs.filter(l => l.classId === cls.id);
-    const checkins = clsLogs.filter(l => l.mode === 'checkin').length;
-    if (!clsStudents.length) return;
-    html += `<div class="summary-class-block">
-      <div class="summary-class-header">
-        <div class="summary-class-name">${cls.name}</div>
-        <div class="summary-class-counts">${checkins}/${clsStudents.length} present</div>
-      </div>`;
-    clsStudents.forEach(st => {
-      const stLogs = clsLogs.filter(l => l.studentId === st.id);
-      const lastIn = stLogs.filter(l => l.mode === 'checkin').sort((a,b) => b.time.localeCompare(a.time))[0];
-      const lastOut = stLogs.filter(l => l.mode === 'checkout').sort((a,b) => b.time.localeCompare(a.time))[0];
-      let chip = '<span class="status-chip absent">Absent</span>';
-      if (lastIn && lastOut) chip = `<span class="status-chip out">In & Out</span>`;
-      else if (lastIn) chip = `<span class="status-chip in">Present ✅</span>`;
-      const timeNote = lastIn ? `<span style="font-size:10px;color:var(--gray-400);margin-left:6px">${new Date(lastIn.time).toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'})}</span>` : '';
-      html += `<div class="summary-student-row"><div class="summary-student-name">${st.name}</div>${chip}${timeNote}</div>`;
+  classes.forEach(c => {
+    const classStudents = students.filter(s => s.classId === c.id);
+    if (!classStudents.length) return;
+    
+    let inCount = 0;
+    let outCount = 0;
+    let rowHtml = '';
+    
+    classStudents.forEach(st => {
+      const studentLogs = targetedLogs.filter(l => l.studentId === st.id);
+      let status = '<span class="status-chip absent">Absent ❌</span>';
+      
+      if (studentLogs.length > 0) {
+        const lastTx = studentLogs[0]; // array is unshifted, item 0 is latest
+        if (lastTx.mode === 'checkin') {
+          status = '<span class="status-chip in">Checked-In ✅</span>';
+        } else {
+          status = '<span class="status-chip out">Checked-Out 🚪</span>';
+        }
+      }
+      
+      const hasIn = studentLogs.some(l => l.mode === 'checkin');
+      const hasOut = studentLogs.some(l => l.mode === 'checkout');
+      if (hasIn) inCount++;
+      if (hasOut) outCount++;
+      
+      rowHtml += `
+        <div class="summary-student-row">
+          <div class="summary-student-name">${st.name}</div>
+          ${status}
+        </div>
+      `;
     });
-    html += '</div>';
+    
+    html += `
+      <div class="summary-section-title">${c.name}</div>
+      <div class="summary-class-block">
+        <div class="summary-class-header">
+          <div class="summary-class-name">Attendance Matrix</div>
+          <div class="summary-class-counts">IN: ${inCount} | OUT: ${outCount}</div>
+        </div>
+        ${rowHtml}
+      </div>
+    `;
   });
-  document.getElementById('summary-body').innerHTML = html || `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No records for this day</div></div>`;
+  
+  document.getElementById('summary-body').innerHTML = html || `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No transactions caught today</div></div>`;
+}
+
+function shiftSummaryDate(days) {
+  const inp = document.getElementById('summary-date');
+  if (!inp.value) return;
+  const d = new Date(inp.value);
+  d.setDate(d.getDate() + days);
+  inp.value = d.toISOString().slice(0, 10);
+  renderSummary();
 }
 
 function exportSummaryCSV() {
   const dateStr = document.getElementById('summary-date').value;
   const dayLogs = logs.filter(l => l.time.slice(0, 10) === dateStr);
-  if (!dayLogs.length) { showToast('No records for this date'); return; }
-  const rows = [['Date','Time','Student','Student ID','Class','Mode']];
+  if (!dayLogs.length) { showToast('No records found for this chosen date partition'); return; }
+  
+  const rows = [['Date', 'Time', 'Student Name', 'Student ID', 'Class Partition', 'Mode']];
   dayLogs.forEach(l => {
-    const t = new Date(l.time);
-    rows.push([dateStr, t.toLocaleTimeString('en-PH'), l.studentName, l.studentId||'', l.className, l.mode === 'checkin' ? 'Check-In' : 'Check-Out']);
+    rows.push([dateStr, new Date(l.time).toLocaleTimeString('en-PH'), l.studentName, l.studentId || '', l.className, l.mode]);
   });
-  const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = `eduscan_summary_${dateStr}.csv`; a.click();
-  showToast('Summary exported!');
+  
+  const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.map(val => `"${val}"`).join(",")).join("\n");
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", `eduscan_summary_${dateStr}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
-populateClassSelects();
-renderStudents();
-initSummaryDate();
+// ===== CSV MULTI-ROW DATA PROCESSING =====
+function handleCSVFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  processCSVData(file);
+}
+
+function handleCSVDrop(e) {
+  e.preventDefault();
+  document.getElementById('import-drop').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) processCSVData(file);
+}
+
+function processCSVData(file) {
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    const text = evt.target.result;
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    if (!lines.length) { showToast('Empty file payload submitted'); return; }
+    
+    let importedCount = 0;
+    let fallbackClassId = null;
+    
+    lines.forEach((line, index) => {
+      // Split on commas safely (basic parse)
+      const parts = line.split(',').map(p => p.trim().replace(/^"|"$/g, ''));
+      if (parts.length < 2) return;
+      
+      const name = parts[0];
+      const id = parts[1];
+      let className = parts[2] || "Imported Section Block";
+      
+      // Skip structural header schemas if matching keywords parsed
+      if (name.toLowerCase() === 'name' || id.toLowerCase() === 'student id' || id.toLowerCase() === 'lrn') return;
+      
+      // Find or establish target class partition layout layout container dynamically
+      let cls = classes.find(c => c.name.toLowerCase() === className.toLowerCase());
+      if (!cls) {
+        cls = { id: 'class_' + (Date.now() + index), name: className, teacher: 'Assigned via CSV Import', webhook: '' };
+        classes.push(cls);
+      }
+      
+      if (!students.some(s => s.id === id)) {
+        students.push({ name, id, classId: cls.id });
+        importedCount++;
+      }
+    });
+    
+    save();
+    renderClasses();
+    showToast(`Successfully processed and bound ${importedCount} profiles!`);
+    showPage('students');
+  };
+  reader.readAsText(file);
+}
+
+// ===== UTILS & SYSTEM MODALS =====
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.innerText = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Initialize layout context defaults
+renderClasses();
 </script>
 </body>
 </html>
