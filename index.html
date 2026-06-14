@@ -630,7 +630,14 @@ function startCamera() {
   const video = document.getElementById('webcam-video');
   video.style.display = 'block';
 
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+  // Requesting optimal 640x480 resolution to eliminate screen moiré/grid artifacts
+  navigator.mediaDevices.getUserMedia({ 
+    video: { 
+      facingMode: 'environment',
+      width: { ideal: 640 },
+      height: { ideal: 480 }
+    } 
+  })
     .then(function(stream) {
       cameraStream = stream;
       video.srcObject = stream;
@@ -669,16 +676,26 @@ function tickScanLoop() {
     const canvas = document.getElementById('qr-canvas');
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    // Lock reading dimension to downsample computer pixel distortion
+    canvas.width = 480;
+    canvas.height = 480;
+    
+    // Crop a clean square right from the center of the camera feed
+    const sourceSize = Math.min(video.videoWidth, video.videoHeight);
+    const sourceX = (video.videoWidth - sourceSize) / 2;
+    const sourceY = (video.videoHeight - sourceSize) / 2;
+    
+    ctx.drawImage(video, sourceX, sourceY, sourceSize, sourceSize, 0, 0, canvas.width, canvas.height);
     
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+    
+    // Aggressive parsing config optimized for digital screen reading
+    const code = jsQR(imageData.data, imageData.width, imageData.height, { 
+      inversionAttempts: 'attemptBoth' 
+    });
 
     if (code && code.data.trim() !== "") {
       const now = Date.now();
-      // Avoid scanning the same code multiple times within 3 seconds
       if (code.data !== lastScannedData || (now - lastScannedTimestamp > 3000)) {
         lastScannedData = code.data;
         lastScannedTimestamp = now;
@@ -869,7 +886,6 @@ function renderClasses() {
   const container = document.getElementById('class-list');
   const selector = document.getElementById('scanner-class-select');
   
-  // Update scanner dropdown choice
   const selectedVal = selector.value;
   selector.innerHTML = '<option value="">— Choose a class —</option>' + 
     classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
@@ -908,7 +924,6 @@ function openAddClass() {
   openModal('modal-class');
 }
 
-// Fixed function structure mismatch
 function saveClass() {
   const name = document.getElementById('inp-class-name').value.trim();
   const teacher = document.getElementById('inp-class-teacher').value.trim();
@@ -1011,7 +1026,7 @@ function renderSummary() {
       let status = '<span class="status-chip absent">Absent ❌</span>';
       
       if (studentLogs.length > 0) {
-        const lastTx = studentLogs[0]; // array is unshifted, item 0 is latest
+        const lastTx = studentLogs[0];
         if (lastTx.mode === 'checkin') {
           status = '<span class="status-chip in">Checked-In ✅</span>';
         } else {
@@ -1098,10 +1113,8 @@ function processCSVData(file) {
     if (!lines.length) { showToast('Empty file payload submitted'); return; }
     
     let importedCount = 0;
-    let fallbackClassId = null;
     
     lines.forEach((line, index) => {
-      // Split on commas safely (basic parse)
       const parts = line.split(',').map(p => p.trim().replace(/^"|"$/g, ''));
       if (parts.length < 2) return;
       
@@ -1109,10 +1122,8 @@ function processCSVData(file) {
       const id = parts[1];
       let className = parts[2] || "Imported Section Block";
       
-      // Skip structural header schemas if matching keywords parsed
       if (name.toLowerCase() === 'name' || id.toLowerCase() === 'student id' || id.toLowerCase() === 'lrn') return;
       
-      // Find or establish target class partition layout layout container dynamically
       let cls = classes.find(c => c.name.toLowerCase() === className.toLowerCase());
       if (!cls) {
         cls = { id: 'class_' + (Date.now() + index), name: className, teacher: 'Assigned via CSV Import', webhook: '' };
@@ -1144,7 +1155,6 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-// Initialize layout context defaults
 renderClasses();
 </script>
 </body>
