@@ -1,196 +1,1372 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Offline QR Attendance Tracker</title>
-    
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 15px;
-            background-color: #f5f7fb;
-            color: #333;
-        }
-        .container {
-            max-width: 480px;
-            margin: 0 auto;
-        }
-        h2 {
-            text-align: center;
-            color: #1e293b;
-            margin-bottom: 5px;
-        }
-        .subtitle {
-            text-align: center;
-            font-size: 14px;
-            color: #64748b;
-            margin-bottom: 20px;
-        }
-        /* Style the scanner box container */
-        #reader {
-            background: #ffffff;
-            border: 2px solid #e2e8f0 !important;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-        }
-        /* Adjust library generated buttons to look modern */
-        #reader button {
-            background-color: #2563eb;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            margin: 10px 0;
-        }
-        #reader button:hover {
-            background-color: #1d4ed8;
-        }
-        .alert-box {
-            margin-top: 20px;
-            padding: 15px;
-            background: #dbeafe;
-            border-left: 4px solid #2563eb;
-            border-radius: 4px;
-            display: none;
-        }
-        .log-section {
-            margin-top: 25px;
-        }
-        .log-list {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            max-height: 250px;
-            overflow-y: auto;
-            padding: 10px;
-        }
-        .log-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 5px;
-            border-bottom: 1px solid #f1f5f9;
-            font-size: 14px;
-        }
-        .log-item:last-child {
-            border-bottom: none;
-        }
-        .status-badge {
-            background: #fee2e2;
-            color: #991b1b;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: bold;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1B2B4B">
+<title>EduScan PH</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #1B2B4B;
+    --navy-light: #2C3E66;
+    --teal: #00BFA5;
+    --teal-hover: #00A68F;
+    --amber: #F5A623;
+    --red: #E53935;
+    --white: #FFFFFF;
+    --gray-50: #F8FAFC;
+    --gray-100: #EDF2F7;
+    --gray-200: #E2E8F0;
+    --gray-400: #94A3B8;
+    --gray-600: #475569;
+    --gray-800: #1E293B;
+    --radius: 20px;
+    --radius-sm: 12px;
+    --shadow: 0 4px 20px rgba(27,43,75,0.08);
+    --shadow-lg: 0 10px 30px rgba(27,43,75,0.12);
+  }
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: #F1F5F9;
+    color: var(--gray-800);
+    min-height: 100dvh;
+    max-width: 430px;
+    margin: 0 auto;
+    overflow-x: hidden;
+    box-shadow: 0 0 30px rgba(0,0,0,0.05);
+  }
+  /* ===== LAYOUT ===== */
+  #app { display: flex; flex-direction: column; min-height: 100dvh; background: var(--gray-50); }
+  
+  .topbar {
+    background: var(--navy);
+    color: var(--white);
+    padding: 18px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: background 0.3s ease;
+  }
+  .topbar-title { font-size: 19px; font-weight: 700; letter-spacing: -0.3px; display: flex; align-items: center; gap: 6px; }
+  .topbar-sub { font-size: 11px; color: var(--teal); font-weight: 600; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+  
+  .network-badge {
+    padding: 4px 10px; border-radius: 100px; font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.1);
+  }
+  .network-badge.online { color: #4ADE80; background: rgba(74,222,128,0.1); }
+  .network-badge.offline { color: #F87171; background: rgba(248,113,113,0.1); }
+  .network-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  .content { flex: 1; overflow-y: auto; padding: 0 0 100px; }
+  
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 430px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    display: flex; border-top: 1px solid var(--gray-100); z-index: 200;
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -4px 25px rgba(0,0,0,0.05);
+  }
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    gap: 4px; padding: 12px 4px; border: none; background: none;
+    cursor: pointer; font-family: 'Poppins', sans-serif;
+    font-size: 11px; font-weight: 600; color: var(--gray-400);
+    transition: all 0.2s ease;
+  }
+  .nav-btn.active { color: var(--navy); transform: translateY(-2px); }
+  .nav-btn svg { width: 22px; height: 22px; transition: stroke 0.2s; }
+  .nav-btn.active svg { stroke: var(--teal); stroke-width: 2.5px; }
+  
+  /* ===== PAGE BASE STRUCTURE ===== */
+  .page { display: none; animation: fadeIn 0.3s ease; }
+  .page.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  
+  /* ===== SCANNER AREA TARGET LAYOUT ===== */
+  .mode-toggle-wrap { padding: 20px 20px 14px; display: flex; gap: 12px; }
+  .mode-btn {
+    flex: 1; padding: 14px 10px; border-radius: var(--radius-sm);
+    border: 2px solid var(--gray-200); background: var(--white);
+    font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  }
+  .mode-btn.checkin.active { border-color: var(--teal); background: var(--teal); color: var(--white); box-shadow: 0 4px 12px rgba(0,191,165,0.25); }
+  .mode-btn.checkout.active { border-color: var(--amber); background: var(--amber); color: var(--white); box-shadow: 0 4px 12px rgba(245,166,35,0.25); }
+  
+  .class-selector-wrap { padding: 0 20px 20px; }
+  .class-selector-wrap label { font-size: 11px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 8px; display: block; }
+  .class-selector-wrap select {
+    width: 100%; padding: 14px 16px; border-radius: var(--radius-sm);
+    border: 2px solid var(--gray-200); background: var(--white);
+    font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600;
+    color: var(--gray-800); appearance: none; outline: none; transition: border-color 0.2s;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 16px center;
+  }
+  .class-selector-wrap select:focus { border-color: var(--navy); }
+
+  .scan-area-wrap { padding: 0 20px; }
+  .scan-area {
+    position: relative; border-radius: var(--radius);
+    overflow: hidden; background: var(--navy);
+    aspect-ratio: 1/1; width: 100%;
+    box-shadow: var(--shadow-lg);
+  }
+  .scan-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 5; }
+  .scan-frame {
+    width: 70%; aspect-ratio: 1/1; border: 2px dashed rgba(255,255,255,0.4); border-radius: 24px; position: relative;
+    animation: pulseFrame 2s infinite ease-in-out;
+  }
+  @keyframes pulseFrame { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.02); opacity: 1; } }
+  
+  .scan-frame::before, .scan-frame::after, .scan-frame .c3, .scan-frame .c4 {
+    content: ''; position: absolute; width: 28px; height: 28px; border-color: var(--teal); border-style: solid; border-radius: 6px;
+  }
+  .scan-frame.checkout-frame::before, .scan-frame.checkout-frame::after, .scan-frame.checkout-frame .c3, .scan-frame.checkout-frame .c4 { border-color: var(--amber); }
+  .scan-frame::before { top: -4px; left: -4px; border-width: 5px 0 0 5px; }
+  .scan-frame::after  { top: -4px; right: -4px; border-width: 5px 5px 0 0; }
+  .scan-frame .c3     { bottom: -4px; left: -4px; border-width: 0 0 5px 5px; }
+  .scan-frame .c4     { bottom: -4px; right: -4px; border-width: 0 5px 5px 0; }
+
+  .scan-mode-badge {
+    position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+    padding: 6px 18px; border-radius: 100px; font-size: 11px; font-weight: 800; letter-spacing: 0.8px;
+    background: var(--teal); color: var(--white); z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .scan-mode-badge.checkout { background: var(--amber); }
+
+  .cam-start-btn {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px; padding: 20px;
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%); color: var(--white);
+    border: none; cursor: pointer; text-align: center;
+  }
+  .cam-start-btn svg { width: 56px; height: 56px; stroke: var(--teal); filter: drop-shadow(0 2px 8px rgba(0,191,165,0.3)); }
+  .cam-start-btn.checkout-view svg { stroke: var(--amber); filter: drop-shadow(0 2px 8px rgba(245,166,35,0.3)); }
+
+  .scan-result {
+    margin: 18px 20px 0; padding: 16px; border-radius: var(--radius-sm);
+    display: flex; align-items: center; gap: 14px; font-size: 13px; font-weight: 600;
+    background: var(--white); border-left: 5px solid var(--gray-200);
+    min-height: 60px; box-shadow: var(--shadow); transition: all 0.3s ease;
+  }
+  .scan-result.success { border-left-color: var(--teal); background: #E6FAF8; color: #006B5E; }
+  .scan-result.checkout-success { border-left-color: var(--amber); background: #FFF8EC; color: #7A4E00; }
+  .scan-result.error { border-left-color: var(--red); background: #FEF2F2; color: #991B1B; }
+  
+  /* ===== SYNC MANAGEMENT ELEMENTS ===== */
+  .sync-banner {
+    margin: 16px 20px 0; padding: 14px 16px; background: #FFF8EC; border: 1.5px solid #FFE0B2;
+    border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: space-between;
+    box-shadow: var(--shadow); animation: fadeIn 0.3s ease;
+  }
+  .sync-banner-text { font-size: 12px; font-weight: 600; color: #7A4E00; display: flex; align-items: center; gap: 8px; }
+  .sync-banner button {
+    background: #F5A623; color: white; border: none; padding: 6px 14px; border-radius: 8px;
+    font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 700; cursor: pointer;
+    box-shadow: 0 2px 6px rgba(245,166,35,0.3); transition: background 0.2s;
+  }
+  .sync-banner button:hover { background: #E29513; }
+
+  /* ===== CARDS AND INTERACTIVE ENTRIES ===== */
+  .page-header { padding: 24px 20px 16px; display: flex; align-items: center; justify-content: space-between; }
+  .page-header h2 { font-size: 20px; font-weight: 700; color: var(--navy); }
+  
+  .student-list, .class-list, .log-list { padding: 0 20px; display: flex; flex-direction: column; gap: 12px; }
+  
+  .student-card, .class-card, .log-item {
+    background: var(--white); border-radius: var(--radius-sm); padding: 16px;
+    display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow);
+    border: 1px solid rgba(226, 232, 240, 0.6); transition: transform 0.2s;
+  }
+  .student-card:active, .class-card:active, .log-item:active { transform: scale(0.99); }
+  
+  .student-avatar {
+    width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--navy) 0%, #2C3E66;); color: var(--white);
+    display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; box-shadow: 0 2px 6px rgba(27,43,75,0.15);
+  }
+  .student-info { flex: 1; }
+  .student-name { font-size: 14px; font-weight: 600; color: var(--gray-800); }
+  .student-meta { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+  
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 10px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 15px; transition: background 0.2s;
+  }
+  .icon-btn.view { background: #E6FAF8; color: var(--teal); }
+  .icon-btn.view:hover { background: #CEF5F1; }
+  .icon-btn.del { background: #FEF2F2; color: var(--red); }
+  .icon-btn.del:hover { background: #FEE2E2; }
+  
+  /* ===== CLASSES STATS VISUALS ===== */
+  .class-card { flex-direction: column; align-items: stretch; gap: 14px; }
+  .class-card-header { display: flex; align-items: flex-start; justify-content: space-between; }
+  .class-name { font-size: 16px; font-weight: 700; color: var(--navy); }
+  .class-meta { font-size: 12px; color: var(--gray-600); margin-top: 3px; display: flex; align-items: center; gap: 4px; }
+  .class-webhook { font-size: 11px; font-weight: 600; color: var(--gray-400); margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+  .class-webhook.ok { color: #006B5E; }
+  
+  .class-stats { display: flex; gap: 10px; }
+  .stat-pill { flex: 1; background: var(--gray-50); border-radius: 10px; padding: 10px; text-align: center; border: 1px solid var(--gray-100); }
+  .stat-pill .val { font-size: 18px; font-weight: 700; color: var(--navy); }
+  .stat-pill .lbl { font-size: 10px; color: var(--gray-400); font-weight: 600; text-transform: uppercase; margin-top: 2px; }
+
+  /* ===== SYNC LOG CLASSIFICATIONS ===== */
+  .log-filters { padding: 12px 20px; display: flex; gap: 10px; overflow-x: auto; }
+  .filter-chip { padding: 8px 16px; border-radius: 100px; border: 2px solid var(--gray-200); background: var(--white); font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; color: var(--gray-600); cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+  .filter-chip.active { border-color: var(--navy); background: var(--navy); color: var(--white); }
+  
+  .log-badge { width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .log-badge.in { background: #E6FAF8; }
+  .log-badge.out { background: #FFF8EC; }
+  .log-status-cloud { font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+  .log-status-cloud.synced { background: #E8F5E9; color: #2E7D32; }
+  .log-status-cloud.pending { background: #FFF3E0; color: #EF6C00; }
+
+  /* ===== DAILY REPORT INTERFACE ===== */
+  .summary-date-bar { padding: 12px 20px; display: flex; align-items: center; gap: 10px; }
+  .summary-date-btn { background: var(--white); border: 2px solid var(--gray-200); border-radius: 10px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+  .summary-date-btn:active { background: var(--gray-100); }
+  .summary-date-inp { flex: 1; padding: 10px 14px; border-radius: 10px; border: 2px solid var(--gray-200); font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; text-align: center; color: var(--navy); }
+  
+  .summary-cards { padding: 0 20px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .summary-card { background: var(--white); border-radius: var(--radius-sm); padding: 16px; text-align: center; box-shadow: var(--shadow); border: 1px solid rgba(226, 232, 240, 0.6); }
+  .summary-card .sc-val { font-size: 26px; font-weight: 700; color: var(--navy); }
+  .summary-card .sc-lbl { font-size: 11px; color: var(--gray-400); font-weight: 600; text-transform: uppercase; margin-top: 2px; }
+  .summary-card.teal .sc-val { color: var(--teal); }
+  .summary-card.amber .sc-val { color: var(--amber); }
+
+  .summary-section-title { padding: 10px 20px 8px; font-size: 11px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.8px; }
+  .summary-class-block { margin: 0 20px 16px; background: var(--white); border-radius: var(--radius-sm); overflow: hidden; box-shadow: var(--shadow); border: 1px solid rgba(226, 232, 240, 0.6); }
+  .summary-class-header { padding: 14px 16px; background: var(--navy); color: var(--white); display: flex; justify-content: space-between; align-items: center; }
+  .summary-class-name { font-size: 14px; font-weight: 700; }
+  .summary-class-counts { font-size: 11px; color: var(--teal); font-weight: 700; background: rgba(0,191,165,0.15); padding: 3px 8px; border-radius: 6px; }
+  .summary-student-row { padding: 12px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--gray-50); }
+  .summary-student-row:last-child { border-bottom: none; }
+  .summary-student-name { flex: 1; font-size: 13px; font-weight: 600; color: var(--gray-800); }
+  
+  .status-chip { padding: 4px 10px; border-radius: 100px; font-size: 11px; font-weight: 700; }
+  .status-chip.in { background: #E6FAF8; color: #006B5E; }
+  .status-chip.out { background: #FFF8EC; color: #7A4E00; }
+  .status-chip.absent { background: #F1F5F9; color: #94A3B8; }
+
+  /* ===== PREMIUM OVERLAY MODALS ===== */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6);
+    z-index: 300; display: none; align-items: flex-end; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--white); border-radius: 28px 28px 0 0;
+    width: 100%; max-width: 430px; padding: 24px 24px 44px;
+    max-height: 88dvh; overflow-y: auto; box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
+    animation: slideUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .modal-title { font-size: 18px; font-weight: 700; color: var(--navy); }
+  .modal-close { background: var(--gray-100); border: none; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; color: var(--gray-600); }
+  
+  .form-group { margin-bottom: 18px; }
+  .form-label { font-size: 11px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block; }
+  .form-input {
+    width: 100%; padding: 14px 16px; border-radius: var(--radius-sm);
+    border: 2px solid var(--gray-200); font-family: 'Poppins', sans-serif;
+    font-size: 14px; color: var(--gray-800); outline: none; transition: border-color 0.2s;
+  }
+  .form-input:focus { border-color: var(--teal); }
+  .form-hint { font-size: 11px; color: var(--gray-400); margin-top: 6px; line-height: 1.5; }
+  
+  .btn-primary {
+    padding: 14px 20px; border-radius: var(--radius-sm);
+    background: var(--teal); color: var(--white); border: none;
+    font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+    box-shadow: 0 4px 12px rgba(0,191,165,0.2); transition: background 0.2s;
+  }
+  .btn-primary:hover { background: var(--teal-hover); }
+  .btn-secondary {
+    padding: 14px 20px; border-radius: var(--radius-sm);
+    background: var(--gray-100); color: var(--gray-800); border: none;
+    font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .modal-actions { display: flex; gap: 12px; margin-top: 24px; }
+  .modal-actions .btn-primary, .modal-actions .btn-secondary { flex: 1; }
+
+  /* ===== QR GENERATOR CONTAINER ===== */
+  .qr-display-wrap { text-align: center; padding: 10px 0; }
+  .qr-canvas-wrap { display: inline-block; background: var(--white); padding: 20px; border-radius: 24px; box-shadow: var(--shadow-lg); margin-bottom: 18px; border: 1px solid var(--gray-100); }
+  .qr-student-name { font-size: 18px; font-weight: 700; color: var(--navy); }
+  .qr-student-meta { font-size: 13px; color: var(--gray-400); margin-bottom: 20px; }
+  .btn-print { background: var(--navy); color: var(--white); border: none; border-radius: var(--radius-sm); padding: 14px 32px; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(27,43,75,0.2); width: 100%; }
+
+  /* ===== FILE DROP INTERFACES ===== */
+  .import-drop {
+    margin: 20px; border: 2.5px dashed var(--gray-200); border-radius: var(--radius);
+    padding: 40px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--white);
+  }
+  .import-drop:hover, .import-drop.drag-over { border-color: var(--teal); background: #E6FAF8; }
+  .import-drop-icon { font-size: 42px; margin-bottom: 12px; }
+  .import-drop-title { font-size: 15px; font-weight: 700; color: var(--navy); }
+  .import-drop-sub { font-size: 12px; color: var(--gray-400); margin-top: 4px; }
+  
+  .import-preview { margin: 0 20px 20px; }
+  .import-preview-table { width: 100%; border-collapse: collapse; font-size: 12px; background: var(--white); border-radius: var(--radius-sm); overflow: hidden; box-shadow: var(--shadow); }
+  .import-preview-table th { background: var(--navy); color: var(--white); padding: 12px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+  .import-preview-table td { padding: 12px; border-bottom: 1px solid var(--gray-50); color: var(--gray-600); }
+  
+  .empty-state { text-align: center; padding: 70px 40px; }
+  .empty-icon { font-size: 56px; margin-bottom: 16px; opacity: 0.8; }
+  .empty-title { font-size: 17px; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
+  .empty-sub { font-size: 13px; color: var(--gray-400); line-height: 1.6; }
+
+  /* ===== FEEDBACK TOASTS ===== */
+  .toast {
+    position: fixed; bottom: 94px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(8px); color: var(--white);
+    padding: 12px 24px; border-radius: 100px; font-size: 13px; font-weight: 600;
+    z-index: 500; opacity: 0; visibility: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  }
+  .toast.show { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+  
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media print { body > *:not(.print-target) { display: none !important; } .print-target { display: block !important; } }
+</style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Attendance Scanner</h2>
-    <p class="subtitle">Remote Mode: Scans are saved safely on your device.</p>
+<div id="app">
+  <!-- Topbar Header -->
+  <div class="topbar" id="topbar">
+    <div>
+      <div class="topbar-title">📋 EduScan PH</div>
+      <div class="topbar-sub" id="topbar-sub">Mode: Check-In ✅</div>
+    </div>
+    <div id="network-status" class="network-badge online">
+      <div class="network-dot"></div>
+      <span id="network-text">Online</span>
+    </div>
+  </div>
+
+  <div class="content">
     
-    <div id="reader"></div>
-
-    <div id="alert-box" class="alert-box">
-        <strong>Scanned Successfully!</strong><br>
-        Student ID: <span id="scanned-id">---</span>
+    <!-- ===== AUTOMATED SYNC QUEUE BAR ===== -->
+    <div id="sync-queue-banner" class="sync-banner" style="display:none;">
+      <div class="sync-banner-text">
+        <span>⏳</span> <span id="sync-count-text">0 scans pending offline storage allocation</span>
+      </div>
+      <button onclick="forceQueueSynchronization()">Sync Now</button>
     </div>
 
-    <div class="log-section">
-        <h3>Unsynced Local Storage Logs (<span id="queue-count">0</span>)</h3>
-        <div id="log-list" class="log-list">
-            <div style="color: #94a3b8; text-align: center; padding: 20px;">No offline scans on this device yet.</div>
+    <!-- ===== SCANNER PAGE ===== -->
+    <div class="page active" id="page-scanner">
+      <div class="mode-toggle-wrap">
+        <button class="mode-btn checkin active" id="btn-checkin" onclick="setMode('checkin')">✅ Check-In</button>
+        <button class="mode-btn checkout" id="btn-checkout" onclick="setMode('checkout')">🚪 Check-Out</button>
+      </div>
+      
+      <div class="class-selector-wrap">
+        <label>Class / Section Selector</label>
+        <select id="scanner-class-select" onchange="onClassChange()">
+          <option value="">— Choose a class —</option>
+        </select>
+      </div>
+      
+      <div class="scan-area-wrap">
+        <div class="scan-area" id="scan-area">
+          <canvas id="qr-canvas" style="display:none"></canvas>
+          <img id="scan-preview-img" style="width:100%;height:100%;object-fit:cover;display:none;">
+          
+          <!-- Default View Framing Layer -->
+          <div class="scan-overlay">
+            <div id="frame-indicator" class="scan-frame"></div>
+          </div>
+
+          <div class="cam-start-btn" id="cam-idle" onclick="triggerScan()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="56" height="56"><rect x="2" y="7" width="20" height="14" rx="3"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><circle cx="12" cy="14" r="3"/></svg>
+            <span style="font-size:15px;font-weight:700">Tap Anywhere Inside to Scan</span>
+            <span style="font-size:11px;opacity:0.6;font-weight:500;margin-top:-6px">Uses camera photo verification engine</span>
+          </div>
+          
+          <!-- Processing Overlay Spinner -->
+          <div id="scan-processing" style="display:none;position:absolute;inset:0;background:rgba(27,43,75,0.9);z-index:20;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:white;font-size:14px;font-weight:600">
+            <div style="width:40px;height:40px;border:3.5px solid rgba(255,255,255,0.2);border-top-color:var(--teal);border-radius:50%;animation:spin 0.8s linear infinite"></div>
+            Analyzing QR Identity matrix...
+          </div>
+          <div class="scan-mode-badge" id="scan-badge">CHECK-IN</div>
         </div>
+        
+        <!-- Native camera triggers -->
+        <input type="file" id="qr-file-input" accept="image/*" capture="environment" style="display:none" onchange="handleQRPhoto(event)">
+        
+        <button class="btn-primary" onclick="triggerScan()" style="margin-top:16px;width:100%;padding:16px;border-radius:var(--radius-sm);font-size:15px;box-shadow: 0 4px 14px rgba(27,43,75,0.15);">
+          📷 Trigger Native Camera Lens
+        </button>
+      </div>
+      
+      <div class="scan-result" id="scan-result">
+        <span class="res-icon" style="font-size:20px">📷</span>
+        <span id="scan-result-text" style="color:var(--gray-600)">Ready to process attendance tracking record.</span>
+      </div>
     </div>
+
+    <!-- ===== STUDENTS PAGE ===== -->
+    <div class="page" id="page-students">
+      <div class="page-header">
+        <h2>Students Registry</h2>
+        <button class="btn-primary" onclick="openAddStudent()" style="padding:10px 16px; font-size:13px">+ Add Profile</button>
+      </div>
+      <div class="student-list" id="student-list"></div>
+    </div>
+
+    <!-- ===== CLASSES PAGE ===== -->
+    <div class="page" id="page-classes">
+      <div class="page-header">
+        <h2>Sections Database</h2>
+        <button class="btn-primary" onclick="openAddClass()" style="padding:10px 16px; font-size:13px">+ Add Class</button>
+      </div>
+      <div class="class-list" id="class-list"></div>
+    </div>
+
+    <!-- ===== LOG PAGE ===== -->
+    <div class="page" id="page-log">
+      <div class="page-header">
+        <h2>Attendance Logs</h2>
+        <button class="btn-secondary" onclick="exportLog()" style="font-size:12px;padding:10px 16px">⬇ Export CSV</button>
+      </div>
+      <div class="log-filters">
+        <button class="filter-chip active" onclick="filterLog('all',this)">All Entries</button>
+        <button class="filter-chip" onclick="filterLog('checkin',this)">Check-Ins</button>
+        <button class="filter-chip" onclick="filterLog('checkout',this)">Check-Outs</button>
+      </div>
+      <div class="log-list" id="log-list"></div>
+    </div>
+
+    <!-- ===== SUMMARY PAGE ===== -->
+    <div class="page" id="page-summary">
+      <div class="page-header">
+        <h2>Daily Report</h2>
+        <button class="btn-secondary" onclick="exportSummaryCSV()" style="font-size:12px;padding:10px 16px">⬇ Export Report</button>
+      </div>
+      <div class="summary-date-bar">
+        <button class="summary-date-btn" onclick="shiftSummaryDate(-1)">‹</button>
+        <input type="date" class="summary-date-inp" id="summary-date" onchange="renderSummary()">
+        <button class="summary-date-btn" onclick="shiftSummaryDate(1)">›</button>
+      </div>
+      <div class="summary-cards" id="summary-cards"></div>
+      <div id="summary-body"></div>
+    </div>
+
+    <!-- ===== IMPORT PAGE ===== -->
+    <div class="page" id="page-import">
+      <div class="page-header">
+        <h2>Bulk Import Profiles</h2>
+      </div>
+      <div class="import-drop" id="import-drop" onclick="document.getElementById('csv-file-input').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleCSVDrop(event)">
+        <div class="import-drop-icon">📂</div>
+        <div class="import-drop-title">Tap to select CSV data file</div>
+        <div class="import-drop-sub">Parses offline records immediately</div>
+      </div>
+      <input type="file" id="csv-file-input" accept=".csv" style="display:none" onchange="handleCSVFile(event)">
+      
+      <div style="margin:0 20px 16px;background:var(--white);border-radius:var(--radius-sm);padding:18px;font-size:12px;color:var(--gray-600);line-height:1.8;box-shadow:var(--shadow);border:1px solid var(--gray-100)">
+        <div style="font-weight:700;color:var(--navy);margin-bottom:6px;font-size:13px">📋 Required Format Layout Structure</div>
+        Ensure columns are aligned precisely in this order without skipping header details:<br>
+        <code style="background:var(--gray-50);padding:8px 12px;border-radius:8px;display:block;margin-top:8px;font-size:11px;color:var(--navy);font-weight:600;border:1px solid var(--gray-200)">Full Name, Student ID/LRN, Class Section Name</code>
+        <div style="margin-top:10px;color:var(--gray-400);font-size:11px">Example:<br>Juan dela Cruz, 123456, Grade 7 - Sampaguita<br>Maria Santos, 789012, Grade 7 - Sampaguita</div>
+      </div>
+      <div class="import-preview" id="import-preview"></div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Nav bar Elements -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" id="nav-scanner" onclick="showPage('scanner')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h2v2h-2zm2 2h3v3h-3zm0-4h4v2h-4z"/></svg>
+      Scan Matrix
+    </button>
+    <button class="nav-btn" id="nav-students" onclick="showPage('students')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><path d="M16 3.13a4 4 0 010 7.75"/><path d="M21 21v-2a4 4 0 00-3-3.85"/></svg>
+      Profiles
+    </button>
+    <button class="nav-btn" id="nav-classes" onclick="showPage('classes')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>
+      Sections
+    </button>
+    <button class="nav-btn" id="nav-summary" onclick="showPage('summary')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      Analytics
+    </button>
+    <button class="nav-btn" id="nav-import" onclick="showPage('import')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+      CSV Load
+    </button>
+  </nav>
 </div>
 
+<!-- Add Student Modal -->
+<div class="modal-backdrop" id="modal-student">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Create Student Profile</div>
+      <button class="modal-close" onclick="closeModal('modal-student')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Full Name</label>
+      <input class="form-input" id="inp-student-name" placeholder="e.g. Juan dela Cruz" type="text">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Student ID / LRN Number</label>
+      <input class="form-input" id="inp-student-id" placeholder="e.g. 123456789012" type="text">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Assigned Class Section</label>
+      <select class="form-input" id="inp-student-class">
+        <option value="">— No class assigned —</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('modal-student')">Cancel</button>
+      <button class="btn-primary" onclick="saveStudent()">Generate QR Card</button>
+    </div>
+  </div>
+</div>
+
+<!-- View Student / QR Modal -->
+<div class="modal-backdrop" id="modal-qr">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Official Student ID Matrix</div>
+      <button class="modal-close" onclick="closeModal('modal-qr')">✕</button>
+    </div>
+    <div class="qr-display-wrap">
+      <div class="qr-canvas-wrap" id="qr-render"></div>
+      <div class="qr-student-name" id="qr-student-name"></div>
+      <div class="qr-student-meta" id="qr-student-meta"></div>
+      <button class="btn-print" onclick="printQR()">🖨 Print Attendance Card</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Class Modal -->
+<div class="modal-backdrop" id="modal-class">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Configure New Section</div>
+      <button class="modal-close" onclick="closeModal('modal-class')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Class Name / Designation</label>
+      <input class="form-input" id="inp-class-name" placeholder="e.g. Grade 7 - Sampaguita" type="text">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Adviser / Teacher Name</label>
+      <input class="form-input" id="inp-class-teacher" placeholder="e.g. Ma'am Santos" type="text">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Google Sheets API Deployment URL</label>
+      <input class="form-input" id="inp-class-webhook" placeholder="https://script.google.com/macros/s/..." type="url">
+      <div class="form-hint">Paste target macro runtime link. Updates sync whenever cloud tracking registers online data connectivity state flags.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('modal-class')">Cancel</button>
+      <button class="btn-primary" onclick="saveClass()">Commit Settings</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
 <script>
-    // Initialize state from device memory or setup empty array if new
-    let offlineQueue = JSON.parse(localStorage.getItem('attendanceQueue')) || [];
+// ===== APPLICATION CORE VARIABLE COMPONENT STATE =====
+let students = JSON.parse(localStorage.getItem('eduscan_students') || '[]');
+let classes = JSON.parse(localStorage.getItem('eduscan_classes') || '[]');
+let logs = JSON.parse(localStorage.getItem('eduscan_logs') || '[]');
+let currentMode = 'checkin';
+let currentClassId = null;
+let logFilter = 'all';
+let importPreviewData = [];
+let currentQRStudent = null;
 
-    // Render historical logs if they exist from past sessions
-    renderLogs();
+// ===== STORAGE HANDLERS =====
+function persistApplicationDatabase() {
+  localStorage.setItem('eduscan_students', JSON.stringify(students));
+  localStorage.setItem('eduscan_classes', JSON.stringify(classes));
+  localStorage.setItem('eduscan_logs', JSON.stringify(logs));
+  evaluateSyncQueueStates();
+}
 
-    function onScanSuccess(decodedText, decodedResult) {
-        // 1. Prevent accidental duplicate immediate double-scans of the same student
-        if (isRecentDuplicate(decodedText)) {
-            return; 
-        }
+// ===== REAL-TIME NETWORK MONITOR TRACERS =====
+function configureConnectivityListeners() {
+  window.addEventListener('online', updateNetworkVisualStatusStates);
+  window.addEventListener('offline', updateNetworkVisualStatusStates);
+  updateNetworkVisualStatusStates();
+}
 
-        // 2. Play subtle haptic vibrate feedback if device allows
-        if (navigator.vibrate) navigator.vibrate(100);
+function updateNetworkVisualStatusStates() {
+  const badge = document.getElementById('network-status');
+  const txt = document.getElementById('network-text');
+  if (navigator.onLine) {
+    badge.className = "network-badge online";
+    txt.textContent = "Online";
+    forceQueueSynchronization(); // Auto trigger push when cell coverage resumes
+  } else {
+    badge.className = "network-badge offline";
+    txt.textContent = "Offline";
+  }
+}
 
-        // 3. Document visual feedback on layout UI
-        document.getElementById('scanned-id').innerText = decodedText;
-        document.getElementById('alert-box').style.display = 'block';
+function evaluateSyncQueueStates() {
+  const unsyncedCount = logs.filter(l => !l.synced && getTargetWebhookUrlForClass(l.classId)).length;
+  const banner = document.getElementById('sync-queue-banner');
+  const counterText = document.getElementById('sync-count-text');
+  
+  if (unsyncedCount > 0) {
+    counterText.textContent = `${unsyncedCount} offline record${unsyncedCount > 1 ? 's' : ''} stored safely on device — pending sync`;
+    banner.style.display = 'flex';
+  } else {
+    banner.style.display = 'none';
+  }
+}
 
-        // 4. Construct data entry layout matching Google Sheets logic requirements
-        const checkInRecord = {
-            studentId: decodedText,
-            timestamp: new Date().toLocaleString(),
-            status: "Pending Sync"
-        };
+function getTargetWebhookUrlForClass(classId) {
+  const cls = classes.find(c => c.id === classId);
+  return cls ? cls.webhook : null;
+}
 
-        // 5. Commit record straight into hard drive space allocation of browser engine
-        offlineQueue.push(checkInRecord);
-        localStorage.setItem('attendanceQueue', JSON.stringify(offlineQueue));
+// ===== NAVIGATION PAGES ROUTING ENGINE =====
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  
+  document.getElementById('page-' + page).classList.add('active');
+  document.getElementById('nav-' + page).classList.add('active');
+  
+  if (page === 'students') renderStudents();
+  if (page === 'classes') renderClasses();
+  if (page === 'log') renderLog();
+  if (page === 'summary') renderSummary();
+}
 
-        // 6. Refresh UI components instantly
-        renderLogs();
-    }
+// ===== SCANNER ATTENDANCE MODE STATE MANAGER =====
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('btn-checkin').classList.toggle('active', mode === 'checkin');
+  document.getElementById('btn-checkout').classList.toggle('active', mode === 'checkout');
+  
+  const badge = document.getElementById('scan-badge');
+  const frame = document.getElementById('frame-indicator');
+  const topbar = document.getElementById('topbar');
+  const subtitle = document.getElementById('topbar-sub');
+  const idleSvg = document.getElementById('cam-idle');
+  
+  badge.textContent = mode === 'checkin' ? 'CHECK-IN' : 'CHECK-OUT';
+  badge.className = 'scan-mode-badge' + (mode === 'checkout' ? ' checkout' : '');
+  frame.className = 'scan-frame' + (mode === 'checkout' ? ' checkout-frame' : '');
+  
+  if (mode === 'checkin') {
+    topbar.style.background = 'var(--navy)';
+    subtitle.textContent = "Mode: Check-In ✅";
+    subtitle.style.color = 'var(--teal)';
+    idleSvg.classList.remove('checkout-view');
+  } else {
+    topbar.style.background = '#7A4E00';
+    subtitle.textContent = "Mode: Check-Out 🚪";
+    subtitle.style.color = 'var(--amber)';
+    idleSvg.classList.add('checkout-view');
+  }
+  resetScanResultLayoutBox();
+}
 
-    function isRecentDuplicate(id) {
-        if (offlineQueue.length === 0) return false;
-        const lastRecord = offlineQueue[offlineQueue.length - 1];
-        
-        // Block scanning the identical person twice if within a tight 4-second timeframe
-        const timeElapsed = new Date() - new Date(lastRecord.timestamp);
-        return lastRecord.studentId === id && timeElapsed < 4000;
-    }
+// ===== NATIVE CAPTURE CAMERA ENGINE PROCESSING INTERFACES =====
+function triggerScan() {
+  if (!currentClassId) { showToast('Please select a class section first'); return; }
+  const fileSelectorInput = document.getElementById('qr-file-input');
+  fileSelectorInput.value = '';
+  fileSelectorInput.click();
+}
 
-    function renderLogs() {
-        const logContainer = document.getElementById('log-list');
-        document.getElementById('queue-count').innerText = offlineQueue.length;
+function handleQRPhoto(event) {
+  const imageFile = event.target.files[0];
+  if (!imageFile) return;
 
-        if (offlineQueue.length === 0) {
-            logContainer.innerHTML = `<div style="color: #94a3b8; text-align: center; padding: 20px;">No offline scans on this device yet.</div>`;
-            return;
-        }
+  const processOverlay = document.getElementById('scan-processing');
+  const idleControlWrapper = document.getElementById('cam-idle');
+  const elementPreviewImg = document.getElementById('scan-preview-img');
+  
+  processOverlay.style.display = 'flex';
+  idleControlWrapper.style.display = 'none';
 
-        // Display newest scans at the top of the stack list tracking feedback
-        const htmlLogs = offlineQueue.map(item => `
-            <div class="log-item">
-                <div>
-                    <strong>${item.studentId}</strong> <br>
-                    <small style="color: #64748b;">${item.timestamp}</small>
-                </div>
-                <div>
-                    <span class="status-badge">${item.status}</span>
-                </div>
-            </div>
-        `).reverse().join('');
+  const engineFileReader = new FileReader();
+  engineFileReader.onload = (fileLoadEvent) => {
+    const contextUri = fileLoadEvent.target.result;
+    elementPreviewImg.src = contextUri;
+    elementPreviewImg.style.display = 'block';
 
-        logContainer.innerHTML = htmlLogs;
-    }
+    const processingImageInstance = new Image();
+    processingImageInstance.onload = () => {
+      const internalCanvas = document.getElementById('qr-canvas');
+      const boundingLimitResolution = 900; 
+      let targetWidth = processingImageInstance.width;
+      let targetHeight = processingImageInstance.height;
+      
+      if (targetWidth > boundingLimitResolution || targetHeight > boundingLimitResolution) {
+        const structuralRatio = Math.min(boundingLimitResolution / targetWidth, boundingLimitResolution / targetHeight);
+        targetWidth = Math.round(targetWidth * structuralRatio);
+        targetHeight = Math.round(targetHeight * structuralRatio);
+      }
+      
+      internalCanvas.width = targetWidth;
+      internalCanvas.height = targetHeight;
+      const matrixContext2d = internalCanvas.getContext('2d');
+      matrixContext2d.drawImage(processingImageInstance, 0, 0, targetWidth, targetHeight);
+      
+      const structuredImageData = matrixContext2d.getImageData(0, 0, targetWidth, targetHeight);
+      const decodedQrMatrixCode = jsQR(structuredImageData.data, structuredImageData.width, structuredImageData.height, { inversionAttempts: 'attemptBoth' });
 
-    // Initialize modern HTML5 Scanner instance configuration layout properties
-    const scannerConfig = { 
-        fps: 15, // Scan frames calculation performance speed rate
-        qrbox: { width: 250, height: 250 }, // Square capture target focus window setup
-        rememberLastUsedCamera: true, // remebers back camera vs front camera options selection
-        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA] // enforces native lens tracking options directly
+      processOverlay.style.display = 'none';
+
+      if (decodedQrMatrixCode) {
+        processValidatedQRScanData(decodedQrMatrixCode.data);
+      } else {
+        renderScanFeedbackBox('error', '❌', 'Matrix read error — optimize lens lighting positions');
+        executeScanResetTimeout(elementPreviewImg, idleControlWrapper);
+      }
     };
+    processingImageInstance.onerror = () => {
+      processOverlay.style.display = 'none';
+      renderScanFeedbackBox('error', '❌', 'Failed processing hardware photo stream definitions');
+      executeScanResetTimeout(elementPreviewImg, idleControlWrapper);
+    };
+    processingImageInstance.src = contextUri;
+  };
+  engineFileReader.readAsDataURL(imageFile);
+}
 
-    const html5QrcodeScanner = new Html5QrcodeScanner("reader", scannerConfig, /* verbose= */ false);
-    html5QrcodeScanner.render(onScanSuccess);
+function executeScanResetTimeout(previewImg, idleView) {
+  setTimeout(() => {
+    previewImg.style.display = 'none';
+    idleView.style.display = 'flex';
+    resetScanResultLayoutBox();
+  }, 2500);
+}
+
+function processValidatedQRScanData(extractedTextPayload) {
+  let objectJsonMetadata;
+  try { 
+    objectJsonMetadata = JSON.parse(extractedTextPayload); 
+  } catch(exception) { 
+    renderScanFeedbackBox('error', '❌', 'Unrecognized verification signature parameters'); 
+    return; 
+  }
+  
+  if (!objectJsonMetadata.eduscan) { 
+    renderScanFeedbackBox('error', '❌', 'Invalid application card authorization parameters'); 
+    return; 
+  }
+  
+  // FIX: Find by matching system generated storage mapping index keys safely
+  const identifiedStudentObject = students.find(s => s.id === objectJsonMetadata.id);
+  if (!identifiedStudentObject) { 
+    renderScanFeedbackBox('error', '❌', 'Profile matrix missing from internal system data storage'); 
+    return; 
+  }
+
+  const selectedClassDataReference = classes.find(c => c.id === currentClassId);
+  
+  // Enforce structural architecture matching lookups explicitly
+  const atomicLogTransactionEntry = {
+    id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+    studentId: identifiedStudentObject.id, // Primary linking identity map 
+    studentName: identifiedStudentObject.name,
+    studentLrn: identifiedStudentObject.studentId || 'N/A',
+    classId: currentClassId,
+    className: selectedClassDataReference ? selectedClassDataReference.name : 'Unassigned Class Registry',
+    mode: currentMode,
+    time: new Date().toISOString(),
+    synced: false
+  };
+
+  logs.unshift(atomicLogTransactionEntry);
+  persistApplicationDatabase();
+
+  const presentationSymbol = currentMode === 'checkin' ? '✅' : '🚪';
+  const structuralClassModifier = currentMode === 'checkin' ? 'success' : 'checkout-success';
+  const timestampStringOutput = new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+  
+  renderScanFeedbackBox(
+    structuralClassModifier, 
+    presentationSymbol, 
+    `${identifiedStudentObject.name} — ${currentMode === 'checkin' ? 'Checked-In' : 'Checked-Out'} registered at ${timestampStringOutput}`
+  );
+  
+  if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+
+  // Handle immediate transmission attempts if online connection states evaluate true
+  if (navigator.onLine && selectedClassDataReference && selectedClassDataReference.webhook) {
+    executeCloudDataSpreadsheetTransmission(selectedClassDataReference.webhook, atomicLogTransactionEntry);
+  }
+}
+
+// ===== DISTRIBUTED ASYNC OFFLINE SYNCHRONIZATION TRANSACTION ENGINES =====
+async function executeCloudDataSpreadsheetTransmission(webhookTargetUrl, logRefObject) {
+  if (!webhookTargetUrl) return false;
+  
+  const constructionEndpointUrl = `${webhookTargetUrl}?student=${encodeURIComponent(logRefObject.studentName)}&studentId=${encodeURIComponent(logRefObject.studentLrn)}&mode=${logRefObject.mode}&className=${encodeURIComponent(logRefObject.className)}`;
+  
+  try {
+    // Uses structural un-cached operational queries verifying clean structural parameters securely
+    await fetch(constructionEndpointUrl, { method: 'GET', mode: 'no-cors', cache: 'no-store' });
+    
+    // Locate historical element records array directly and update network synchronization values safely
+    const databaseMatchIndex = logs.findIndex(l => l.id === logRefObject.id);
+    if (databaseMatchIndex !== -1) {
+      logs[databaseMatchIndex].synced = true;
+      persistApplicationDatabase();
+    }
+    return true;
+  } catch (transmissionException) {
+    console.warn("Spreadsheet network transmission failure deferred to stack queue:", transmissionException);
+    return false;
+  }
+}
+
+async function forceQueueSynchronization() {
+  if (!navigator.onLine) { 
+    showToast('Cannot synchronize data loops while network connection reports offline'); 
+    return; 
+  }
+
+  const pendingTransferLogs = logs.filter(l => !l.synced);
+  if (pendingTransferLogs.length === 0) {
+    showToast('All transaction log modules synchronized successfully');
+    return;
+  }
+
+  showToast(`Attempting push transmissions across ${pendingTransferLogs.length} logged data lines...`);
+  
+  let successfulTransmissionsCounter = 0;
+  for (const logItemElement of pendingTransferLogs) {
+    const structuralEndpointWebhook = getTargetWebhookUrlForClass(logItemElement.classId);
+    if (structuralEndpointWebhook) {
+      const performanceResult = await executeCloudDataSpreadsheetTransmission(structuralEndpointWebhook, logItemElement);
+      if (performanceResult) successfulTransmissionsCounter++;
+    }
+  }
+
+  if (successfulTransmissionsCounter > 0) {
+    showToast(`✅ Successfully synchronized ${successfulTransmissionsCounter} system logging records!`);
+    renderLog();
+    renderSummary();
+  }
+}
+
+function renderScanFeedbackBox(type, icon, text) {
+  const el = document.getElementById('scan-result');
+  el.className = 'scan-result ' + type;
+  el.querySelector('.res-icon').textContent = icon;
+  document.getElementById('scan-result-text').textContent = text;
+}
+
+function resetScanResultLayoutBox() {
+  renderScanFeedbackBox('', '📷', 'Awaiting camera capture framework initialization sequences.');
+}
+
+function onClassChange() {
+  currentClassId = document.getElementById('scanner-class-select').value || null;
+  resetScanResultLayoutBox();
+  
+  const imgPreview = document.getElementById('scan-preview-img');
+  const idleView = document.getElementById('cam-idle');
+  imgPreview.style.display = 'none';
+  idleView.style.display = 'flex';
+}
+
+// ===== INDIVIDUAL PROFILE MANAGEMENT INTERFACES =====
+function renderStudents() {
+  const targetLayoutContainer = document.getElementById('student-list');
+  if (!students.length) {
+    targetLayoutContainer.innerHTML = `<div class="empty-state"><div class="empty-icon">🎒</div><div class="empty-title">No Profiles Loaded</div><div class="empty-sub">Import records via text files or write manual parameters to start generating barcode identity modules.</div></div>`;
+    return;
+  }
+  targetLayoutContainer.innerHTML = students.map(studentItem => {
+    const representationInitials = studentItem.name.split(' ').map(wordElement => wordElement[0]).join('').slice(0, 2).toUpperCase();
+    const mappedClassReference = classes.find(classElement => classElement.id === studentItem.classId);
+    return `<div class="student-card">
+      <div class="student-avatar">${representationInitials}</div>
+      <div class="student-info">
+        <div class="student-name">${studentItem.name}</div>
+        <div class="student-meta">LRN/ID: ${studentItem.studentId || 'Not Documented'} · ${mappedClassReference ? mappedClassReference.name : 'Section Unassigned'}</div>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button class="icon-btn view" onclick="displayTargetStudentQrCard('${studentItem.id}')">🔳</button>
+        <button class="icon-btn del" onclick="removeTargetStudentProfile('${studentItem.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openAddStudent() {
+  document.getElementById('inp-student-name').value = '';
+  document.getElementById('inp-student-id').value = '';
+  populateClassSelectDropdownElements();
+  openModal('modal-student');
+}
+
+function saveStudent() {
+  const structuralNameInput = document.getElementById('inp-student-name').value.trim();
+  const rawIdInput = document.getElementById('inp-student-id').value.trim();
+  const chosenClassAssignedKey = document.getElementById('inp-student-class').value;
+  
+  if (!structuralNameInput) { showToast('Profile definition parameters require valid name settings'); return; }
+  
+  const constructedStudentProfile = { 
+    id: 'STU' + Date.now().toString() + Math.random().toString(36).substr(2, 4), 
+    name: structuralNameInput, 
+    studentId: rawIdInput, 
+    classId: chosenClassAssignedKey 
+  };
+  
+  students.push(constructedStudentProfile);
+  persistApplicationDatabase();
+  closeModal('modal-student');
+  showPage('students');
+  setTimeout(() => displayTargetStudentQrCard(constructedStudentProfile.id), 250);
+}
+
+function removeTargetStudentProfile(targetIdentityKey) {
+  if (!confirm('Permanently purge this profile from local system operational access frameworks?')) return;
+  students = students.filter(s => s.id !== targetIdentityKey);
+  persistApplicationDatabase(); 
+  renderStudents();
+}
+
+function displayTargetStudentQrCard(studentIdentityMappingKey) {
+  const targetStudentProfileMatch = students.find(s => s.id === studentIdentityMappingKey);
+  if (!targetStudentProfileMatch) return;
+  
+  currentQRStudent = targetStudentProfileMatch;
+  document.getElementById('qr-student-name').textContent = targetStudentProfileMatch.name;
+  
+  const associatedClassDataLookup = classes.find(c => c.id === targetStudentProfileMatch.classId);
+  document.getElementById('qr-student-meta').textContent = (targetStudentProfileMatch.studentId ? `LRN: ${targetStudentProfileMatch.studentId}` : '') + (associatedClassDataLookup ? ` · ${associatedClassDataLookup.name}` : '');
+  
+  const renderWrapperElement = document.getElementById('qr-render');
+  renderWrapperElement.innerHTML = '';
+  
+  const standardizedQrPayloadString = JSON.stringify({ 
+    eduscan: true, 
+    id: targetStudentProfileMatch.id, 
+    name: targetStudentProfileMatch.name, 
+    studentId: targetStudentProfileMatch.studentId 
+  });
+  
+  new QRCode(renderWrapperElement, { 
+    text: standardizedQrPayloadString, 
+    width: 200, 
+    height: 200, 
+    colorDark: '#1B2B4B', 
+    colorLight: '#ffffff', 
+    correctLevel: QRCode.CorrectLevel.H 
+  });
+  openModal('modal-qr');
+}
+
+function printQR() {
+  if (!currentQRStudent) return;
+  setTimeout(() => {
+    const wrap = document.getElementById('qr-render');
+    const img = wrap.querySelector('img');
+    const canvas = wrap.querySelector('canvas');
+    let qrSrc = '';
+    if (img && img.src) qrSrc = img.src;
+    else if (canvas) qrSrc = canvas.toDataURL('image/png');
+    
+    if (!qrSrc) { showToast('Matrix generator streaming initialization error'); return; }
+
+    const s = currentQRStudent;
+    const cls = classes.find(c => c.id === s.classId);
+    const clsName = cls ? cls.name : 'Section Unassigned';
+    const win = window.open('', '_blank');
+    win.document.write(`<!DOCTYPE html><html><head><title>Print Guard - ${s.name}</title>
+    <style>
+      body { font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 90vh; margin: 0; background: #fff; }
+      .card { text-align: center; border: 3px solid #1B2B4B; border-radius: 20px; padding: 30px; max-width: 280px; }
+      .school { font-size: 11px; color: #94A3B8; font-weight:700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 16px; }
+      img { width: 200px; height: 200px; display: block; margin: 0 auto; }
+      .name { font-size: 18px; font-weight: 700; color: #1B2B4B; margin-top: 16px; }
+      .meta { font-size: 12px; color: #475569; margin-top: 6px; font-weight:500; }
+      .badge { display: inline-block; margin-top: 16px; background: #1B2B4B; color: #00BFA5; padding: 6px 16px; border-radius: 100px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; }
+    </style></head><body>
+    <div class="card">
+      <div class="school">EduScan PH · Attendance Identity Pass</div>
+      <img src="${qrSrc}">
+      <div class="name">${s.name}</div>
+      <div class="meta">${s.studentId ? 'ID/LRN: ' + s.studentId : ''}${clsName ? ' · ' + clsName : ''}</div>
+      <div class="badge">SCAN FOR ATTENDANCE TRACKING</div>
+    </div>
+    <script>window.onload = function(){ window.print(); setTimeout(function(){ window.close(); }, 500); }<\/script>
+    </body></html>`);
+    win.document.close();
+  }, 250);
+}
+
+// ===== CLASSROOM SECTION SETTINGS LOOPS =====
+function renderClasses() {
+  const structuralClassWrapper = document.getElementById('class-list');
+  if (!classes.length) {
+    structuralClassWrapper.innerHTML = `<div class="empty-state"><div class="empty-icon">🏫</div><div class="empty-title">No Sections Documented</div><div class="empty-sub">Configure classroom metrics below to map Google Sheets pipeline configurations.</div></div>`;
+    return;
+  }
+  structuralClassWrapper.innerHTML = classes.map(classItem => {
+    const activeSizeCount = students.filter(s => s.classId === classItem.id).length;
+    const currentDayLogsArray = logs.filter(l => l.classId === classItem.id && new Date(l.time).toDateString() === new Date().toDateString());
+    const trackingCheckinCounter = currentDayLogsArray.filter(l => l.mode === 'checkin').length;
+    return `<div class="class-card">
+      <div class="class-card-header">
+        <div>
+          <div class="class-name">${classItem.name}</div>
+          <div class="class-meta">👩‍🏫 Adviser: ${classItem.teacher || 'Unassigned Advisership'}</div>
+          <div class="class-webhook ${classItem.webhook ? 'ok' : ''}">${classItem.webhook ? '🟢 Webhook Pipeline Linked' : '🟡 Offline Local Mode Only'}</div>
+        </div>
+        <button class="icon-btn del" onclick="removeTargetClassMetrics('${classItem.id}')">🗑</button>
+      </div>
+      <div class="class-stats">
+        <div class="stat-pill"><div class="val">${activeSizeCount}</div><div class="lbl">Profiles</div></div>
+        <div class="stat-pill"><div class="val">${trackingCheckinCounter}</div><div class="lbl">Check-Ins</div></div>
+        <div class="stat-pill"><div class="val">${currentDayLogsArray.length}</div><div class="lbl">Total Scans</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openAddClass() {
+  document.getElementById('inp-class-name').value = '';
+  document.getElementById('inp-class-teacher').value = '';
+  document.getElementById('inp-class-webhook').value = '';
+  openModal('modal-class');
+}
+
+function saveClass() {
+  const designativeClassName = document.getElementById('inp-class-name').value.trim();
+  const trackingTeacherName = document.getElementById('inp-class-teacher').value.trim();
+  const structuralWebhookEndpoint = document.getElementById('inp-class-webhook').value.trim();
+  
+  if (!designativeClassName) { showToast('Section configurations require structural name parameters'); return; }
+  
+  classes.push({ 
+    id: 'CLS' + Date.now().toString(), 
+    name: designativeClassName, 
+    teacher: trackingTeacherName, 
+    webhook: structuralWebhookEndpoint 
+  });
+  
+  persistApplicationDatabase();
+  closeModal('modal-class');
+  populateClassSelectDropdownElements();
+  renderClasses();
+  showToast('New section added successfully');
+}
+
+function removeTargetClassMetrics(targetClassIdentityKey) {
+  if (!confirm('Purging this section disconnects student profiles—continue?')) return;
+  classes = classes.filter(c => c.id !== targetClassIdentityKey);
+  persistApplicationDatabase(); 
+  renderClasses(); 
+  populateClassSelectDropdownElements();
+}
+
+function populateClassSelectDropdownElements() {
+  const generationOptionStrings = classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  document.getElementById('inp-student-class').innerHTML = '<option value="">— No class assigned —</option>' + generationOptionStrings;
+  document.getElementById('scanner-class-select').innerHTML = '<option value="">— Choose a class —</option>' + generationOptionStrings;
+}
+
+// ===== REALTIME DATA AUDIT ENGINE COMPONENT LOGS =====
+function renderLog() {
+  const listLayoutContainer = document.getElementById('log-list');
+  const contextFilteredLogStack = logFilter === 'all' ? logs : logs.filter(l => l.mode === logFilter);
+  
+  if (!contextFilteredLogStack.length) {
+    listLayoutContainer.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">History Logs Clean</div><div class="empty-sub">Attendance processing lines display verification indicators dynamically here.</div></div>`;
+    return;
+  }
+  listLayoutContainer.innerHTML = contextFilteredLogStack.map(logItem => {
+    const parsedDateObject = new Date(logItem.time);
+    const clientDateString = parsedDateObject.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' });
+    const clientTimeString = parsedDateObject.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+    const syncStatusClass = logItem.synced ? 'synced' : 'pending';
+    const syncStatusLabel = logItem.synced ? 'Synced' : 'Local';
+    const classWebhookHasReference = getTargetWebhookUrlForClass(logItem.classId);
+    const syncBadgeHtml = classWebhookHasReference ? `<span class="log-status-cloud ${syncStatusClass}">${syncStatusLabel}</span>` : '';
+    
+    return `<div class="log-item">
+      <div class="log-badge ${logItem.mode === 'checkin' ? 'in' : 'out'}">${logItem.mode === 'checkin' ? '✅' : '🚪'}</div>
+      <div class="log-info">
+        <div class="log-name">${logItem.studentName}</div>
+        <div class="log-detail" style="display:flex; align-items:center; gap:6px;">
+          <span>${logItem.className}</span>
+          ${syncBadgeHtml}
+        </div>
+      </div>
+      <div class="log-time" style="font-size:11px; font-weight:600; text-align:right; color:var(--gray-600)">${clientDateString}<br>${clientTimeString}</div>
+    </div>`;
+  }).join('');
+}
+
+function filterLog(filterFlagValue, controlBadgeTriggerReference) {
+  logFilter = filterFlagValue;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  controlBadgeTriggerReference.classList.add('active');
+  renderLog();
+}
+
+function exportLog() {
+  if (!logs.length) { showToast('No data models allocated within historical logging cache parameters'); return; }
+  const structuralRowsArray = [['Date', 'Time', 'Student Profile Name', 'LRN ID Number', 'Section Group', 'Scanning Track Mode', 'Cloud Synced Status']];
+  
+  logs.forEach(l => {
+    const elementTimeDate = new Date(l.time);
+    structuralRowsArray.push([
+      elementTimeDate.toLocaleDateString('en-PH'),
+      elementTimeDate.toLocaleTimeString('en-PH'),
+      l.studentName, 
+      l.studentLrn || '', 
+      l.className,
+      l.mode === 'checkin' ? 'Check-In' : 'Check-Out',
+      l.synced ? 'YES' : 'NO'
+    ]);
+  });
+  executeCsvFileDownloadPipeline(structuralRowsArray, `eduscan_master_log_${new Date().toISOString().slice(0,10)}`);
+}
+
+// ===== BULK LOAD REPOSITORIES (CSV TRANSLATION MANAGEMENT) =====
+function handleCSVDrop(e) {
+  e.preventDefault();
+  document.getElementById('import-drop').classList.remove('drag-over');
+  const transferFileMatch = e.dataTransfer.files[0];
+  if (transferFileMatch) executeDataParserCSV(transferFileMatch);
+}
+
+function handleCSVFile(e) {
+  const diagnosticFileTarget = e.target.files[0];
+  if (diagnosticFileTarget) executeDataParserCSV(diagnosticFileTarget);
+  e.target.value = '';
+}
+
+function executeDataParserCSV(fileBlobReference) {
+  const transactionalReader = new FileReader();
+  transactionalReader.onload = (fileLoadEvent) => {
+    const standardLinesCollection = fileLoadEvent.target.result.split('\n').map(l => l.trim()).filter(l => l);
+    importPreviewData = [];
+    const evaluationInitialHeaderIndex = standardLinesCollection[0].toLowerCase().includes('name') ? 1 : 0;
+    
+    for (let loopIndex = evaluationInitialHeaderIndex; loopIndex < standardLinesCollection.length; loopIndex++) {
+      const rowColumnsCollection = standardLinesCollection[loopIndex].split(',').map(columnCell => columnCell.trim().replace(/^"|"$/g, ''));
+      if (rowColumnsCollection[0]) {
+        importPreviewData.push({ 
+          name: rowColumnsCollection[0], 
+          studentId: rowColumnsCollection[1] || '', 
+          className: rowColumnsCollection[2] || '' 
+        });
+      }
+    }
+    renderImportPreviewTableList();
+  };
+  transactionalReader.readAsText(fileBlobReference);
+}
+
+function renderImportPreviewTableList() {
+  const interfaceWrapper = document.getElementById('import-preview');
+  if (!importPreviewData.length) { interfaceWrapper.innerHTML = ''; return; }
+  interfaceWrapper.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="font-size:13px;font-weight:700;color:var(--navy)">${importPreviewData.length} records parsed from source</div>
+      <button class="btn-primary" onclick="commitBulkImportDataStack()" style="padding:8px 16px;font-size:12px">Commit Registry</button>
+    </div>
+    <table class="import-preview-table">
+      <tr><th>Student Name</th><th>ID / LRN</th><th>Target Section</th></tr>
+      ${importPreviewData.slice(0,6).map(row => `<tr><td>${row.name}</td><td>${row.studentId || '—'}</td><td>${row.className || '—'}</td></tr>`).join('')}
+      ${importPreviewData.length > 6 ? `<tr><td colspan="3" style="color:var(--gray-400);text-align:center;padding:12px;font-weight:600">... truncated showing data rows up to row parameters limit (${importPreviewData.length - 6} hidden rows)</td></tr>` : ''}
+    </table>`;
+}
+
+function commitBulkImportDataStack() {
+  let createdCount = 0, duplicatesSkippedCount = 0;
+  
+  importPreviewData.forEach(csvDataRow => {
+    if (students.find(s => s.name.toLowerCase() === csvDataRow.name.toLowerCase() && s.studentId === csvDataRow.studentId)) { 
+      duplicatesSkippedCount++; 
+      return; 
+    }
+    
+    let resolvedClassIdentityKey = '';
+    if (csvDataRow.className) {
+      const exactSectionNameMatch = classes.find(c => c.name.toLowerCase() === csvDataRow.className.toLowerCase());
+      resolvedClassIdentityKey = exactSectionNameMatch ? exactSectionNameMatch.id : '';
+    }
+    
+    students.push({ 
+      id: 'STU' + Date.now().toString() + Math.random().toString(36).substr(2, 4), 
+      name: csvDataRow.name, 
+      studentId: csvDataRow.studentId, 
+      classId: resolvedClassIdentityKey 
+    });
+    createdCount++;
+  });
+  
+  persistApplicationDatabase();
+  importPreviewData = [];
+  document.getElementById('import-preview').innerHTML = '';
+  showToast(`Bulk data process loaded: ${createdCount} configured profiles ${duplicatesSkippedCount ? ` [${duplicatesSkippedCount} duplicates skipped]` : ''}`);
+  renderStudents();
+}
+
+// ===== REAL-TIME ANALYTICS AND DAILY METRICS MANAGEMENT =====
+function configureSummaryTrackingDate() {
+  const targetDateInput = document.getElementById('summary-date');
+  targetDateInput.value = new Date().toISOString().slice(0, 10);
+}
+
+function shiftSummaryDate(dayOffsetDelta) {
+  const inputDateControl = document.getElementById('summary-date');
+  const baseTimeInstance = new Date(inputDateControl.value + 'T00:00:00');
+  baseTimeInstance.setDate(baseTimeInstance.getDate() + dayOffsetDelta);
+  inputDateControl.value = baseTimeInstance.toISOString().slice(0, 10);
+  renderSummary();
+}
+
+function renderSummary() {
+  const analyticalTargetIsoDateString = document.getElementById('summary-date').value;
+  const filteredDailyLogs = logs.filter(l => l.time.slice(0, 10) === analyticalTargetIsoDateString);
+  
+  const calculatedCheckins = filteredDailyLogs.filter(l => l.mode === 'checkin').length;
+  const calculatedCheckouts = filteredDailyLogs.filter(l => l.mode === 'checkout').length;
+  
+  // FIX: Accurate lookup mapping tracking linked index items accurately without duplicates
+  const aggregateUniquePresentCollection = new Set(filteredDailyLogs.map(l => l.studentId));
+  const activePresentHeadcount = aggregateUniquePresentCollection.size;
+  const standardAbsenteeCounter = Math.max(0, students.length - activePresentHeadcount);
+
+  document.getElementById('summary-cards').innerHTML = `
+    <div class="summary-card teal"><div class="sc-val">${calculatedCheckins}</div><div class="sc-lbl">Check-Ins</div></div>
+    <div class="summary-card amber"><div class="sc-val">${calculatedCheckouts}</div><div class="sc-lbl">Check-Outs</div></div>
+    <div class="summary-card"><div class="sc-val">${activePresentHeadcount}</div><div class="sc-lbl">Present</div></div>
+    <div class="summary-card"><div class="sc-val">${standardAbsenteeCounter}</div><div class="sc-lbl">Absent</div></div>`;
+
+  if (!classes.length) { 
+    document.getElementById('summary-body').innerHTML = `<div class="empty-state"><div class="empty-icon">🏫</div><div class="empty-title">Section Setup Mandatory</div></div>`; 
+    return; 
+  }
+
+  let visualClassBlockHtmlString = '';
+  classes.forEach(classLoopItem => {
+    const specificClassStudentsCollection = students.filter(s => s.classId === classLoopItem.id);
+    const specificClassLogsCollection = filteredDailyLogs.filter(l => l.classId === classLoopItem.id);
+    
+    // Evaluate explicit check-ins count per classroom profile context accurately
+    const classPresentUniqueSet = new Set(specificClassLogsCollection.filter(l => l.mode === 'checkin').map(l => l.studentId));
+    
+    if (!specificClassStudentsCollection.length) return;
+    
+    visualClassBlockHtmlString += `<div class="summary-class-block">
+      <div class="summary-class-header">
+        <div class="summary-class-name">${classLoopItem.name}</div>
+        <div class="summary-class-counts">${classPresentUniqueSet.size}/${specificClassStudentsCollection.length} Present</div>
+      </div>`;
+      
+    specificClassStudentsCollection.forEach(studentRecordItem => {
+      // FIX: Reference structural identity values instead of raw text string tags
+      const currentStudentLogs = specificClassLogsCollection.filter(l => l.studentId === studentRecordItem.id);
+      const optimizedCheckinLogMatch = currentStudentLogs.filter(l => l.mode === 'checkin').sort((a, b) => b.time.localeCompare(a.time))[0];
+      const optimizedCheckoutLogMatch = currentStudentLogs.filter(l => l.mode === 'checkout').sort((a, b) => b.time.localeCompare(a.time))[0];
+      
+      let badgeChipRenderHtml = '<span class="status-chip absent">Absent</span>';
+      if (optimizedCheckinLogMatch && optimizedCheckoutLogMatch) badgeChipRenderHtml = `<span class="status-chip out">In & Out</span>`;
+      else if (optimizedCheckinLogMatch) badgeChipRenderHtml = `<span class="status-chip in">Present ✅</span>`;
+      
+      const timePresentationNote = optimizedCheckinLogMatch ? `<span style="font-size:11px;color:var(--gray-400);margin-left:6px;font-weight:600">${new Date(optimizedCheckinLogMatch.time).toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'})}</span>` : '';
+      
+      visualClassBlockHtmlString += `<div class="summary-student-row">
+        <div class="summary-student-name">${studentRecordItem.name}</div>
+        ${badgeChipRenderHtml}${timePresentationNote}
+      </div>`;
+    });
+    visualClassBlockHtmlString += '</div>';
+  });
+  
+  document.getElementById('summary-body').innerHTML = visualClassBlockHtmlString || `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Zero transactions match current target window parameters</div></div>`;
+}
+
+function exportSummaryCSV() {
+  const currentSummaryTargetDateStr = document.getElementById('summary-date').value;
+  const filteredDayLogsCollection = logs.filter(l => l.time.slice(0, 10) === currentSummaryTargetDateStr);
+  
+  if (!filteredDayLogsCollection.length) { showToast('No logs exist matching active target schedule constraints'); return; }
+  const extractionRowsContainer = [['Report Production Tracking Target Date', 'Transaction Incident Time', 'Student Profile Name', 'LRN Reference Identity', 'Section Mapping Group', 'Operational Tracking Mode']];
+  
+  filteredDayLogsCollection.forEach(logItemElement => {
+    const temporaryTimeDateInstance = new Date(logItemElement.time);
+    extractionRowsContainer.push([
+      currentSummaryTargetDateStr, 
+      temporaryTimeDateInstance.toLocaleTimeString('en-PH'), 
+      logItemElement.studentName, 
+      logItemElement.studentLrn || '', 
+      logItemElement.className, 
+      logItemElement.mode === 'checkin' ? 'Check-In' : 'Check-Out'
+    ]);
+  });
+  executeCsvFileDownloadPipeline(extractionRowsContainer, `eduscan_daily_report_${currentSummaryTargetDateStr}`);
+}
+
+function executeCsvFileDownloadPipeline(rowsMatrixArray, calculatedFileNameString) {
+  const translatedCsvContentString = rowsMatrixArray.map(rowCells => rowCells.map(cellValue => `"${cellValue}"`).join(',')).join('\n');
+  const compilationDataBlob = new Blob([translatedCsvContentString], { type: 'text/csv;charset=utf-8;' });
+  const virtualDownloadLinkAnchor = document.createElement('a');
+  
+  virtualDownloadLinkAnchor.href = URL.createObjectURL(compilationDataBlob);
+  virtualDownloadLinkAnchor.download = `${calculatedFileNameString}.csv`;
+  virtualDownloadLinkAnchor.click();
+  showToast('CSV data file exported and saved locally');
+}
+
+// ===== HELPER CORE UTILITY LAYOUT DECORATORS =====
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-backdrop').forEach(backdropElement => {
+  backdropElement.addEventListener('click', eventArgs => { 
+    if (eventArgs.target === backdropElement) backdropElement.classList.remove('open'); 
+  });
+});
+
+function showToast(messageTextContent) {
+  const toastContainerElement = document.getElementById('toast');
+  toastContainerElement.textContent = messageTextContent; 
+  toastContainerElement.classList.add('show');
+  setTimeout(() => toastContainerElement.classList.remove('show'), 3000);
+}
+
+// ===== INITIALIZATION STARTUP LOOPS =====
+populateClassSelectDropdownElements();
+configureConnectivityListeners();
+configureSummaryTrackingDate();
+evaluateSyncQueueStates();
 </script>
 </body>
 </html>
