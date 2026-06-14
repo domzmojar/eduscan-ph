@@ -72,46 +72,97 @@
     .btn.danger:hover { background: #dc2626; }
     .btn.success { background: var(--success); }
     .btn.sm { padding: 0.3rem 0.6rem; font-size: 0.78rem; border-radius: 6px; }
+    .btn.outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+    .btn.outline:hover { background: var(--primary-bg); }
 
     /* ── SCAN MODE TOGGLE ── */
-    .mode-toggle { display: flex; border-radius: 12px; overflow: hidden; border: 2px solid var(--border); margin-bottom: 1rem; background: var(--bg); }
+    .mode-toggle { display: flex; border-radius: 14px; overflow: hidden; border: 2px solid var(--border); margin-bottom: 1rem; background: var(--bg); gap: 0; }
     .mode-btn {
-      flex: 1; padding: 0.85rem 0.5rem; border: none; background: transparent;
-      font-weight: 700; font-size: 1rem; cursor: pointer; transition: all 0.2s;
-      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      flex: 1; padding: 1rem 0.5rem; border: none; background: transparent;
+      font-weight: 800; font-size: 1rem; cursor: pointer; transition: all 0.25s;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      position: relative;
     }
-    .mode-btn .mode-icon { font-size: 1.4rem; line-height: 1; }
-    .mode-btn .mode-label { font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase; }
-    .mode-btn.arrival-active { background: var(--arrival-bg); color: var(--arrival); border-right: 2px solid var(--border); }
-    .mode-btn.departure-active { background: var(--departure-bg); color: var(--departure); }
-    .mode-btn:not(.arrival-active):not(.departure-active) { color: var(--text-muted); }
-    .mode-btn:not(.arrival-active):not(.departure-active):first-child { border-right: 2px solid var(--border); }
+    .mode-btn .mode-icon { font-size: 1.8rem; line-height: 1; }
+    .mode-btn .mode-label { font-size: 0.8rem; letter-spacing: 0.07em; text-transform: uppercase; font-weight: 700; }
+    .mode-btn .mode-desc { font-size: 0.7rem; font-weight: 500; opacity: 0.75; margin-top: 1px; }
+
+    /* ARRIVAL active — strong sky-blue pill */
+    .mode-btn.arrival-active {
+      background: #0369a1;
+      color: #fff;
+      box-shadow: inset 0 -3px 0 rgba(0,0,0,0.25);
+    }
+    .mode-btn.arrival-active .mode-icon { filter: drop-shadow(0 0 4px rgba(255,255,255,0.6)); }
+
+    /* DEPARTURE active — strong violet pill */
+    .mode-btn.departure-active {
+      background: #7c3aed;
+      color: #fff;
+      box-shadow: inset 0 -3px 0 rgba(0,0,0,0.25);
+    }
+    .mode-btn.departure-active .mode-icon { filter: drop-shadow(0 0 4px rgba(255,255,255,0.6)); }
+
+    /* Inactive state */
+    .mode-btn:not(.arrival-active):not(.departure-active) { color: #94a3b8; }
+
+    /* Divider between the two buttons */
+    .mode-toggle-divider { width: 1px; background: var(--border); flex-shrink: 0; }
+
+    /* Stop scan button */
+    #stop-scan-btn {
+      display: none;
+      width: 100%;
+      margin-top: 0.5rem;
+      background: #475569;
+      color: white;
+      padding: 0.6rem 1rem;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    #stop-scan-btn:hover { background: #334155; }
+    #stop-scan-btn.visible { display: flex; align-items: center; justify-content: center; gap: 6px; }
 
     /* ── SCAN AREA ── */
-    .scan-area { position: relative; width: 100%; max-width: 360px; aspect-ratio: 1/1; margin: 0 auto 0.75rem; background: #000; border-radius: 16px; overflow: hidden; border: 3px solid var(--border); transition: border-color 0.3s; }
-    .scan-area.mode-arrival  { border-color: var(--arrival-border); }
-    .scan-area.mode-departure { border-color: var(--departure-border); }
+    .scan-area { position: relative; width: 100%; max-width: 360px; aspect-ratio: 1/1; margin: 0 auto 0.75rem; background: #000; border-radius: 16px; overflow: hidden; border: 4px solid var(--border); transition: border-color 0.3s, box-shadow 0.3s; }
+    .scan-area.mode-arrival  { border-color: #0369a1; box-shadow: 0 0 0 3px rgba(3,105,161,0.18); }
+    .scan-area.mode-departure { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.18); }
     #cam-idle { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; text-align: center; padding: 2rem; cursor: pointer; gap: 0.5rem; }
+
+    /* Mode label overlay on camera */
+    .scan-mode-overlay {
+      position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+      padding: 3px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 800;
+      letter-spacing: 0.07em; text-transform: uppercase; z-index: 3; display: none;
+      pointer-events: none;
+    }
+    .scan-mode-overlay.active { display: block; }
+    .scan-area.mode-arrival  .scan-mode-overlay { background: #0369a1; color: #fff; }
+    .scan-area.mode-departure .scan-mode-overlay { background: #7c3aed; color: #fff; }
 
     .scan-line { position: absolute; left: 0; right: 0; height: 2px; animation: scanAnim 2s linear infinite; pointer-events: none; z-index: 2; display: none; }
     .scan-line.active { display: block; }
-    .scan-area.mode-arrival  .scan-line { background: linear-gradient(90deg, transparent, var(--arrival), transparent); }
-    .scan-area.mode-departure .scan-line { background: linear-gradient(90deg, transparent, var(--departure), transparent); }
+    .scan-area.mode-arrival  .scan-line { background: linear-gradient(90deg, transparent, #0ea5e9, transparent); }
+    .scan-area.mode-departure .scan-line { background: linear-gradient(90deg, transparent, #a855f7, transparent); }
     @keyframes scanAnim { 0% { top: 10%; } 100% { top: 90%; } }
 
     .scan-corners { position: absolute; inset: 12px; pointer-events: none; z-index: 2; display: none; }
     .scan-corners.active { display: block; }
     .scan-corners::before, .scan-corners::after, .sc-br::before, .sc-br::after {
-      content: ''; position: absolute; width: 24px; height: 24px; border-style: solid;
+      content: ''; position: absolute; width: 28px; height: 28px; border-style: solid;
     }
     .scan-area.mode-arrival  .scan-corners::before,
     .scan-area.mode-arrival  .scan-corners::after,
     .scan-area.mode-arrival  .sc-br::before,
-    .scan-area.mode-arrival  .sc-br::after { border-color: var(--arrival); }
+    .scan-area.mode-arrival  .sc-br::after { border-color: #38bdf8; }
     .scan-area.mode-departure .scan-corners::before,
     .scan-area.mode-departure .scan-corners::after,
     .scan-area.mode-departure .sc-br::before,
-    .scan-area.mode-departure .sc-br::after { border-color: var(--departure); }
+    .scan-area.mode-departure .sc-br::after { border-color: #c084fc; }
     .scan-corners::before { top:0; left:0; border-width:3px 0 0 3px; border-radius:4px 0 0 0; }
     .scan-corners::after  { top:0; right:0; border-width:3px 3px 0 0; border-radius:0 4px 0 0; }
     .sc-br::before { bottom:0; left:0; border-width:0 0 3px 3px; border-radius:0 0 0 4px; }
@@ -130,16 +181,25 @@
     #toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px); background: #1e293b; color: white; padding: 0.65rem 1.25rem; border-radius: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: transform 0.3s ease; z-index: 1000; pointer-events: none; font-size: 0.85rem; white-space: nowrap; max-width: 90vw; text-overflow: ellipsis; overflow: hidden; }
     #toast.show { transform: translateX(-50%) translateY(0); }
 
-    /* ── QR CARD ── */
-    .qr-card {
-      display: inline-flex; flex-direction: column; align-items: center;
-      border: 1px solid var(--border); padding: 0.9rem 0.75rem; border-radius: 10px;
-      margin: 0.4rem; background: var(--surface); width: 160px;
+    /* ── QR GRID — 3 columns ── */
+    #students-qr-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.6rem;
     }
-    .qr-card .qr-class { font-size: 0.68rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.04em; text-align: center; }
-    .qr-card .qr-name  { font-size: 0.88rem; font-weight: 700; margin: 0.2rem 0 0.15rem; text-align: center; line-height: 1.3; }
-    .qr-card .qr-lrn   { font-size: 0.7rem; color: var(--text-muted); font-family: monospace; margin-bottom: 0.5rem; }
-    .qr-card .qr-meta  { font-size: 0.7rem; color: var(--text-muted); text-align: center; margin-bottom: 0.5rem; line-height: 1.4; }
+    @media (max-width: 420px) {
+      #students-qr-container { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .qr-card {
+      display: flex; flex-direction: column; align-items: center;
+      border: 1px solid var(--border); padding: 0.7rem 0.5rem; border-radius: 10px;
+      background: var(--surface);
+    }
+    .qr-card .qr-class { font-size: 0.62rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.04em; text-align: center; }
+    .qr-card .qr-name  { font-size: 0.8rem; font-weight: 700; margin: 0.2rem 0 0.15rem; text-align: center; line-height: 1.3; }
+    .qr-card .qr-lrn   { font-size: 0.65rem; color: var(--text-muted); font-family: monospace; margin-bottom: 0.4rem; }
+    .qr-card .qr-meta  { font-size: 0.65rem; color: var(--text-muted); text-align: center; margin-bottom: 0.4rem; line-height: 1.4; }
 
     .scan-feedback { border-radius: 10px; padding: 0.9rem 1rem; margin-top: 0.65rem; border: 1px solid; }
     .scan-feedback.ok      { background: var(--success-bg);   border-color: var(--success-border);   color: #14532d; }
@@ -152,6 +212,25 @@
     .stat { flex: 1; min-width: 70px; background: var(--bg); border-radius: 8px; padding: 0.65rem 0.75rem; text-align: center; }
     .stat .val { font-size: 1.4rem; font-weight: 700; }
     .stat .lbl { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+
+    /* Clickable stat buttons for summary */
+    .stat-btn {
+      flex: 1; min-width: 70px; background: var(--bg); border-radius: 8px;
+      padding: 0.65rem 0.75rem; text-align: center; border: 2px solid transparent;
+      cursor: pointer; transition: all 0.15s; font-family: inherit;
+    }
+    .stat-btn:hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,0.1); }
+    .stat-btn.enrolled  { border-color: var(--border); }
+    .stat-btn.enrolled:hover { border-color: var(--primary); background: var(--primary-bg); }
+    .stat-btn.arrived   { border-color: transparent; }
+    .stat-btn.arrived:hover { border-color: var(--arrival); background: var(--arrival-bg); }
+    .stat-btn.departed  { border-color: transparent; }
+    .stat-btn.departed:hover { border-color: var(--departure); background: var(--departure-bg); }
+    .stat-btn.absent    { border-color: transparent; }
+    .stat-btn.absent:hover { border-color: var(--danger); background: var(--danger-bg); }
+    .stat-btn .val { font-size: 1.4rem; font-weight: 700; }
+    .stat-btn .lbl { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+    .stat-btn .tap-hint { font-size: 0.62rem; color: var(--text-muted); margin-top: 3px; opacity: 0.7; }
 
     .sync-status { display: flex; align-items: center; gap: 8px; padding: 0.6rem 1rem; border-radius: 8px; font-size: 0.85rem; margin-top: 0.75rem; }
     .sync-status.ok   { background: var(--success-bg); color: var(--success); }
@@ -166,9 +245,6 @@
     .empty { text-align: center; color: var(--text-muted); padding: 2rem 1rem; font-size: 0.9rem; }
     .row-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
 
-    .form-row { display: flex; gap: 0.75rem; }
-    .form-row .form-group { flex: 1; }
-
     video { width: 100%; height: 100%; object-fit: cover; display: none; }
     canvas { display: none; }
 
@@ -176,6 +252,42 @@
     .today-item:last-child { border-bottom: none; }
 
     details summary { cursor: pointer; font-size: 0.87rem; font-weight: 600; color: var(--primary); }
+
+    /* ── SUMMARY HISTORY ── */
+    .history-date-block { margin-bottom: 1.25rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border); }
+    .history-date-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .history-date-label { font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.7rem; }
+    .history-class-row { margin-bottom: 1rem; }
+    .history-class-name { font-weight: 700; color: var(--primary); font-size: 0.92rem; margin-bottom: 0.5rem; }
+    .stat-row-btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
+
+    /* ── MODAL ── */
+    .modal-backdrop {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      z-index: 500; align-items: flex-end; justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-sheet {
+      background: var(--surface); border-radius: 18px 18px 0 0;
+      width: 100%; max-width: 600px; max-height: 80vh;
+      display: flex; flex-direction: column;
+      box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
+      animation: slideUp 0.25s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
+    }
+    .modal-title { font-weight: 700; font-size: 1rem; }
+    .modal-close { background: var(--bg); border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
+    .modal-body { overflow-y: auto; padding: 1rem 1.25rem; flex: 1; }
+    .modal-student-item { display: flex; align-items: center; gap: 10px; padding: 0.55rem 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+    .modal-student-item:last-child { border-bottom: none; }
+    .modal-student-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--primary-bg); color: var(--primary); font-weight: 700; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .modal-student-name { font-weight: 600; flex: 1; }
+    .modal-student-lrn { font-size: 0.75rem; color: var(--text-muted); font-family: monospace; }
+    .modal-student-time { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -207,21 +319,25 @@
       </div>
 
       <!-- MODE TOGGLE -->
-      <label style="margin-bottom:0.4rem;">Scan mode</label>
+      <label style="margin-bottom:0.4rem; display:block;">Scan mode</label>
       <div class="mode-toggle" id="mode-toggle">
         <button class="mode-btn arrival-active" id="mode-btn-arrival" onclick="setMode('arrival')">
-          <span class="mode-icon">↑</span>
+          <span class="mode-icon">☀️</span>
           <span class="mode-label">Arrival</span>
+          <span class="mode-desc">Student came in</span>
         </button>
+        <div class="mode-toggle-divider"></div>
         <button class="mode-btn" id="mode-btn-departure" onclick="setMode('departure')">
-          <span class="mode-icon">↓</span>
+          <span class="mode-icon">🌙</span>
           <span class="mode-label">Departure</span>
+          <span class="mode-desc">Student going home</span>
         </button>
       </div>
 
       <div class="scan-area mode-arrival" id="scan-area" onclick="handleScanAreaClick()">
         <video id="scan-video" autoplay playsinline></video>
         <canvas id="qr-canvas"></canvas>
+        <div class="scan-mode-overlay" id="scan-mode-overlay">↑ Arrival</div>
         <div class="scan-line" id="scan-line"></div>
         <div class="scan-corners" id="scan-corners"><div class="sc-br"></div></div>
         <div id="cam-idle">
@@ -233,6 +349,11 @@
           <p id="idle-notice-text" style="font-size:0.85rem; line-height:1.4; margin-top:0.5rem;">Select a class to start scanning</p>
         </div>
       </div>
+
+      <!-- STOP SCAN BUTTON -->
+      <button id="stop-scan-btn" onclick="stopCameraManual()">
+        ⏹ Stop Camera
+      </button>
 
       <div id="scan-result-box"></div>
 
@@ -253,12 +374,27 @@
       </div>
       <button class="btn full" onclick="addClass()">Save class</button>
     </div>
+
     <div class="card">
       <h2>Registered classes</h2>
       <table id="classes-table">
         <thead><tr><th>Name</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
+    </div>
+
+    <!-- VIEW ENROLLED STUDENTS PER CLASS -->
+    <div class="card">
+      <h2>View class roster</h2>
+      <div class="form-group" style="margin-bottom:0.75rem;">
+        <label for="class-roster-select">Select a class</label>
+        <select id="class-roster-select" onchange="renderClassRoster()">
+          <option value="">— Choose a class —</option>
+        </select>
+      </div>
+      <div id="class-roster-content">
+        <p class="empty" style="padding:1rem 0;">Choose a class above to view enrolled students.</p>
+      </div>
     </div>
   </div>
 
@@ -278,23 +414,6 @@
         <label for="student-lrn-input">LRN (Learner Reference Number)</label>
         <input type="text" id="student-lrn-input" placeholder="12-digit LRN" maxlength="12">
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="student-grade-input">Grade level</label>
-          <select id="student-grade-input">
-            <option value="">— Grade —</option>
-            <option>Kinder</option>
-            <option>Grade 1</option><option>Grade 2</option><option>Grade 3</option>
-            <option>Grade 4</option><option>Grade 5</option><option>Grade 6</option>
-            <option>Grade 7</option><option>Grade 8</option><option>Grade 9</option>
-            <option>Grade 10</option><option>Grade 11</option><option>Grade 12</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="student-section-input">Section</label>
-          <input type="text" id="student-section-input" placeholder="e.g. Sampaguita">
-        </div>
-      </div>
       <div class="form-group">
         <label for="student-guardian-input">Guardian name <span style="font-weight:400; text-transform:none;">(optional)</span></label>
         <input type="text" id="student-guardian-input" placeholder="e.g. Maria Dela Cruz">
@@ -308,7 +427,7 @@
           <option value="">All classes</option>
         </select>
       </div>
-      <div id="students-qr-container" style="display:flex; flex-wrap:wrap; justify-content:center;"></div>
+      <div id="students-qr-container"></div>
     </div>
   </div>
 
@@ -329,11 +448,14 @@
   <!-- SUMMARY PAGE -->
   <div id="page-summary" class="page">
     <div class="card">
-      <h2>Summary</h2>
-      <div class="form-group">
-        <label for="summary-date-filter">Date</label>
+      <div class="row-flex" style="margin-bottom:0.5rem;">
+        <h2 style="margin:0;">Attendance summary</h2>
+      </div>
+      <div class="form-group" style="margin-bottom:0.75rem;">
+        <label for="summary-date-filter">Filter by date (optional)</label>
         <input type="date" id="summary-date-filter" onchange="renderSummary()">
       </div>
+      <button class="btn outline sm" onclick="clearSummaryFilter()" style="margin-bottom:1rem;">Show all dates</button>
       <div id="summary-analytics-content"></div>
     </div>
   </div>
@@ -373,6 +495,17 @@
 
 <div id="toast"></div>
 
+<!-- STUDENT LIST MODAL -->
+<div class="modal-backdrop" id="modal-backdrop" onclick="closeModal(event)">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Students</span>
+      <button class="modal-close" onclick="closeModalDirect()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
 <script>
 // ── STATE ─────────────────────────────────────────────────────────────────
 let classes  = JSON.parse(localStorage.getItem('edu_classes'))  || [];
@@ -384,7 +517,7 @@ let cameraStream    = null;
 let scanning        = false;
 let lastScanned     = null;
 let lastScannedTime = 0;
-let scanMode        = 'arrival'; // 'arrival' | 'departure'
+let scanMode        = 'arrival';
 
 function saveState() {
   localStorage.setItem('edu_classes',  JSON.stringify(classes));
@@ -409,11 +542,14 @@ function showPage(page) {
   document.getElementById('page-' + page).classList.add('active');
   document.getElementById('nav-' + page).classList.add('active');
 
-  if (page === 'scanner' && currentClassId) startCamera();
-  else stopCamera();
+  if (page === 'scanner' && currentClassId && !scanning) {
+    // Don't auto-restart if user stopped manually; they can tap
+  } else if (page !== 'scanner') {
+    stopCamera();
+  }
 
   if (page === 'students') renderStudents();
-  if (page === 'classes')  renderClasses();
+  if (page === 'classes')  { renderClasses(); renderClassRoster(); }
   if (page === 'log')      renderLog();
   if (page === 'summary') {
     const d = document.getElementById('summary-date-filter');
@@ -428,7 +564,7 @@ function onClassChange() {
   resetScanResult();
   if (currentClassId) {
     document.getElementById('idle-notice-text').textContent = 'Tap to activate camera';
-    startCamera();
+    // Don't auto-start — user taps to start
   } else {
     document.getElementById('idle-notice-text').textContent = 'Select a class to start scanning';
     stopCamera();
@@ -444,16 +580,21 @@ function resetScanResult() {
 // ── SCAN MODE ─────────────────────────────────────────────────────────────
 function setMode(mode) {
   scanMode = mode;
-  lastScanned = null; // reset debounce when mode changes
+  lastScanned = null;
 
   const area    = document.getElementById('scan-area');
+  const overlay = document.getElementById('scan-mode-overlay');
   const btnArr  = document.getElementById('mode-btn-arrival');
   const btnDep  = document.getElementById('mode-btn-departure');
 
   area.className = 'scan-area mode-' + mode;
+
+  overlay.textContent = mode === 'arrival' ? '☀️ Arrival' : '🌙 Departure';
+
   if (scanning) {
     document.getElementById('scan-line').classList.add('active');
     document.getElementById('scan-corners').classList.add('active');
+    overlay.classList.add('active');
   }
 
   if (mode === 'arrival') {
@@ -469,8 +610,10 @@ function setMode(mode) {
 
 // ── CAMERA ────────────────────────────────────────────────────────────────
 async function startCamera() {
-  const video = document.getElementById('scan-video');
-  const idle  = document.getElementById('cam-idle');
+  const video   = document.getElementById('scan-video');
+  const idle    = document.getElementById('cam-idle');
+  const stopBtn = document.getElementById('stop-scan-btn');
+  const overlay = document.getElementById('scan-mode-overlay');
   if (!currentClassId) return showToast('Select a class first.');
   if (cameraStream) stopCamera();
   try {
@@ -480,6 +623,9 @@ async function startCamera() {
     idle.style.display = 'none';
     document.getElementById('scan-line').classList.add('active');
     document.getElementById('scan-corners').classList.add('active');
+    overlay.classList.add('active');
+    overlay.textContent = scanMode === 'arrival' ? '☀️ Arrival' : '🌙 Departure';
+    stopBtn.classList.add('visible');
     scanning = true;
     requestAnimationFrame(scanFrameLoop);
   } catch(err) {
@@ -489,12 +635,22 @@ async function startCamera() {
 
 function stopCamera() {
   scanning = false;
+  const stopBtn = document.getElementById('stop-scan-btn');
+  const overlay = document.getElementById('scan-mode-overlay');
   if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
   const video = document.getElementById('scan-video');
   if (video) { video.style.display = 'none'; video.srcObject = null; }
   document.getElementById('cam-idle').style.display = 'flex';
   document.getElementById('scan-line').classList.remove('active');
   document.getElementById('scan-corners').classList.remove('active');
+  overlay.classList.remove('active');
+  if (stopBtn) stopBtn.classList.remove('visible');
+}
+
+function stopCameraManual() {
+  stopCamera();
+  document.getElementById('idle-notice-text').textContent = 'Camera stopped. Tap to resume.';
+  showToast('Camera stopped.');
 }
 
 function handleScanAreaClick() {
@@ -527,6 +683,10 @@ function scanFrameLoop() {
 // ── DATE HELPERS ──────────────────────────────────────────────────────────
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 function sameDay(iso, dateStr) { return iso.slice(0, 10) === dateStr; }
+function formatDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+}
 
 // ── QR SCAN HANDLER ───────────────────────────────────────────────────────
 function handleQRScan(rawData) {
@@ -548,7 +708,6 @@ function handleQRScan(rawData) {
       sameDay(l.timestamp, today)
     );
 
-    // Check if this exact type was already logged today
     const alreadyLogged = todayLog.find(l => l.type === scanMode);
     if (alreadyLogged) {
       const typeLabel = scanMode === 'arrival' ? 'Arrival' : 'Departure';
@@ -568,7 +727,6 @@ function handleQRScan(rawData) {
       studentId:    student.id,
       studentName:  student.name,
       studentLrn:   student.lrn   || '',
-      studentGrade: student.grade || '',
       type:         scanMode
     };
 
@@ -579,7 +737,7 @@ function handleQRScan(rawData) {
     const isArrival = scanMode === 'arrival';
     showFeedback(
       isArrival ? 'ok' : 'ok-dep',
-      isArrival ? '✓ Arrival recorded' : '✓ Departure recorded',
+      isArrival ? '☀️ Arrival recorded' : '🌙 Departure recorded',
       `<strong>${student.name}</strong>${student.lrn ? ' · LRN ' + student.lrn : ''}<br>` +
       `<span style="font-size:0.82rem;">${new Date(logEntry.timestamp).toLocaleTimeString()}</span>`
     );
@@ -611,7 +769,7 @@ function renderTodayList() {
       <span>${l.studentName}${l.studentLrn ? ' <span style="color:var(--text-muted);font-size:0.75rem;">· ' + l.studentLrn + '</span>' : ''}</span>
       <div style="display:flex; align-items:center; gap:5px;">
         <span style="color:var(--text-muted); font-size:0.76rem;">${new Date(l.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>
-        <span class="badge badge-${l.type}">${l.type === 'arrival' ? '↑' : '↓'} ${l.type === 'arrival' ? 'Arrival' : 'Departure'}</span>
+        <span class="badge badge-${l.type}">${l.type === 'arrival' ? '☀️ Arrival' : '🌙 Departure'}</span>
       </div>
     </div>`).join('');
 }
@@ -642,11 +800,47 @@ function renderClasses() {
     tbody.innerHTML = `<tr><td colspan="2" class="empty">No classes yet.</td></tr>`;
     return;
   }
-  tbody.innerHTML = classes.map(c => `
+  tbody.innerHTML = classes.map(c => {
+    const count = students.filter(s => s.classId === c.id).length;
+    return `
     <tr>
-      <td><strong>${c.name}</strong></td>
+      <td><strong>${c.name}</strong><br><span style="font-size:0.75rem;color:var(--text-muted);">${count} student${count !== 1 ? 's' : ''}</span></td>
       <td style="text-align:right;"><button class="btn danger sm" onclick="removeClass('${c.id}')">Delete</button></td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
+}
+
+function renderClassRoster() {
+  const select  = document.getElementById('class-roster-select');
+  const content = document.getElementById('class-roster-content');
+  const classId = select.value;
+
+  if (!classId) {
+    content.innerHTML = `<p class="empty" style="padding:1rem 0;">Choose a class above to view enrolled students.</p>`;
+    return;
+  }
+
+  const cls      = classes.find(c => c.id === classId);
+  const enrolled = students.filter(s => s.classId === classId);
+
+  if (!enrolled.length) {
+    content.innerHTML = `<p class="empty" style="padding:1rem 0;">No students enrolled in <strong>${cls ? cls.name : 'this class'}</strong> yet.</p>`;
+    return;
+  }
+
+  content.innerHTML = `
+    <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:0.6rem;">${enrolled.length} student${enrolled.length !== 1 ? 's' : ''} enrolled</p>
+    <table>
+      <thead><tr><th>#</th><th>Name</th><th>LRN</th></tr></thead>
+      <tbody>
+        ${enrolled.map((s, i) => `
+          <tr>
+            <td style="color:var(--text-muted); font-size:0.78rem;">${i + 1}</td>
+            <td><strong>${s.name}</strong>${s.guardian ? `<br><span style="font-size:0.73rem;color:var(--text-muted);">👤 ${s.guardian}</span>` : ''}</td>
+            <td style="font-family:monospace; font-size:0.78rem; color:var(--text-muted);">${s.lrn || '—'}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
 }
 
 // ── STUDENTS ──────────────────────────────────────────────────────────────
@@ -654,21 +848,19 @@ function addStudent() {
   const classId  = document.getElementById('student-class-select').value;
   const name     = document.getElementById('student-name-input').value.trim();
   const lrn      = document.getElementById('student-lrn-input').value.trim();
-  const grade    = document.getElementById('student-grade-input').value;
-  const section  = document.getElementById('student-section-input').value.trim();
   const guardian = document.getElementById('student-guardian-input').value.trim();
 
   if (!classId || !name) return showToast('Class and full name are required.');
 
-  students.push({ id: 'student_' + Date.now(), classId, name, lrn, grade, section, guardian });
+  students.push({ id: 'student_' + Date.now(), classId, name, lrn, guardian });
   saveState();
 
-  // clear fields except class select
-  ['student-name-input','student-lrn-input','student-section-input','student-guardian-input'].forEach(id => {
+  ['student-name-input','student-lrn-input','student-guardian-input'].forEach(id => {
     document.getElementById(id).value = '';
   });
-  document.getElementById('student-grade-input').value = '';
   renderStudents();
+  renderClasses();
+  populateDropdowns();
   showToast('Student saved. QR generated.');
 }
 
@@ -676,7 +868,7 @@ function deleteStudent(id) {
   if (!confirm('Remove this student?')) return;
   students = students.filter(s => s.id !== id);
   logs     = logs.filter(l => l.studentId !== id);
-  saveState(); renderStudents();
+  saveState(); renderStudents(); renderClasses();
   showToast('Student removed.');
 }
 
@@ -686,22 +878,20 @@ function renderStudents() {
   const list      = filterVal ? students.filter(s => s.classId === filterVal) : students;
 
   if (!list.length) {
-    container.innerHTML = `<p class="empty" style="width:100%;">No students registered yet.</p>`;
+    container.innerHTML = `<p class="empty" style="grid-column:1/-1;">No students registered yet.</p>`;
     return;
   }
   container.innerHTML = list.map(s => {
     const cls    = (classes.find(c => c.id === s.classId) || {}).name || 'Unknown';
     const qrData = encodeURIComponent(JSON.stringify({ eduscan: true, id: s.id }));
     const qrUrl  = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${qrData}`;
-    const meta   = [s.grade, s.section].filter(Boolean).join(' · ');
     return `
       <div class="qr-card">
         <span class="qr-class">${cls}</span>
         <span class="qr-name">${s.name}</span>
         ${s.lrn ? `<span class="qr-lrn">LRN: ${s.lrn}</span>` : ''}
-        ${meta ? `<span class="qr-meta">${meta}</span>` : ''}
-        <img src="${qrUrl}" alt="QR for ${s.name}" style="width:130px;height:130px;border:1px solid #eee;padding:4px;background:#fff;">
-        ${s.guardian ? `<span class="qr-meta" style="margin-top:0.35rem;">👤 ${s.guardian}</span>` : ''}
+        <img src="${qrUrl}" alt="QR for ${s.name}" style="width:100%;max-width:120px;height:auto;border:1px solid #eee;padding:3px;background:#fff;border-radius:4px;">
+        ${s.guardian ? `<span class="qr-meta" style="margin-top:0.3rem;">👤 ${s.guardian}</span>` : ''}
         <button class="btn danger sm" style="margin-top:0.5rem;" onclick="deleteStudent('${s.id}')">Remove</button>
       </div>`;
   }).join('');
@@ -719,7 +909,7 @@ function renderLog() {
       <td style="color:var(--text-muted);font-size:0.78rem;white-space:nowrap;">
         ${new Date(l.timestamp).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}
       </td>
-      <td><span class="badge badge-${l.type || 'arrival'}">${l.type === 'departure' ? '↓ Departure' : '↑ Arrival'}</span></td>
+      <td><span class="badge badge-${l.type || 'arrival'}">${l.type === 'departure' ? '🌙 Dep.' : '☀️ Arr.'}</span></td>
       <td><span class="badge badge-class" style="font-size:0.7rem;">${l.className || '—'}</span></td>
       <td><strong>${l.studentName}</strong></td>
       <td style="font-size:0.78rem;color:var(--text-muted);font-family:monospace;">${l.studentLrn || '—'}</td>
@@ -733,42 +923,163 @@ function clearLogs() {
 }
 
 // ── SUMMARY ───────────────────────────────────────────────────────────────
+function clearSummaryFilter() {
+  document.getElementById('summary-date-filter').value = '';
+  renderSummary();
+}
+
 function renderSummary() {
-  const box      = document.getElementById('summary-analytics-content');
-  const dateVal  = document.getElementById('summary-date-filter').value;
-  const filtered = dateVal ? logs.filter(l => l.timestamp.slice(0,10) === dateVal) : logs;
+  const box     = document.getElementById('summary-analytics-content');
+  const dateVal = document.getElementById('summary-date-filter').value;
 
   if (!classes.length) {
     box.innerHTML = `<p class="empty">No classes configured yet.</p>`;
     return;
   }
+
+  // Collect all dates that have logs
+  const allDates = dateVal
+    ? [dateVal]
+    : [...new Set(logs.map(l => l.timestamp.slice(0, 10)))].sort((a, b) => b.localeCompare(a));
+
+  if (!allDates.length) {
+    box.innerHTML = `<p class="empty">No attendance data yet.</p>`;
+    return;
+  }
+
   let html = '';
-  classes.forEach(c => {
-    const classStudents = students.filter(s => s.classId === c.id);
-    const classLogs     = filtered.filter(l => l.classId === c.id);
-    const arrivedIds    = new Set(classLogs.filter(l => l.type === 'arrival').map(l => l.studentId));
-    const departedIds   = new Set(classLogs.filter(l => l.type === 'departure').map(l => l.studentId));
-    const absent        = Math.max(0, classStudents.length - arrivedIds.size);
-    html += `
-      <div style="margin-bottom:1.5rem; padding-bottom:1.25rem; border-bottom:1px solid var(--border);">
-        <p style="font-weight:700; color:var(--primary); margin-bottom:0.65rem;">${c.name}</p>
-        <div class="stat-row">
-          <div class="stat"><div class="val">${classStudents.length}</div><div class="lbl">Enrolled</div></div>
-          <div class="stat"><div class="val" style="color:var(--arrival);">${arrivedIds.size}</div><div class="lbl">Arrived</div></div>
-          <div class="stat"><div class="val" style="color:var(--departure);">${departedIds.size}</div><div class="lbl">Departed</div></div>
-          <div class="stat"><div class="val" style="color:var(--danger);">${absent}</div><div class="lbl">Absent</div></div>
-        </div>
-      </div>`;
+  allDates.forEach(dateStr => {
+    const dateLogs = logs.filter(l => l.timestamp.slice(0, 10) === dateStr);
+    if (!dateLogs.length) return;
+
+    html += `<div class="history-date-block">`;
+    html += `<div class="history-date-label">📅 ${formatDate(dateStr)}</div>`;
+
+    classes.forEach(c => {
+      const classStudents = students.filter(s => s.classId === c.id);
+      const classLogs     = dateLogs.filter(l => l.classId === c.id);
+      if (!classLogs.length && !classStudents.length) return;
+
+      const arrivedIds  = new Set(classLogs.filter(l => l.type === 'arrival').map(l => l.studentId));
+      const departedIds = new Set(classLogs.filter(l => l.type === 'departure').map(l => l.studentId));
+      const absentIds   = classStudents.filter(s => !arrivedIds.has(s.id)).map(s => s.id);
+
+      html += `
+        <div class="history-class-row">
+          <div class="history-class-name">${c.name}</div>
+          <div class="stat-row-btns">
+            <button class="stat-btn enrolled"
+              onclick="openModal('enrolled','${c.id}','${dateStr}','${encodeURIComponent(c.name)}')">
+              <div class="val">${classStudents.length}</div>
+              <div class="lbl">Enrolled</div>
+              <div class="tap-hint">tap to view</div>
+            </button>
+            <button class="stat-btn arrived"
+              onclick="openModal('arrived','${c.id}','${dateStr}','${encodeURIComponent(c.name)}')">
+              <div class="val" style="color:var(--arrival);">${arrivedIds.size}</div>
+              <div class="lbl">Arrived</div>
+              <div class="tap-hint">tap to view</div>
+            </button>
+            <button class="stat-btn departed"
+              onclick="openModal('departed','${c.id}','${dateStr}','${encodeURIComponent(c.name)}')">
+              <div class="val" style="color:var(--departure);">${departedIds.size}</div>
+              <div class="lbl">Departed</div>
+              <div class="tap-hint">tap to view</div>
+            </button>
+            <button class="stat-btn absent"
+              onclick="openModal('absent','${c.id}','${dateStr}','${encodeURIComponent(c.name)}')">
+              <div class="val" style="color:var(--danger);">${absentIds.length}</div>
+              <div class="lbl">Absent</div>
+              <div class="tap-hint">tap to view</div>
+            </button>
+          </div>
+        </div>`;
+    });
+
+    html += `</div>`;
   });
-  box.innerHTML = html || `<p class="empty">No data for this date.</p>`;
+
+  box.innerHTML = html || `<p class="empty">No data found.</p>`;
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────
+function openModal(type, classId, dateStr, encodedClassName) {
+  const className = decodeURIComponent(encodedClassName);
+  const cls = classes.find(c => c.id === classId);
+  const classStudents = students.filter(s => s.classId === classId);
+  const dateLogs = logs.filter(l => l.classId === classId && l.timestamp.slice(0, 10) === dateStr);
+
+  const arrivedIds  = new Set(dateLogs.filter(l => l.type === 'arrival').map(l => l.studentId));
+  const departedIds = new Set(dateLogs.filter(l => l.type === 'departure').map(l => l.studentId));
+
+  let title = '';
+  let studentList = [];
+  let showTime = false;
+
+  if (type === 'enrolled') {
+    title = `Enrolled — ${className}`;
+    studentList = classStudents;
+  } else if (type === 'arrived') {
+    title = `☀️ Arrived — ${className}`;
+    studentList = classStudents.filter(s => arrivedIds.has(s.id));
+    showTime = true;
+  } else if (type === 'departed') {
+    title = `🌙 Departed — ${className}`;
+    studentList = classStudents.filter(s => departedIds.has(s.id));
+    showTime = true;
+  } else if (type === 'absent') {
+    title = `Absent — ${className}`;
+    studentList = classStudents.filter(s => !arrivedIds.has(s.id));
+  }
+
+  document.getElementById('modal-title').textContent = title + ` (${formatDate(dateStr)})`;
+
+  if (!studentList.length) {
+    document.getElementById('modal-body').innerHTML = `<p class="empty">No students in this category.</p>`;
+  } else {
+    document.getElementById('modal-body').innerHTML = studentList.map((s, i) => {
+      let timeStr = '';
+      if (showTime) {
+        const logType = type === 'arrived' ? 'arrival' : 'departure';
+        const logEntry = dateLogs.find(l => l.studentId === s.id && l.type === logType);
+        if (logEntry) timeStr = new Date(logEntry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+      const initials = s.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+      return `
+        <div class="modal-student-item">
+          <div class="modal-student-avatar">${initials}</div>
+          <div style="flex:1;">
+            <div class="modal-student-name">${s.name}</div>
+            ${s.lrn ? `<div class="modal-student-lrn">LRN: ${s.lrn}</div>` : ''}
+          </div>
+          ${timeStr ? `<div class="modal-student-time">${timeStr}</div>` : ''}
+        </div>`;
+    }).join('');
+  }
+
+  document.getElementById('modal-backdrop').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modal-backdrop')) closeModalDirect();
+}
+function closeModalDirect() {
+  document.getElementById('modal-backdrop').classList.remove('open');
+  document.body.style.overflow = '';
 }
 
 // ── DROPDOWNS ─────────────────────────────────────────────────────────────
 function populateDropdowns() {
-  const opts = `<option value="">— Choose a class —</option>` +
+  const classOpts = `<option value="">— Choose a class —</option>` +
     classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-  document.getElementById('scanner-class-select').innerHTML = opts;
-  document.getElementById('student-class-select').innerHTML = opts;
+
+  document.getElementById('scanner-class-select').innerHTML = classOpts;
+  document.getElementById('student-class-select').innerHTML = classOpts;
+
+  const rosterOpts = `<option value="">— Choose a class —</option>` +
+    classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  document.getElementById('class-roster-select').innerHTML = rosterOpts;
 
   const filterOpts = `<option value="">All classes</option>` +
     classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
@@ -792,7 +1103,7 @@ function doPost(e) {
 
     if (!sheet) {
       sheet = ss.insertSheet('Attendance');
-      sheet.appendRow(['Timestamp','Date','Time','Type','Class','Student Name','LRN','Grade']);
+      sheet.appendRow(['Timestamp','Date','Time','Type','Class','Student Name','LRN']);
       sheet.setFrozenRows(1);
     }
 
@@ -805,13 +1116,12 @@ function doPost(e) {
         l.type === 'departure' ? 'Departure' : 'Arrival',
         l.className,
         l.studentName,
-        l.studentLrn  || '',
-        l.studentGrade || ''
+        l.studentLrn  || ''
       ];
     });
 
     if (rows.length > 0)
-      sheet.getRange(sheet.getLastRow()+1, 1, rows.length, 8).setValues(rows);
+      sheet.getRange(sheet.getLastRow()+1, 1, rows.length, 7).setValues(rows);
 
     return ContentService
       .createTextOutput(JSON.stringify({ success: true, added: rows.length }))
@@ -869,8 +1179,7 @@ function copyScript() {
 
 // ── BOOT ──────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
-  // Migrate old logs missing type/lrn fields
-  logs = logs.map(l => ({ type: 'arrival', studentLrn: '', studentGrade: '', ...l }));
+  logs = logs.map(l => ({ type: 'arrival', studentLrn: '', ...l }));
   saveState();
   populateDropdowns();
 });
