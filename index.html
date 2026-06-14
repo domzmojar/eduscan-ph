@@ -1,700 +1,1135 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EduScan PH - Attendance System</title>
-  <!-- jsQR Library for real-time video stream frame analysis -->
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-  <style>
-    :root {
-      --primary: #2563eb;
-      --primary-dark: #1d4ed8;
-      --success: #16a34a;
-      --danger: #dc2626;
-      --bg: #f8fafc;
-      --surface: #ffffff;
-      --text: #0f172a;
-      --border: #e2e8f0;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-
-    body {
-      background-color: var(--bg);
-      color: var(--text);
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-
-    header {
-      background-color: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 1rem;
-      text-align: center;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-
-    nav {
-      display: flex;
-      background-color: var(--surface);
-      border-bottom: 1px solid var(--border);
-      overflow-x: auto;
-      sticky: top;
-    }
-
-    .nav-btn {
-      flex: 1;
-      padding: 1rem;
-      border: none;
-      background: none;
-      font-weight: 600;
-      color: #64748b;
-      cursor: pointer;
-      text-align: center;
-      white-space: nowrap;
-      border-bottom: 3px solid transparent;
-      transition: all 0.2s;
-    }
-
-    .nav-btn.active {
-      color: var(--primary);
-      border-bottom-color: var(--primary);
-    }
-
-    main {
-      flex: 1;
-      padding: 1rem;
-      max-width: 800px;
-      width: 100%;
-      margin: 0 auto;
-    }
-
-    .page {
-      display: none;
-    }
-
-    .page.active {
-      display: block;
-    }
-
-    h2 {
-      margin-bottom: 1rem;
-      font-size: 1.5rem;
-    }
-
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.5rem;
-      margin-bottom: 1rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-    }
-
-    .form-group {
-      margin-bottom: 1rem;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 500;
-      font-size: 0.9rem;
-    }
-
-    select, input {
-      width: 100%;
-      padding: 0.75rem;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-size: 1rem;
-      background: var(--surface);
-    }
-
-    button.btn {
-      background-color: var(--primary);
-      color: white;
-      padding: 0.75rem 1.5rem;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      width: 100%;
-      transition: background 0.2s;
-    }
-
-    button.btn:hover {
-      background-color: var(--primary-dark);
-    }
-
-    /* Scanner Specific Styles */
-    .scan-area {
-      position: relative;
-      width: 100%;
-      max-width: 400px;
-      aspect-ratio: 1 / 1;
-      margin: 1rem auto;
-      background: #000;
-      border-radius: 16px;
-      overflow: hidden;
-      border: 4px solid var(--border);
-    }
-
-    #cam-idle {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: #94a3b8;
-      text-align: center;
-      padding: 2rem;
-      cursor: pointer;
-    }
-
-    #scan-preview-img {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: none;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-    }
-
-    th, td {
-      padding: 0.75rem;
-      text-align: left;
-      border-bottom: 1px solid var(--border);
-    }
-
-    th {
-      background-color: #f1f5f9;
-      font-weight: 600;
-    }
-
-    /* Toast Notification */
-    #toast {
-      position: fixed;
-      bottom: 2rem;
-      left: 50%;
-      transform: translateX(-50%) translateY(100px);
-      background: #1e293b;
-      color: white;
-      padding: 0.75rem 1.5rem;
-      border-radius: 30px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      transition: transform 0.3s ease;
-      z-index: 1000;
-      pointer-events: none;
-      font-size: 0.9rem;
-    }
-
-    #toast.show {
-      transform: translateX(-50%) translateY(0);
-    }
-
-    .qr-card {
-      display: inline-flex;
-      flex-direction: column;
-      align-items: center;
-      border: 1px dashed var(--border);
-      padding: 1rem;
-      border-radius: 8px;
-      margin: 0.5rem;
-      background: #fafafa;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1B2B4B">
+<title>EduScan PH</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #1B2B4B;
+    --teal: #00BFA5;
+    --amber: #F5A623;
+    --red: #E53935;
+    --white: #FFFFFF;
+    --gray-50: #F0F4F8;
+    --gray-100: #E2E8F0;
+    --gray-400: #94A3B8;
+    --gray-600: #475569;
+    --gray-800: #1E293B;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 4px 24px rgba(27,43,75,0.12);
+    --shadow-lg: 0 8px 40px rgba(27,43,75,0.18);
+  }
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: var(--gray-50);
+    color: var(--gray-800);
+    min-height: 100dvh;
+    max-width: 430px;
+    margin: 0 auto;
+    overflow-x: hidden;
+  }
+  /* ===== LAYOUT ===== */
+  #app { display: flex; flex-direction: column; min-height: 100dvh; }
+  .topbar {
+    background: var(--navy);
+    color: var(--white);
+    padding: 16px 20px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+    transition: background 0.3s;
+  }
+  .topbar-title { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+  .topbar-sub { font-size: 11px; color: var(--teal); font-weight: 500; margin-top: 1px; transition: color 0.3s; }
+  .topbar-logo { font-size: 28px; }
+  .content { flex: 1; overflow-y: auto; padding: 0 0 90px; }
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 430px;
+    background: var(--white);
+    display: flex;
+    border-top: 1px solid var(--gray-100);
+    z-index: 200;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+  }
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    gap: 3px; padding: 10px 4px 12px; border: none; background: none;
+    cursor: pointer; font-family: 'Poppins', sans-serif;
+    font-size: 10px; font-weight: 500; color: var(--gray-400);
+    transition: color 0.2s;
+  }
+  .nav-btn.active { color: var(--teal); }
+  .nav-btn svg { width: 22px; height: 22px; }
+  /* ===== PAGE ===== */
+  .page { display: none; }
+  .page.active { display: block; }
+  /* ===== SCANNER PAGE ===== */
+  #page-scanner { background: var(--gray-50); }
+  .mode-toggle-wrap {
+    padding: 20px 20px 12px;
+    display: flex; gap: 10px;
+  }
+  .mode-btn {
+    flex: 1; padding: 14px 8px; border-radius: var(--radius-sm);
+    border: 2.5px solid var(--gray-100); background: var(--white);
+    font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; display: flex; align-items: center;
+    justify-content: center; gap: 6px;
+  }
+  .mode-btn.checkin.active {
+    border-color: var(--teal); background: var(--teal); color: var(--white);
+  }
+  .mode-btn.checkout.active {
+    border-color: var(--amber); background: var(--amber); color: var(--white);
+  }
+  .class-selector-wrap { padding: 0 20px 16px; }
+  .class-selector-wrap label { font-size: 11px; font-weight: 600; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
+  .class-selector-wrap select {
+    width: 100%; padding: 12px 14px; border-radius: var(--radius-sm);
+    border: 2px solid var(--gray-100); background: var(--white);
+    font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 500;
+    color: var(--gray-800); appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 14px center;
+  }
+  .scan-area-wrap { padding: 0 20px; }
+  .scan-area {
+    position: relative; border-radius: var(--radius);
+    overflow: hidden; background: var(--navy);
+    aspect-ratio: 1/1; width: 100%;
+  }
+  .scan-area video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .scan-area canvas { display: none; }
+  .scan-overlay {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  .scan-frame {
+    width: 65%; aspect-ratio: 1/1;
+    border: 3px solid var(--white);
+    border-radius: 20px;
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);
+    position: relative;
+  }
+  .scan-mode-badge {
+    position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+    padding: 4px 16px; border-radius: 100px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.3px;
+    background: var(--teal); color: var(--white);
+  }
+  .scan-mode-badge.checkout { background: var(--amber); }
+  .cam-start-btn {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 10px;
+    background: var(--navy); color: var(--white);
+    border: none; cursor: pointer; font-family: 'Poppins', sans-serif;
+    font-size: 14px; font-weight: 600;
+  }
+  .cam-start-btn svg { width: 48px; height: 48px; opacity: 0.7; }
+  .scan-processing-overlay {
+    position: absolute; inset: 0; background: rgba(27,43,75,0.85);
+    display: none; align-items: center; justify-content: center;
+    flex-direction: column; gap: 10px; color: white; font-size: 13px; font-weight: 600;
+  }
+  .scan-result {
+    margin: 14px 20px 0;
+    padding: 14px 16px; border-radius: var(--radius-sm);
+    display: flex; align-items: center; gap: 12px;
+    font-size: 13px; font-weight: 600;
+    background: var(--white);
+    border-left: 4px solid var(--gray-100);
+    min-height: 54px;
+    transition: all 0.3s;
+  }
+  .scan-result.success { border-left-color: var(--teal); background: #E6FAF8; color: #006B5E; }
+  .scan-result.checkout-success { border-left-color: var(--amber); background: #FFF8EC; color: #7A4E00; }
+  .scan-result.error { border-left-color: var(--red); background: #FEF2F2; color: #991B1B; }
+  .scan-result .res-icon { font-size: 22px; flex-shrink: 0; }
+  /* ===== STUDENTS PAGE ===== */
+  .page-header {
+    padding: 20px 20px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .page-header h2 { font-size: 18px; font-weight: 700; }
+  .btn-primary {
+    padding: 9px 16px; border-radius: var(--radius-sm);
+    background: var(--teal); color: var(--white); border: none;
+    font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; gap: 6px;
+  }
+  .btn-secondary {
+    padding: 9px 16px; border-radius: var(--radius-sm);
+    background: var(--gray-100); color: var(--gray-800); border: none;
+    font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600;
+    cursor: pointer;
+  }
+  .student-list { padding: 0 20px; display: flex; flex-direction: column; gap: 10px; }
+  .student-card {
+    background: var(--white); border-radius: var(--radius-sm);
+    padding: 14px 16px; display: flex; align-items: center; gap: 14px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+  }
+  .student-avatar {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: var(--navy); color: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 700; flex-shrink: 0;
+  }
+  .student-info { flex: 1; }
+  .student-name { font-size: 14px; font-weight: 600; }
+  .student-meta { font-size: 11px; color: var(--gray-400); margin-top: 1px; }
+  .student-actions { display: flex; gap: 6px; }
+  .icon-btn {
+    width: 34px; height: 34px; border-radius: 8px; border: none;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 14px;
+  }
+  .icon-btn.view { background: #E6FAF8; }
+  .icon-btn.del { background: #FEF2F2; }
+  /* ===== CLASSES PAGE ===== */
+  .class-list { padding: 0 20px; display: flex; flex-direction: column; gap: 10px; }
+  .class-card {
+    background: var(--white); border-radius: var(--radius-sm);
+    padding: 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+  }
+  .class-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+  .class-name { font-size: 15px; font-weight: 700; }
+  .class-meta { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+  .class-webhook { font-size: 11px; color: var(--gray-400); margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+  .class-webhook.ok { color: #006B5E; }
+  .class-stats { display: flex; gap: 10px; margin-top: 10px; }
+  .stat-pill {
+    flex: 1; background: var(--gray-50); border-radius: 8px; padding: 8px 10px; text-align: center;
+  }
+  .stat-pill .val { font-size: 18px; font-weight: 700; color: var(--navy); }
+  .stat-pill .lbl { font-size: 10px; color: var(--gray-400); font-weight: 500; }
+  /* ===== MODAL ===== */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    z-index: 300; display: none; align-items: flex-end; justify-content: center;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--white); border-radius: 24px 24px 0 0;
+    width: 100%; max-width: 430px;
+    padding: 24px 24px 40px;
+    max-height: 90dvh; overflow-y: auto;
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .modal-title { font-size: 17px; font-weight: 700; }
+  .modal-close { background: var(--gray-100); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 16px; }
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 11px; font-weight: 600; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
+  .form-input {
+    width: 100%; padding: 12px 14px; border-radius: var(--radius-sm);
+    border: 2px solid var(--gray-100); font-family: 'Poppins', sans-serif;
+    font-size: 14px; color: var(--gray-800); outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-input:focus { border-color: var(--teal); }
+  .form-hint { font-size: 11px; color: var(--gray-400); margin-top: 4px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .modal-actions .btn-primary { flex: 1; justify-content: center; padding: 13px; font-size: 14px; }
+  .modal-actions .btn-secondary { flex: 1; justify-content: center; padding: 13px; font-size: 14px; }
+  /* QR display */
+  .qr-display-wrap { text-align: center; padding: 10px 0 0; }
+  .qr-canvas-wrap { display: inline-block; background: var(--white); padding: 16px; border-radius: 16px; box-shadow: var(--shadow); margin-bottom: 14px; }
+  .qr-student-name { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+  .qr-student-meta { font-size: 12px; color: var(--gray-400); margin-bottom: 16px; }
+  .btn-print { background: var(--navy); color: var(--white); border: none; border-radius: var(--radius-sm); padding: 12px 28px; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; }
+  /* ===== EMPTY STATE ===== */
+  .empty-state { text-align: center; padding: 60px 30px; }
+  .empty-icon { font-size: 52px; margin-bottom: 14px; }
+  .empty-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .empty-sub { font-size: 13px; color: var(--gray-400); line-height: 1.5; }
+  /* ===== LOG PAGE ===== */
+  .log-filters { padding: 12px 20px; display: flex; gap: 8px; overflow-x: auto; }
+  .filter-chip { padding: 6px 14px; border-radius: 100px; border: 2px solid var(--gray-100); background: var(--white); font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; color: var(--gray-600); cursor: pointer; white-space: nowrap; }
+  .filter-chip.active { border-color: var(--teal); background: var(--teal); color: var(--white); }
+  .log-list { padding: 0 20px; display: flex; flex-direction: column; gap: 8px; }
+  .log-item { background: var(--white); border-radius: var(--radius-sm); padding: 12px 14px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+  .log-badge { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .log-badge.in { background: #E6FAF8; }
+  .log-badge.out { background: #FFF8EC; }
+  .log-info { flex: 1; }
+  .log-name { font-size: 13px; font-weight: 600; }
+  .log-detail { font-size: 11px; color: var(--gray-400); margin-top: 1px; }
+  .log-time { font-size: 11px; font-weight: 600; color: var(--gray-600); text-align: right; }
+  /* ===== TOAST ===== */
+  .toast {
+    position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+    background: var(--gray-800); color: var(--white);
+    padding: 10px 20px; border-radius: 100px; font-size: 13px; font-weight: 500;
+    z-index: 500; opacity: 0; transition: opacity 0.3s;
+    white-space: nowrap; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+  /* ===== TOPBAR MODE STYLES ===== */
+  .topbar.checkout-mode { background: #7A4E00; }
+  .topbar.checkin-mode { background: var(--navy); }
+  /* ===== SUMMARY PAGE ===== */
+  .summary-date-bar { padding: 14px 20px; display: flex; align-items: center; gap: 10px; }
+  .summary-date-btn { background: var(--gray-100); border: none; border-radius: 8px; padding: 8px 12px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .summary-date-inp { flex: 1; padding: 9px 12px; border-radius: 8px; border: 2px solid var(--gray-100); font-family: 'Poppins', sans-serif; font-size: 13px; }
+  .summary-cards { padding: 0 20px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .summary-card { background: var(--white); border-radius: var(--radius-sm); padding: 16px; text-align: center; box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
+  .summary-card .sc-val { font-size: 28px; font-weight: 700; color: var(--navy); }
+  .summary-card .sc-lbl { font-size: 11px; color: var(--gray-400); font-weight: 500; margin-top: 2px; }
+  .summary-card.teal .sc-val { color: var(--teal); }
+  .summary-card.amber .sc-val { color: var(--amber); }
+  .summary-section-title { padding: 4px 20px 8px; font-size: 12px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.5px; }
+  .summary-class-block { margin: 0 20px 12px; background: var(--white); border-radius: var(--radius-sm); overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
+  .summary-class-header { padding: 12px 14px; background: var(--navy); color: var(--white); display: flex; justify-content: space-between; align-items: center; }
+  .summary-class-name { font-size: 13px; font-weight: 700; }
+  .summary-class-counts { font-size: 11px; color: var(--teal); font-weight: 600; }
+  .summary-student-row { padding: 10px 14px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--gray-50); }
+  .summary-student-row:last-child { border-bottom: none; }
+  .summary-student-name { flex: 1; font-size: 13px; font-weight: 500; }
+  .status-chip { padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 700; }
+  .status-chip.in { background: #E6FAF8; color: #006B5E; }
+  .status-chip.out { background: #FFF8EC; color: #7A4E00; }
+  .status-chip.absent { background: var(--gray-100); color: var(--gray-400); }
+  /* ===== CSV IMPORT ===== */
+  .import-drop {
+    margin: 0 20px 16px; border: 2.5px dashed var(--gray-100); border-radius: var(--radius);
+    padding: 32px 20px; text-align: center; cursor: pointer; transition: border-color 0.2s;
+    background: var(--white);
+  }
+  .import-drop:hover, .import-drop.drag-over { border-color: var(--teal); background: #E6FAF8; }
+  .import-drop-icon { font-size: 36px; margin-bottom: 10px; }
+  .import-drop-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .import-drop-sub { font-size: 12px; color: var(--gray-400); }
+  .import-preview { margin: 0 20px 16px; }
+  .import-preview-table { width: 100%; border-collapse: collapse; font-size: 12px; background: var(--white); border-radius: var(--radius-sm); overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
+  .import-preview-table th { background: var(--navy); color: var(--white); padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; }
+  .import-preview-table td { padding: 9px 12px; border-bottom: 1px solid var(--gray-50); }
+  .import-preview-table tr:last-child td { border-bottom: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
 </head>
 <body>
 
-  <header>
-    <h1>EduScan PH</h1>
-    <p style="font-size: 0.85rem; color: #64748b;">Secure Attendee Tracking System</p>
-  </header>
+<div id="app">
+  <div class="topbar" id="topbar">
+    <div>
+      <div class="topbar-title">📋 EduScan PH</div>
+      <div class="topbar-sub" id="topbar-sub">Mode: Arrival ☀️</div>
+    </div>
+  </div>
 
-  <nav>
-    <button class="nav-btn active" id="nav-scanner" onclick="showPage('scanner')">Scanner</button>
-    <button class="nav-btn" id="nav-classes" onclick="showPage('classes')">Classes</button>
-    <button class="nav-btn" id="nav-students" onclick="showPage('students')">Students</button>
-    <button class="nav-btn" id="nav-log" onclick="showPage('log')">Logs</button>
-    <button class="nav-btn" id="nav-summary" onclick="showPage('summary')">Summary</button>
-  </nav>
-
-  <main>
-    <!-- SCANNER PAGE -->
-    <div id="page-scanner" class="page active">
-      <div class="card">
-        <div class="form-group">
-          <label for="scanner-class-select">Active Class / Section Session</label>
-          <select id="scanner-class-select" onchange="onClassChange()">
-            <option value="">-- Choose Class Section --</option>
-          </select>
-        </div>
-
+  <div class="content">
+    <div class="page active" id="page-scanner">
+      <div class="mode-toggle-wrap">
+        <button class="mode-btn checkin active" id="btn-checkin" onclick="setMode('arrival')">☀️ Arrival</button>
+        <button class="mode-btn checkout" id="btn-checkout" onclick="setMode('departure')">🌙 Departure</button>
+      </div>
+      <div class="class-selector-wrap">
+        <label>Class / Section</label>
+        <select id="scanner-class-select" onchange="onClassChange()">
+          <option value="">— Choose a class —</option>
+        </select>
+      </div>
+      <div class="scan-area-wrap">
         <div class="scan-area" id="scan-area">
-          <!-- Continuous camera stream element -->
-          <video id="scan-video" autoplay playsinline style="width:100%; height:100%; object-fit:cover; display:none;"></video>
-          <!-- Hidden canvas used context extraction framework for jsQR -->
           <canvas id="qr-canvas" style="display:none"></canvas>
-          <!-- Fallback image layout element -->
-          <img id="scan-preview-img" alt="Scan preview">
+          <img id="scan-preview-img" style="width:100%;height:100%;object-fit:cover;display:none;">
           
-          <div id="cam-idle">
-            <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-bottom:0.5rem;">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0110 8.186v.44M18 10.5V18a2 2 0 01-2 2H8a2 2 0 01-2-2v-7.5M12 3v3m0 12v3m9-9h-3M6 12H3"></path>
-            </svg>
-            <p id="idle-notice-text">Select a Class Section to Activate Viewfinder</p>
+          <div class="cam-start-btn" id="cam-idle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="52" height="52"><rect x="2" y="7" width="20" height="14" rx="3"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><circle cx="12" cy="14" r="3"/></svg>
+            <span>Tap to scan QR code</span>
+            <span style="font-size:11px;opacity:0.5;font-weight:400;margin-top:2px">Opens your device camera</span>
           </div>
-        </div>
 
-        <div id="scan-result-box"></div>
+          <div id="scan-processing" class="scan-processing-overlay">
+            <div style="width:36px;height:36px;border:3px solid rgba(255,255,255,0.3);border-top-color:var(--teal);border-radius:50%;animation:spin 0.8s linear infinite"></div>
+            Reading QR code...
+          </div>
+          <div class="scan-mode-badge" id="scan-badge">ARRIVAL</div>
+        </div>
+        <input type="file" id="qr-file-input" accept="image/*" capture="environment" style="display:none" onchange="handleQRPhoto(event)">
+        <button onclick="triggerScan()" style="margin-top:12px;width:100%;padding:16px;border-radius:var(--radius-sm);border:none;background:var(--teal);color:white;font-family:'Poppins',sans-serif;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+          📷 Open Camera to Scan
+        </button>
+      </div>
+      <div class="scan-result" id="scan-result">
+        <span class="res-icon">📷</span>
+        <span id="scan-result-text">Point the camera at a student's QR code</span>
       </div>
     </div>
 
-    <!-- CLASSES CONFIGURATION PAGE -->
-    <div id="page-classes" class="page">
-      <div class="card">
-        <h2>Add New Class Section</h2>
-        <div class="form-group">
-          <label for="class-name-input">Class Section Designation Name</label>
-          <input type="text" id="class-name-input" placeholder="e.g., Grade 7 - Sampaguita">
-        </div>
-        <button class="btn" onclick="addClass()">Save Class Group</button>
+    <div class="page" id="page-students">
+      <div class="page-header">
+        <h2>Students</h2>
+        <button class="btn-primary" onclick="openAddStudent()">+ Add Student</button>
       </div>
-      <div class="card">
-        <h2>Registered Classes</h2>
-        <table id="classes-table">
-          <thead>
-            <tr><th>Section Title ID</th><th>Action</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+      <div class="student-list" id="student-list"></div>
     </div>
 
-    <!-- STUDENTS CONFIGURATION PAGE -->
-    <div id="page-students" class="page">
-      <div class="card">
-        <h2>Register Student Roster</h2>
-        <div class="form-group">
-          <label for="student-class-select">Assign to Class Section</label>
-          <select id="student-class-select"></select>
-        </div>
-        <div class="form-group">
-          <label for="student-name-input">Full Registered Name</label>
-          <input type="text" id="student-name-input" placeholder="e.g., Juan Dela Cruz">
-        </div>
-        <button class="btn" onclick="addStudent()">Save & Generate QR Identity</button>
+    <div class="page" id="page-classes">
+      <div class="page-header">
+        <h2>Classes</h2>
+        <button class="btn-primary" onclick="openAddClass()">+ Add Class</button>
       </div>
-      <div class="card">
-        <h2>Roster & Generated Credentials</h2>
-        <div id="students-qr-container" style="display: flex; flex-wrap: wrap; justify-content: center;"></div>
-      </div>
+      <div class="class-list" id="class-list"></div>
     </div>
 
-    <!-- LIVE RUNNING LOGS PAGE -->
-    <div id="page-log" class="page">
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-          <h2>Real-Time Attendance Stream</h2>
-          <button class="btn" style="width:auto; padding:0.5rem 1rem; background-color:var(--danger);" onclick="clearLogs()">Wipe All System Logs</button>
-        </div>
-        <table>
-          <thead>
-            <tr><th>Timestamp</th><th>Class Section</th><th>Student Name</th></tr>
-          </thead>
-          <tbody id="logs-table-body"></tbody>
-        </table>
+    <div class="page" id="page-log">
+      <div class="page-header">
+        <h2>Attendance Log</h2>
+        <button class="btn-secondary" onclick="exportLog()" style="font-size:12px;padding:8px 12px">⬇ Export</button>
       </div>
+      <div class="log-filters">
+        <button class="filter-chip active" onclick="filterLog('all',this)">All</button>
+        <button class="filter-chip" onclick="filterLog('arrival',this)">Arrival</button>
+        <button class="filter-chip" onclick="filterLog('departure',this)">Departure</button>
+      </div>
+      <div class="log-list" id="log-list"></div>
     </div>
 
-    <!-- DATA SUMMARY METRICS PAGE -->
-    <div id="page-summary" class="page">
-      <div class="card">
-        <h2>Class Logs Summary Analytics Matrix</h2>
-        <div id="summary-analytics-content"></div>
+    <div class="page" id="page-summary">
+      <div class="page-header">
+        <h2>Daily Summary</h2>
+        <button class="btn-secondary" onclick="exportSummaryCSV()" style="font-size:12px;padding:8px 12px">⬇ Export</button>
+      </div>
+      <div class="summary-date-bar">
+        <button class="summary-date-btn" onclick="shiftSummaryDate(-1)">‹</button>
+        <input type="date" class="summary-date-inp" id="summary-date" onchange="renderSummary()">
+        <button class="summary-date-btn" onclick="shiftSummaryDate(1)">›</button>
+      </div>
+      <div class="summary-cards" id="summary-cards"></div>
+      <div id="summary-body"></div>
+    </div>
+
+    <div class="page" id="page-import">
+      <div class="page-header">
+        <h2>Import Students</h2>
+      </div>
+      <div class="import-drop" id="import-drop" onclick="document.getElementById('csv-file-input').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleCSVDrop(event)">
+        <div class="import-drop-icon">📂</div>
+        <div class="import-drop-title">Tap to upload CSV file</div>
+        <div class="import-drop-sub">or drag and drop here</div>
+      </div>
+      <input type="file" id="csv-file-input" accept=".csv" style="display:none" onchange="handleCSVFile(event)">
+      <div style="margin:0 20px 16px;background:var(--white);border-radius:var(--radius-sm);padding:14px 16px;font-size:12px;color:var(--gray-600);line-height:1.8;box-shadow:0 1px 6px rgba(0,0,0,0.06)">
+        <div style="font-weight:700;color:var(--gray-800);margin-bottom:6px">📋 CSV Format</div>
+        Your CSV must have these columns in order:<br>
+        <code style="background:var(--gray-50);padding:6px 10px;border-radius:6px;display:block;margin-top:8px;font-size:11px;color:var(--navy)">Name, Student ID, Class Name</code>
+        <div style="margin-top:8px;color:var(--gray-400)">Example:<br>Juan dela Cruz, 123456, Grade 7 - Sampaguita<br>Maria Santos, 789012, Grade 7 - Sampaguita</div>
+      </div>
+      <div class="import-preview" id="import-preview"></div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn active" id="nav-scanner" onclick="showPage('scanner')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h2v2h-2zm2 2h3v3h-3zm0-4h4v2h-4z"/></svg>
+      Scan
+    </button>
+    <button class="nav-btn" id="nav-students" onclick="showPage('students')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><path d="M16 3.13a4 4 0 010 7.75"/><path d="M21 21v-2a4 4 0 00-3-3.85"/></svg>
+      Students
+    </button>
+    <button class="nav-btn" id="nav-classes" onclick="showPage('classes')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>
+      Classes
+    </button>
+    <button class="nav-btn" id="nav-summary" onclick="showPage('summary')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      Summary
+    </button>
+    <button class="nav-btn" id="nav-import" onclick="showPage('import')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+      Import
+    </button>
+  </nav>
+</div>
+
+<div class="modal-backdrop" id="modal-student">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add Student</div>
+      <button class="modal-close" onclick="closeModal('modal-student')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Full Name</label>
+      <input class="form-input" id="inp-student-name" placeholder="e.g. Juan dela Cruz" type="text">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Student ID / LRN</label>
+      <input class="form-input" id="inp-student-id" placeholder="e.g. 123456789012" type="text">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Class / Section</label>
+      <select class="form-input" id="inp-student-class">
+        <option value="">— No class assigned —</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('modal-student')">Cancel</button>
+      <button class="btn-primary" onclick="saveStudent()" style="flex:1;justify-content:center;padding:13px">Save & Generate QR</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-qr">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Student QR Code</div>
+      <button class="modal-close" onclick="closeModal('modal-qr')">✕</button>
+    </div>
+    <div class="qr-display-wrap">
+      <div class="qr-canvas-wrap" id="qr-render"></div>
+      <div class="qr-student-name" id="qr-student-name"></div>
+      <div class="qr-student-meta" id="qr-student-meta"></div>
+      <button class="btn-print" onclick="printQR()">🖨 Print QR Card</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-class">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add Class</div>
+      <button class="modal-close" onclick="closeModal('modal-class')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Class Name / Section</label>
+      <input class="form-input" id="inp-class-name" placeholder="e.g. Grade 7 - Sampaguita" type="text">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Teacher Name</label>
+      <input class="form-input" id="inp-class-teacher" placeholder="e.g. Ma'am Santos" type="text">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Google Sheets Webhook URL</label>
+      <input class="form-input" id="inp-class-webhook" placeholder="https://script.google.com/macros/..." type="url">
+      <div class="form-hint">Paste the Google Apps Script deployment web app URL for this class sheet. <span style="color:var(--teal);cursor:pointer" onclick="openModal('modal-webhook-help')">How to set up?</span></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('modal-class')">Cancel</button>
+      <button class="btn-primary" onclick="saveClass()" style="flex:1;justify-content:center;padding:13px">Save Class</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-webhook-help">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📋 Google Sheets Setup Guide</div>
+      <button class="modal-close" onclick="closeModal('modal-webhook-help')">✕</button>
+    </div>
+    <div style="font-size:13px;line-height:1.7;color:var(--gray-600)">
+      <p style="font-weight:700;color:var(--gray-800);margin-bottom:10px">Follow these steps once per class:</p>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:10px"><div style="width:24px;height:24px;border-radius:50%;background:var(--teal);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">1</div><div><strong>Create a Google Sheet</strong> — Name it after your class section.</div></div>
+        <div style="display:flex;gap:10px"><div style="width:24px;height:24px;border-radius:50%;background:var(--teal);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">2</div><div>Go to <strong>Extensions → Apps Script</strong> in that spreadsheet.</div></div>
+        <div style="display:flex;gap:10px"><div style="width:24px;height:24px;border-radius:50%;background:var(--teal);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">3</div><div><strong>Paste this script</strong> exactly and click Save (💾 icon):</div></div>
+      </div>
+      <pre style="background:var(--gray-50);border-radius:10px;padding:14px;font-size:11px;overflow-x:auto;margin:12px 0;color:var(--navy);line-height:1.6">function doGet(e) {
+  var sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getActiveSheet();
+  var p = e.parameter;
+  sheet.appendRow([
+    new Date(), 
+    p.student,
+    p.studentId, 
+    p.mode,
+    p.className
+  ]);
+  return ContentService
+    .createTextOutput("OK");
+}</pre>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px">
+        <div style="display:flex;gap:10px"><div style="width:24px;height:24px;border-radius:50%;background:var(--teal);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">4</div><div>Click <strong>Deploy → New Deployment</strong> at the top right.</div></div>
+        <div style="display:flex;gap:10px"><div style="width:24px;height:24px;border-radius:50%;background:var(--teal);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">5</div><div>Select type: <strong>Web App</strong>. Set Execute as: <strong>Me</strong>, and Who has access: <strong>Anyone</strong>.</div></div>
+        <div style="display:flex;gap:10px"><div style="width:24px;height:24px;border-radius:50%;background:var(--teal);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">6</div><div>Authorize permissions, <strong>Copy the Web App URL</strong>, and paste it here under Class setup!</div></div>
       </div>
     </div>
-  </main>
+    <div class="modal-actions" style="margin-top:20px">
+      <button class="btn-primary" onclick="closeModal('modal-webhook-help')" style="flex:1;justify-content:center;padding:13px">Got it!</button>
+    </div>
+  </div>
+</div>
 
-  <div id="toast">Message notification placeholder</div>
+<div class="toast" id="toast"></div>
 
-  <script>
-    // ===== DATA MANAGEMENT CORE =====
-    let classes = JSON.parse(localStorage.getItem('edu_classes')) || [];
-    let students = JSON.parse(localStorage.getItem('edu_students')) || [];
-    let logs = JSON.parse(localStorage.getItem('edu_logs')) || [];
+<script>
+// ===== STATE MANAGEMENT =====
+let students = JSON.parse(localStorage.getItem('eduscan_students') || '[]');
+let classes = JSON.parse(localStorage.getItem('eduscan_classes') || '[]');
+let logs = JSON.parse(localStorage.getItem('eduscan_logs') || '[]');
+let currentMode = 'arrival';
+let currentClassId = null;
+let logFilter = 'all';
 
-    let currentClassId = null;
-    let cameraStream = null;
-    let scanning = false;
-    let lastScanned = null;
-    let lastScannedTime = 0;
+// Backward compatibility helper functions for old logs
+const isArrivalMode = (m) => m === 'arrival' || m === 'checkin';
+const isDepartureMode = (m) => m === 'departure' || m === 'checkout';
 
-    function saveState() {
-      localStorage.setItem('edu_classes', JSON.stringify(classes));
-      localStorage.setItem('edu_students', JSON.stringify(students));
-      localStorage.setItem('edu_logs', JSON.stringify(logs));
-    }
+function save() {
+  localStorage.setItem('eduscan_students', JSON.stringify(students));
+  localStorage.setItem('eduscan_classes', JSON.stringify(classes));
+  localStorage.setItem('eduscan_logs', JSON.stringify(logs));
+}
 
-    // ===== TOAST UTILITY =====
-    function showToast(message) {
-      const toast = document.getElementById('toast');
-      toast.innerText = message;
-      toast.classList.add('show');
-      setTimeout(() => { toast.classList.remove('show'); }, 3000);
-    }
+// ===== NAVIGATION =====
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.getElementById('nav-' + page).classList.add('active');
+  if (page === 'students') renderStudents();
+  if (page === 'classes') renderClasses();
+  if (page === 'log') renderLog();
+  if (page === 'summary') renderSummary();
+}
 
-    // ===== UI PAGE CONTROLLER SWITCH =====
-    function showPage(page) {
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById('page-' + page).classList.add('active');
-      document.getElementById('nav-' + page).classList.add('active');
-      
-      if (page === 'scanner' && currentClassId) {
-        startCamera();
+// ===== SELECTION MODE =====
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('btn-checkin').classList.toggle('active', mode === 'arrival');
+  document.getElementById('btn-checkout').classList.toggle('active', mode === 'departure');
+  
+  const badge = document.getElementById('scan-badge');
+  badge.textContent = mode === 'arrival' ? 'ARRIVAL' : 'DEPARTURE';
+  badge.className = 'scan-mode-badge' + (mode === 'departure' ? ' checkout' : '');
+  
+  document.getElementById('topbar').className = 'topbar ' + (mode === 'arrival' ? 'checkin-mode' : 'checkout-mode');
+  document.getElementById('topbar-sub').textContent = mode === 'arrival' ? 'Mode: Arrival ☀️' : 'Mode: Departure 🌙';
+  resetScanResult();
+}
+
+// ===== NATIVE IMAGE SCANNING UTILS =====
+function triggerScan() {
+  const cls = document.getElementById('scanner-class-select').value;
+  if (!cls) { showToast('Please select a class first'); return; }
+  const inp = document.getElementById('qr-file-input');
+  inp.value = '';
+  inp.click();
+}
+
+function handleQRPhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const processing = document.getElementById('scan-processing');
+  const idle = document.getElementById('cam-idle');
+  const previewImg = document.getElementById('scan-preview-img');
+  processing.style.display = 'flex';
+  idle.style.display = 'none';
+
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const dataUrl = ev.target.result;
+    previewImg.src = dataUrl;
+    previewImg.style.display = 'block';
+
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.getElementById('qr-canvas');
+      const MAX = 800;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        const ratio = Math.min(MAX / w, MAX / h);
+        w = Math.round(w * ratio);
+        h = Math.round(h * ratio);
+      }
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      const imageData = ctx.getImageData(0, 0, w, h);
+      const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+
+      processing.style.display = 'none';
+
+      if (code) {
+        handleQRScan(code.data);
       } else {
-        stopCamera();
+        showScanResult('error', '❌', 'No QR code detected — adjust lighting or match focus');
+        setTimeout(() => {
+          previewImg.style.display = 'none';
+          idle.style.display = 'flex';
+        }, 2200);
       }
-      
-      if (page === 'students') renderStudents();
-      if (page === 'classes') renderClasses();
-      if (page === 'log') renderLog();
-      if (page === 'summary') renderSummary();
-    }
-
-    function onClassChange() {
-      currentClassId = document.getElementById('scanner-class-select').value || null;
-      resetScanResult();
-      if (currentClassId) {
-        document.getElementById('idle-notice-text').innerText = "Camera loop idling. Click inside layout box to kickstart engine.";
-        startCamera();
-      } else {
-        document.getElementById('idle-notice-text').innerText = "Select a Class Section to Activate Viewfinder";
-        stopCamera();
-      }
-    }
-
-    function resetScanResult() {
-      document.getElementById('scan-result-box').innerHTML = '';
-      lastScanned = null;
-    }
-
-    // ===== WEBCAM & SCANNING ENGINE =====
-    async function startCamera() {
-      const video = document.getElementById('scan-video');
-      const idle = document.getElementById('cam-idle');
-      const previewImg = document.getElementById('scan-preview-img');
-      
-      if (!currentClassId) {
-        showToast('Please select an active Class / Section configuration setting!');
-        return;
-      }
-
-      previewImg.style.display = 'none';
-      if (cameraStream) stopCamera();
-
-      try {
-        cameraStream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: 'environment' } 
-        });
-        video.srcObject = cameraStream;
-        video.style.display = 'block';
-        idle.style.display = 'none';
-        scanning = true;
-        requestAnimationFrame(scanFrameLoop);
-      } catch (err) {
-        console.error("Camera access error:", err);
-        showToast("Webcam access rejected or blockaded. Verify permissions layout.");
-      }
-    }
-
-    function stopCamera() {
-      scanning = false;
-      if (cameraStream) {
-        cameraStream.getTracks().forEach(track => track.stop());
-        cameraStream = null;
-      }
-      const video = document.getElementById('scan-video');
-      if (video) {
-        video.style.display = 'none';
-        video.srcObject = null;
-      }
-      document.getElementById('cam-idle').style.display = 'flex';
-    }
-
-    function scanFrameLoop() {
-      if (!scanning) return;
-      const video = document.getElementById('scan-video');
-      
-      if (video.readyState === video.HAVE_CURRENT_DATA || video.readyState === video.HAVE_ENOUGH_DATA) {
-        const canvas = document.getElementById('qr-canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
-
-        if (code) {
-          const now = Date.now();
-          // Anti-debounce threshold pattern (3-second buffer logic window)
-          if (code.data !== lastScanned || (now - lastScannedTime > 3000)) {
-            lastScanned = code.data;
-            lastScannedTime = now;
-            handleQRScan(code.data);
-          }
-        }
-      }
-      requestAnimationFrame(scanFrameLoop);
-    }
-
-    document.getElementById('scan-area').onclick = function() {
-      if (!scanning && currentClassId) startCamera();
     };
+    img.onerror = () => {
+      processing.style.display = 'none';
+      showScanResult('error', '❌', 'Failed reading selected snapshot');
+    };
+    img.src = dataUrl;
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
 
-    // ===== DATA DECODER & PROCESSING HANDLER =====
-    function handleQRScan(rawData) {
-      try {
-        const payload = JSON.parse(rawData);
-        
-        // Validation check rule 1: App schema identity verification matching
-        if (!payload.eduscan) {
-          showToast("Rejected: Unknown or foreign QR structure framework signature.");
-          return;
-        }
+// ===== QR ATTENDANCE SCAN PROCESSING WITH DUPLICATE FILTERING =====
+function handleQRScan(data) {
+  let parsed;
+  try { parsed = JSON.parse(data); } catch(e) { showScanResult('error', '❌', 'Invalid QR framework structure'); return; }
+  if (!parsed.eduscan) { showScanResult('error', '❌', 'Unknown badge signature error'); return; }
+  
+  const student = students.find(s => s.id === parsed.id);
+  if (!student) { showScanResult('error', '❌', 'Student profile record missing from system database'); return; }
 
-        // Validation check rule 2: System session validation execution state
-        if (!currentClassId) {
-          showToast("Error: No Class Section session context selected.");
-          return;
-        }
+  // --- DUPLICATE CHECK LOGIC ---
+  const todayDateString = new Date().toDateString();
+  const alreadyLoggedToday = logs.some(l => {
+    const isSameStudent = l.studentId === student.id;
+    const isSameClass = l.classId === currentClassId;
+    const isSameDay = new Date(l.time).toDateString() === todayDateString;
+    
+    // Checks standard match types dynamically adapting legacy configurations
+    const matchesMode = (currentMode === 'arrival' && isArrivalMode(l.mode)) || 
+                        (currentMode === 'departure' && isDepartureMode(l.mode));
+                        
+    return isSameStudent && isSameClass && isSameDay && matchesMode;
+  });
 
-        // Validation check rule 3: Cross reference index lookup inside localStorage target array
-        const matchStudent = students.find(s => s.id === payload.id && s.classId === currentClassId);
-        
-        if (!matchStudent) {
-          showToast("Query Error: Student token structural match profile missing from target section.");
-          document.getElementById('scan-result-box').innerHTML = `
-            <div style="background:#fee2e2; color:#991b1b; padding:1rem; border-radius:8px; margin-top:1rem; border:1px solid #fca5a5;">
-              <strong>⚠️ Scan Rejection Match Fault</strong><br>
-              ID Target Profile matches no student parameters inside this active class roster.
-            </div>`;
-          return;
-        }
+  if (alreadyLoggedToday) {
+    const modeLabel = currentMode === 'arrival' ? 'Arrival ☀️' : 'Departure 🌙';
+    showScanResult('error', '⚠️', `${student.name} is already registered for ${modeLabel} today.`);
+    showToast(`Rejected duplicate entry request.`);
+    return;
+  }
 
-        // Append log processing record
-        const logEntry = {
-          timestamp: new Date().toISOString(),
-          classId: currentClassId,
-          className: classes.find(c => c.id === currentClassId).name,
-          studentId: matchStudent.id,
-          studentName: matchStudent.name
-        };
+  const cls = classes.find(c => c.id === currentClassId);
+  const log = {
+    id: Date.now().toString(),
+    studentId: student.id,
+    studentName: student.name,
+    classId: currentClassId,
+    className: cls ? cls.name : 'Unlisted Class Group',
+    mode: currentMode,
+    time: new Date().toISOString()
+  };
+  
+  logs.unshift(log);
+  save();
 
-        logs.unshift(logEntry);
-        saveState();
+  const icon = currentMode === 'arrival' ? '☀️' : '🌙';
+  const type = currentMode === 'arrival' ? 'success' : 'checkout-success';
+  const timeStr = new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+  
+  showScanResult(type, icon, `${student.name} — ${currentMode === 'arrival' ? 'Arrived' : 'Departed'} at ${timeStr}`);
 
-        // Render responsive verification window UI highlight box frame elements
-        if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // Device notification rumble pass
+  if (cls && cls.webhook) sendToSheet(cls.webhook, log);
+}
 
-        document.getElementById('scan-result-box').innerHTML = `
-          <div style="background:#dcfce7; color:#166534; padding:1rem; border-radius:8px; margin-top:1rem; border:1px solid #bbf7d0;">
-            <strong style="font-size:1.1rem;">✓ Attendance Log Entry Authenticated</strong><br>
-            <p style="margin-top:0.25rem;"><strong>Name:</strong> ${matchStudent.name}</p>
-            <p><strong>Timestamp:</strong> ${new Date(logEntry.timestamp).toLocaleTimeString()}</p>
-          </div>`;
-          
-        showToast(`Logged successfully: ${matchStudent.name}`);
+function showScanResult(type, icon, text) {
+  const el = document.getElementById('scan-result');
+  el.className = 'scan-result ' + type;
+  el.querySelector('.res-icon').textContent = icon;
+  document.getElementById('scan-result-text').textContent = text;
+}
 
-      } catch (err) {
-        console.error(err);
-        showToast("Error parsing code data profile framework payload.");
-      }
+function resetScanResult() {
+  showScanResult('', '📷', 'Ready to snap student record QR badges');
+}
+
+function onClassChange() {
+  currentClassId = document.getElementById('scanner-class-select').value || null;
+  resetScanResult();
+}
+
+// ===== REAL-TIME GOOGLE CLOUD INTEGRATION SCRIPT LINK =====
+async function sendToSheet(webhookUrl, log) {
+  const readableMode = log.mode === 'arrival' ? 'Arrival' : 'Departure';
+  const url = `${webhookUrl}?student=${encodeURIComponent(log.studentName)}&studentId=${encodeURIComponent(log.studentId)}&mode=${encodeURIComponent(readableMode)}&className=${encodeURIComponent(log.className)}`;
+  try {
+    await fetch(url, { method: 'GET', mode: 'no-cors' });
+  } catch(e) { /* Local sandbox safe fallthrough if connectivity drops */ }
+}
+
+// ===== STUDENT PROFILES MANAGEMENT =====
+function renderStudents() {
+  const list = document.getElementById('student-list');
+  if (!students.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">🎒</div><div class="empty-title">No profiles found</div><div class="empty-sub">Add accounts manually or drop formatted tabular spreadsheets via import panels.</div></div>`;
+    return;
+  }
+  list.innerHTML = students.map(s => {
+    const initials = s.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const cls = classes.find(c => c.id === s.classId);
+    return `<div class="student-card">
+      <div class="student-avatar">${initials}</div>
+      <div class="student-info">
+        <div class="student-name">${s.name}</div>
+        <div class="student-meta">ID: ${s.studentId || 'N/A'} · ${cls ? cls.name : 'Unassigned'}</div>
+      </div>
+      <div class="student-actions">
+        <button class="icon-btn view" onclick="showQR('${s.id}')">🔳</button>
+        <button class="icon-btn del" onclick="deleteStudent('${s.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openAddStudent() {
+  document.getElementById('inp-student-name').value = '';
+  document.getElementById('inp-student-id').value = '';
+  populateClassSelects();
+  openModal('modal-student');
+}
+
+function saveStudent() {
+  const name = document.getElementById('inp-student-name').value.trim();
+  const sid = document.getElementById('inp-student-id').value.trim();
+  const classId = document.getElementById('inp-student-class').value;
+  if (!name) { showToast('Profile moniker target entry required'); return; }
+  const student = { id: Date.now().toString(), name, studentId: sid, classId };
+  students.push(student);
+  save();
+  closeModal('modal-student');
+  showPage('students');
+  setTimeout(() => showQR(student.id), 200);
+}
+
+function deleteStudent(id) {
+  if (!confirm('Permanently remove this student profile configuration?')) return;
+  students = students.filter(s => s.id !== id);
+  save(); renderStudents();
+}
+
+let currentQRStudent = null;
+
+function showQR(id) {
+  const s = students.find(st => st.id === id);
+  if (!s) return;
+  currentQRStudent = s;
+  document.getElementById('qr-student-name').textContent = s.name;
+  const cls = classes.find(c => c.id === s.classId);
+  document.getElementById('qr-student-meta').textContent = (s.studentId ? `ID: ${s.studentId}` : '') + (cls ? ` · ${cls.name}` : '');
+  const wrap = document.getElementById('qr-render');
+  wrap.innerHTML = '';
+  const qrData = JSON.stringify({ eduscan: true, id: s.id, name: s.name, studentId: s.studentId });
+  new QRCode(wrap, { text: qrData, width: 220, height: 220, colorDark: '#1B2B4B', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
+  openModal('modal-qr');
+}
+
+function printQR() {
+  if (!currentQRStudent) return;
+  setTimeout(() => {
+    const wrap = document.getElementById('qr-render');
+    const img = wrap.querySelector('img');
+    const canvas = wrap.querySelector('canvas');
+    let qrSrc = '';
+    if (img && img.src) qrSrc = img.src;
+    else if (canvas) qrSrc = canvas.toDataURL('image/png');
+    if (!qrSrc) { showToast('Rendering engine bottlenecked, tap again'); return; }
+
+    const s = currentQRStudent;
+    const cls = classes.find(c => c.id === s.classId);
+    const clsName = cls ? cls.name : '';
+    const win = window.open('', '_blank');
+    win.document.write(`<!DOCTYPE html><html><head><title>QR Card - ${s.name}</title>
+    <style>
+      body { font-family: Arial, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #fff; }
+      .card { text-align: center; border: 2px solid #1B2B4B; border-radius: 16px; padding: 24px 32px; display: inline-block; }
+      .school { font-size: 12px; color: #94A3B8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+      img { width: 220px; height: 220px; display: block; margin: 0 auto; }
+      .name { font-size: 20px; font-weight: 700; color: #1B2B4B; margin-top: 14px; }
+      .meta { font-size: 13px; color: #475569; margin-top: 4px; }
+      .badge { display: inline-block; margin-top: 12px; background: #1B2B4B; color: #00BFA5; padding: 4px 16px; border-radius: 100px; font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+    </style></head><body>
+    <div class="card">
+      <div class="school">EduScan PH · Student Identity System</div>
+      <img src="${qrSrc}" alt="QR Badge Source Target">
+      <div class="name">${s.name}</div>
+      <div class="meta">${s.studentId ? 'ID: ' + s.studentId : ''}${clsName ? ' · ' + clsName : ''}</div>
+      <div class="badge">SCAN FOR ATTENDANCE SYSTEM INDEX</div>
+    </div>
+    <script>window.onload = function(){ window.print(); }<\/script>
+    </body></html>`);
+    win.document.close();
+  }, 300);
+}
+
+// ===== SECTIONS CONFIGURATION =====
+function renderClasses() {
+  const list = document.getElementById('class-list');
+  if (!classes.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">🏫</div><div class="empty-title">No classes configured</div><div class="empty-sub">Instantiate track indices linked up cleanly to centralized sheets.</div></div>`;
+    return;
+  }
+  list.innerHTML = classes.map(c => {
+    const count = students.filter(s => s.classId === c.id).length;
+    const todayLogs = logs.filter(l => l.classId === c.id && new Date(l.time).toDateString() === new Date().toDateString());
+    const arrivals = todayLogs.filter(l => isArrivalMode(l.mode)).length;
+    return `<div class="class-card">
+      <div class="class-card-header">
+        <div>
+          <div class="class-name">${c.name}</div>
+          <div class="class-meta">👩‍🏫 ${c.teacher || 'No teacher configured'}</div>
+          <div class="class-webhook ${c.webhook ? 'ok' : ''}">${c.webhook ? '✅ Sheets Sync Active' : '⚠️ Unbound Data Endpoint'}</div>
+        </div>
+        <button class="icon-btn del" onclick="deleteClass('${c.id}')">🗑</button>
+      </div>
+      <div class="class-stats">
+        <div class="stat-pill"><div class="val">${count}</div><div class="lbl">Students</div></div>
+        <div class="stat-pill"><div class="val">${arrivals}</div><div class="lbl">Arrivals Today</div></div>
+        <div class="stat-pill"><div class="val">${todayLogs.length}</div><div class="lbl">Total Logs Today</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openAddClass() {
+  document.getElementById('inp-class-name').value = '';
+  document.getElementById('inp-class-teacher').value = '';
+  document.getElementById('inp-class-webhook').value = '';
+  openModal('modal-class');
+}
+
+function saveClass() {
+  const name = document.getElementById('inp-class-name').value.trim();
+  const teacher = document.getElementById('inp-class-teacher').value.trim();
+  const webhook = document.getElementById('inp-class-webhook').value.trim();
+  if (!name) { showToast('Please type structural group name identity'); return; }
+  classes.push({ id: Date.now().toString(), name, teacher, webhook });
+  save();
+  closeModal('modal-class');
+  populateClassSelects();
+  renderClasses();
+  showToast('Class parameters instantiated!');
+}
+
+function deleteClass(id) {
+  if (!confirm('Drop execution bounds container structural frame?')) return;
+  classes = classes.filter(c => c.id !== id);
+  save(); renderClasses(); populateClassSelects();
+}
+
+function populateClassSelects() {
+  const opts = classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  document.getElementById('inp-student-class').innerHTML = '<option value="">— No class assigned —</option>' + opts;
+  document.getElementById('scanner-class-select').innerHTML = '<option value="">— Choose a class —</option>' + opts;
+}
+
+// ===== REALTIME LOG INDEX PANEL =====
+function renderLog() {
+  const list = document.getElementById('log-list');
+  const filtered = logFilter === 'all' ? logs : logs.filter(l => {
+    if (logFilter === 'arrival') return isArrivalMode(l.mode);
+    if (logFilter === 'departure') return isDepartureMode(l.mode);
+    return true;
+  });
+  
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No log registry found</div></div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(l => {
+    const t = new Date(l.time);
+    const dateStr = t.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' });
+    const timeStr = t.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+    const isArr = isArrivalMode(l.mode);
+    return `<div class="log-item">
+      <div class="log-badge ${isArr ? 'in' : 'out'}">${isArr ? '☀️' : '🌙'}</div>
+      <div class="log-info">
+        <div class="log-name">${l.studentName}</div>
+        <div class="log-detail">${l.className} · ${isArr ? 'Arrival' : 'Departure'}</div>
+      </div>
+      <div class="log-time">${dateStr}<br>${timeStr}</div>
+    </div>`;
+  }).join('');
+}
+
+function filterLog(f, btn) {
+  logFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  renderLog();
+}
+
+function exportLog() {
+  if (!logs.length) { showToast('No data entries found inside storage arrays'); return; }
+  const rows = [['Date','Time','Student Name','Student ID','Section Group','Status Mode']];
+  logs.forEach(l => {
+    const t = new Date(l.time);
+    rows.push([
+      t.toLocaleDateString('en-PH'),
+      t.toLocaleTimeString('en-PH'),
+      l.studentName, l.studentId || '', l.className,
+      isArrivalMode(l.mode) ? 'Arrival' : 'Departure'
+    ]);
+  });
+  const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `eduscan_log_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+// ===== MODAL CONTROLS =====
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-backdrop').forEach(b => {
+  b.addEventListener('click', e => { if (e.target === b) b.classList.remove('open'); });
+});
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ===== FLAT CSV DATA LOADER =====
+let importPreviewData = [];
+
+function handleCSVDrop(e) {
+  e.preventDefault();
+  document.getElementById('import-drop').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) parseCSV(file);
+}
+
+function handleCSVFile(e) {
+  const file = e.target.files[0];
+  if (file) parseCSV(file);
+  e.target.value = '';
+}
+
+function parseCSV(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const lines = e.target.result.split('\n').map(l => l.trim()).filter(l => l);
+    importPreviewData = [];
+    const start = lines[0].toLowerCase().includes('name') ? 1 : 0;
+    for (let i = start; i < lines.length; i++) {
+      const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+      if (cols[0]) importPreviewData.push({ name: cols[0], studentId: cols[1] || '', className: cols[2] || '' });
     }
+    renderImportPreview();
+  };
+  reader.readAsText(file);
+}
 
-    // ===== CLASS DATA MANAGEMENT RENDERERS =====
-    function addClass() {
-      const input = document.getElementById('class-name-input');
-      const name = input.value.trim();
-      if (!name) return showToast("Enter an identifiable naming string descriptor parameter value.");
+function renderImportPreview() {
+  const wrap = document.getElementById('import-preview');
+  if (!importPreviewData.length) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-size:13px;font-weight:700;color:var(--gray-800)">${importPreviewData.length} records parsed</div>
+      <button class="btn-primary" onclick="confirmImport()" style="padding:8px 16px;font-size:12px">Commit Profiles</button>
+    </div>
+    <table class="import-preview-table">
+      <tr><th>Name</th><th>ID</th><th>Assigned Group</th></tr>
+      ${importPreviewData.slice(0,8).map(r => `<tr><td>${r.name}</td><td>${r.studentId||'—'}</td><td>${r.className||'—'}</td></tr>`).join('')}
+      ${importPreviewData.length > 8 ? `<tr><td colspan="3" style="color:var(--gray-400);text-align:center;padding:10px">...and ${importPreviewData.length-8} more files</td></tr>` : ''}
+    </table>`;
+}
+
+function confirmImport() {
+  let added = 0, skipped = 0;
+  importPreviewData.forEach(row => {
+    if (students.find(s => s.name === row.name && s.studentId === row.studentId)) { skipped++; return; }
+    let classId = '';
+    if (row.className) {
+      const match = classes.find(c => c.name.toLowerCase() === row.className.toLowerCase());
+      classId = match ? match.id : '';
+    }
+    students.push({ id: Date.now().toString() + Math.random(), name: row.name, studentId: row.studentId, classId });
+    added++;
+  });
+  save();
+  importPreviewData = [];
+  document.getElementById('import-preview').innerHTML = '';
+  showToast(`✅ Successfully parsed ${added} student indices.`);
+  renderStudents();
+}
+
+// ===== REAL-TIME STRUCTURAL METRIC COMPILERS =====
+function initSummaryDate() {
+  const inp = document.getElementById('summary-date');
+  inp.value = new Date().toISOString().slice(0, 10);
+}
+
+function shiftSummaryDate(delta) {
+  const inp = document.getElementById('summary-date');
+  const d = new Date(inp.value + 'T00:00:00');
+  d.setDate(d.getDate() + delta);
+  inp.value = d.toISOString().slice(0, 10);
+  renderSummary();
+}
+
+function renderSummary() {
+  const dateStr = document.getElementById('summary-date').value;
+  const dayLogs = logs.filter(l => l.time.slice(0, 10) === dateStr);
+  const totalArrivals = dayLogs.filter(l => isArrivalMode(l.mode)).length;
+  const totalDepartures = dayLogs.filter(l => isDepartureMode(l.mode)).length;
+  const uniqueStudents = new Set(dayLogs.map(l => l.studentId)).size;
+
+  document.getElementById('summary-cards').innerHTML = `
+    <div class="summary-card teal"><div class="sc-val">${totalArrivals}</div><div class="sc-lbl">Arrivals</div></div>
+    <div class="summary-card amber"><div class="sc-val">${totalDepartures}</div><div class="sc-lbl">Departures</div></div>
+    <div class="summary-card"><div class="sc-val">${uniqueStudents}</div><div class="sc-lbl">Present</div></div>
+    <div class="summary-card"><div class="sc-val">${Math.max(0, students.length - uniqueStudents)}</div><div class="sc-lbl">Absent Target</div></div>`;
+
+  if (!classes.length) { document.getElementById('summary-body').innerHTML = `<div class="empty-state"><div class="empty-icon">🏫</div><div class="empty-title">No tracks present</div></div>`; return; }
+
+  let html = '';
+  classes.forEach(cls => {
+    const clsStudents = students.filter(s => s.classId === cls.id);
+    const clsLogs = dayLogs.filter(l => l.classId === cls.id);
+    const arrivals = clsLogs.filter(l => isArrivalMode(l.mode)).length;
+    if (!clsStudents.length) return;
+    html += `<div class="summary-class-block">
+      <div class="summary-class-header">
+        <div class="summary-class-name">${cls.name}</div>
+        <div class="summary-class-counts">${arrivals}/${clsStudents.length} present</div>
+      </div>`;
+    clsStudents.forEach(st => {
+      const stLogs = clsLogs.filter(l => l.studentId === st.id);
+      const lastIn = stLogs.filter(l => isArrivalMode(l.mode)).sort((a,b) => b.time.localeCompare(a.time))[0];
+      const lastOut = stLogs.filter(l => isDepartureMode(l.mode)).sort((a,b) => b.time.localeCompare(a.time))[0];
       
-      const newClass = { id: 'class_' + Date.now(), name: name };
-      classes.push(newClass);
-      saveState();
-      input.value = '';
-      renderClasses();
-      populateDropdowns();
-      showToast("Class profile registered.");
-    }
-
-    function removeClass(id) {
-      classes = classes.filter(c => c.id !== id);
-      students = students.filter(s => s.classId !== id);
-      logs = logs.filter(l => l.classId !== id);
-      saveState();
-      renderClasses();
-      populateDropdowns();
-      showToast("Class section index wiped.");
-    }
-
-    function renderClasses() {
-      const tbody = document.querySelector('#classes-table tbody');
-      tbody.innerHTML = classes.map(c => `
-        <tr>
-          <td><strong>${c.name}</strong></td>
-          <td><button class="btn" style="background-color:var(--danger); padding:0.25rem 0.5rem; font-size:0.8rem; width:auto;" onclick="removeClass('${c.id}')">Delete</button></td>
-        </tr>
-      `).join('');
-    }
-
-    // ===== STUDENT ROSTER CONFIGURATION & DYNAMIC GENERATOR =====
-    function addStudent() {
-      const classSelect = document.getElementById('student-class-select');
-      const nameInput = document.getElementById('student-name-input');
+      let chip = '<span class="status-chip absent">Absent</span>';
+      if (lastIn && lastOut) chip = `<span class="status-chip out">Arrived & Departed</span>`;
+      else if (lastIn) chip = `<span class="status-chip in">Present ☀️</span>`;
       
-      const classId = classSelect.value;
-      const name = nameInput.value.trim();
-
-      if (!classId || !name) return showToast("Complete all structural form parameters before compilation execution.");
-
-      const studentId = 'student_' + Date.now();
-      const newStudent = { id: studentId, classId: classId, name: name };
-      
-      students.push(newStudent);
-      saveState();
-      nameInput.value = '';
-      renderStudents();
-      showToast("Student profile committed. Structural barcode identity generated.");
-    }
-
-    function deleteStudent(id) {
-      students = students.filter(s => s.id !== id);
-      logs = logs.filter(l => l.studentId !== id);
-      saveState();
-      renderStudents();
-      showToast("Student profile dropped.");
-    }
-
-    function renderStudents() {
-      const container = document.getElementById('students-qr-container');
-      if (students.length === 0) {
-        container.innerHTML = `<p style="color:#64748b; padding:2rem; width:100%; text-align:center;">No students registered inside standard local storage index blocks.</p>`;
-        return;
-      }
-
-      container.innerHTML = students.map(s => {
-        const targetClassName = classes.find(c => c.id === s.classId)?.name || 'Unknown Class Group';
-        
-        // Exact structural configuration string required for validation analysis checks passes
-        const qrStringPayload = JSON.stringify({ eduscan: true, id: s.id });
-        const qrImageSourceUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrStringPayload)}`;
-
-        return `
-          <div class="qr-card">
-            <span style="font-size:0.75rem; font-weight:700; color:var(--primary);">${targetClassName}</span>
-            <strong style="margin:0.25rem 0 0.5rem 0; font-size:0.95rem;">${s.name}</strong>
-            <img src="${qrImageSourceUrl}" alt="Student QR Element Graphic ID Matrix Layout Card" style="width:130px; height:130px; border:1px solid #eee; padding:4px; background:#fff;">
-            <button class="btn" style="background-color:var(--danger); padding:0.2rem 0.4rem; font-size:0.75rem; margin-top:0.5rem; width:auto;" onclick="deleteStudent('${s.id}')">Remove Profile</button>
-          </div>
-        `;
-      }).join('');
-    }
-
-    // ===== ATTENDANCE ENGINE TRANSACTION LOGGER AND DATA SUMMARIZER =====
-    function renderLog() {
-      const tbody = document.getElementById('logs-table-body');
-      if (logs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#64748b;">No verification events compiled yet inside logs database registry array.</td></tr>`;
-        return;
-      }
-      tbody.innerHTML = logs.map(l => `
-        <tr>
-          <td style="font-size:0.85rem; color:#64748b;">${new Date(l.timestamp).toLocaleString()}</td>
-          <td><span style="font-size:0.8rem; background:#e2e8f0; padding:2px 6px; border-radius:4px;">${l.className || 'Detached Record Line'}</span></td>
-          <td><strong>${l.studentName}</strong></td>
-        </tr>
-      `).join('');
-    }
-
-    function clearLogs() {
-      if (confirm("Confirm structural clearance instruction request pattern? This wipe action resets storage variables indices.")) {
-        logs = [];
-        saveState();
-        renderLog();
-        showToast("System runtime indices arrays cleared.");
-      }
-    }
-
-    function renderSummary() {
-      const targetBox = document.getElementById('summary-analytics-content');
-      if (classes.length === 0) {
-        targetBox.innerHTML = `<p style="color:#64748b;">Configure active system metrics tracking structures inside classes tab parameters workspace maps.</p>`;
-        return;
-      }
-
-      let templateOutputBufferString = '';
-
-      classes.forEach(c => {
-        const associatedStudentsList = students.filter(s => s.classId === c.id);
-        const uniqueAttendeesCollectionLogCount = [...new Set(logs.filter(l => l.classId === c.id).map(l => l.studentId))].length;
-
-        templateOutputBufferString += `
-          <div style="margin-bottom:1.5rem; border-bottom:1px dashed var(--border); padding-bottom:1rem;">
-            <h3 style="color:var(--primary); font-size:1.1rem; margin-bottom:0.5rem;">${c.name}</h3>
-            <div style="display:flex; gap:1.5rem; font-size:0.9rem;">
-              <div>Total Enrolled Roster Base: <strong>${associatedStudentsList.length}</strong></div>
-              <div>Unique Attendees Verified: <strong style="color:var(--success);">${uniqueAttendeesCollectionLogCount}</strong></div>
-              <div>Absence Manifest Metric Frame: <strong style="color:var(--danger);">${Math.max(0, associatedStudentsList.length - uniqueAttendeesCollectionLogCount)}</strong></div>
-            </div>
-          </div>
-        `;
-      });
-
-      targetBox.innerHTML = templateOutputBufferString;
-    }
-
-    function populateDropdowns() {
-      const scannerSelect = document.getElementById('scanner-class-select');
-      const studentSelect = document.getElementById('student-class-select');
-      
-      const selectHtmlOptionsMarkupPayload = `
-        <option value="">-- Choose Class Section --</option>
-        ${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
-      `;
-      
-      scannerSelect.innerHTML = selectHtmlOptionsMarkupPayload;
-      studentSelect.innerHTML = selectHtmlOptionsMarkupPayload;
-      
-      // Keep structural integrity tracking reference checks aligned to state changes
-      if (currentClassId && !classes.find(c => c.id === currentClassId)) {
-        currentClassId = null;
-        stopCamera();
-      }
-      scannerSelect.value = currentClassId || "";
-    }
-
-    // ===== APPLICATION LIFECYCLE ROUTER HANDLER INITIALIZATION BOOT =====
-    window.addEventListener('DOMContentLoaded', () => {
-      populateDropdowns();
+      const timeNote = lastIn ? `<span style="font-size:10px;color:var(--gray-400);margin-left:6px">${new Date(lastIn.time).toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'})}</span>` : '';
+      html += `<div class="summary-student-row"><div class="summary-student-name">${st.name}</div>${chip}${timeNote}</div>`;
     });
-  </script>
+    html += '</div>';
+  });
+  document.getElementById('summary-body').innerHTML = html || `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No records historical profile matches for today</div></div>`;
+}
+
+function exportSummaryCSV() {
+  const dateStr = document.getElementById('summary-date').value;
+  const dayLogs = logs.filter(l => l.time.slice(0, 10) === dateStr);
+  if (!dayLogs.length) { showToast('Empty set arrays targeting current target boundaries'); return; }
+  const rows = [['Date Index','Timestamp','Student Name','Student ID','Section Index Group','Mode Activity']];
+  dayLogs.forEach(l => {
+    const t = new Date(l.time);
+    rows.push([dateStr, t.toLocaleTimeString('en-PH'), l.studentName, l.studentId||'', l.className, isArrivalMode(l.mode) ? 'Arrival' : 'Departure']);
+  });
+  const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `eduscan_summary_${dateStr}.csv`; a.click();
+}
+
+// Runtime Setup Init
+populateClassSelects();
+renderStudents();
+initSummaryDate();
+</script>
 </body>
 </html>
