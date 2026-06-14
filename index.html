@@ -630,7 +630,6 @@ function startCamera() {
   const video = document.getElementById('webcam-video');
   video.style.display = 'block';
 
-  // Requesting optimal 640x480 resolution to eliminate screen moiré/grid artifacts
   navigator.mediaDevices.getUserMedia({ 
     video: { 
       facingMode: 'environment',
@@ -676,11 +675,9 @@ function tickScanLoop() {
     const canvas = document.getElementById('qr-canvas');
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     
-    // Lock reading dimension to downsample computer pixel distortion
     canvas.width = 480;
     canvas.height = 480;
     
-    // Crop a clean square right from the center of the camera feed
     const sourceSize = Math.min(video.videoWidth, video.videoHeight);
     const sourceX = (video.videoWidth - sourceSize) / 2;
     const sourceY = (video.videoHeight - sourceSize) / 2;
@@ -688,8 +685,6 @@ function tickScanLoop() {
     ctx.drawImage(video, sourceX, sourceY, sourceSize, sourceSize, 0, 0, canvas.width, canvas.height);
     
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    
-    // Aggressive parsing config optimized for digital screen reading
     const code = jsQR(imageData.data, imageData.width, imageData.height, { 
       inversionAttempts: 'attemptBoth' 
     });
@@ -699,7 +694,7 @@ function tickScanLoop() {
       if (code.data !== lastScannedData || (now - lastScannedTimestamp > 3000)) {
         lastScannedData = code.data;
         lastScannedTimestamp = now;
-        handleQRScanResult(code.data);
+        handleQRScanResult(code.data.trim());
       }
     }
   }
@@ -713,10 +708,11 @@ function handleQRScanResult(scannedValue) {
   const selectedClassId = document.getElementById('scanner-class-select').value;
   if (!selectedClassId) return;
 
+  // Search by exact ID match or strict Name match
   let student = students.find(s => s.id === scannedValue || s.name === scannedValue);
 
   if (!student) {
-    showScanResult('error', '🔍', `Unknown QR Code parsed: "${scannedValue}"`);
+    showScanResult('error', '🔍', `Unknown QR Code: "${scannedValue}"`);
     return;
   }
 
@@ -727,7 +723,6 @@ function handleQRScanResult(scannedValue) {
     return;
   }
 
-  // Create Log entry
   const newLog = {
     id: 'log_' + Date.now(),
     studentId: student.id,
@@ -741,7 +736,6 @@ function handleQRScanResult(scannedValue) {
   logs.unshift(newLog);
   save();
 
-  // Send payload to Google Sheets Webhook asynchronously
   const activeClass = classes.find(c => c.id === selectedClassId);
   if (activeClass && activeClass.webhook) {
     const url = `${activeClass.webhook}?student=${encodeURIComponent(student.name)}&studentId=${encodeURIComponent(student.id)}&mode=${encodeURIComponent(currentMode)}&className=${encodeURIComponent(activeClass.name)}`;
@@ -750,7 +744,6 @@ function handleQRScanResult(scannedValue) {
       .catch(e => console.error('Webhook payload failed to dispatch', e));
   }
 
-  // Alert Success indicators
   if (currentMode === 'checkin') {
     showScanResult('success', '✅', `Checked-In: ${student.name}`);
     showToast(`Checked-In: ${student.name}`);
@@ -797,7 +790,7 @@ function onClassChange() {
 function renderStudents() {
   const container = document.getElementById('student-list');
   if (!students.length) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">No students registered</div><div class="empty-sub">Add manually or import CSV data files.</div></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">No students registered</div></div>`;
     return;
   }
   
@@ -812,8 +805,8 @@ function renderStudents() {
           <div class="student-meta">ID: ${s.id || 'N/A'} • ${cls ? cls.name : 'Unassigned'}</div>
         </div>
         <div class="student-actions">
-          <button class="icon-btn view" onclick="viewStudentQR('${s.id}')">🔍</button>
-          <button class="icon-btn del" onclick="deleteStudent('${s.id}')">🗑️</button>
+          <button class="icon-btn view" onclick="viewStudentQR('${s.id || s.name}')">🔍</button>
+          <button class="icon-btn del" onclick="deleteStudent('${s.id || s.name}')">🗑️</button>
         </div>
       </div>
     `;
@@ -832,10 +825,12 @@ function openAddStudent() {
 
 function saveStudent() {
   const name = document.getElementById('inp-student-name').value.trim();
-  const id = document.getElementById('inp-student-id').value.trim();
+  let id = document.getElementById('inp-student-id').value.trim();
   const classId = document.getElementById('inp-student-class').value;
   
-  if (!name || !id) { showToast('Name and ID are required'); return; }
+  if (!name) { showToast('Name is required'); return; }
+  if (!id) { id = 'ID_' + Date.now(); } // Safe fallback if ID field is empty
+  
   if (students.some(s => s.id === id)) { showToast('Student ID already exists'); return; }
   
   const newStudent = { name, id, classId };
@@ -846,16 +841,16 @@ function saveStudent() {
   viewStudentQR(id);
 }
 
-function deleteStudent(id) {
+function deleteStudent(identifier) {
   if (confirm('Are you sure you want to delete this student profile?')) {
-    students = students.filter(s => s.id !== id);
+    students = students.filter(s => s.id !== identifier && s.name !== identifier);
     save();
     renderStudents();
   }
 }
 
-function viewStudentQR(id) {
-  const student = students.find(s => s.id === id);
+function viewStudentQR(identifier) {
+  const student = students.find(s => s.id === identifier || s.name === identifier);
   if (!student) return;
   
   const cls = classes.find(c => c.id === student.classId);
@@ -865,14 +860,19 @@ function viewStudentQR(id) {
   const qrContainer = document.getElementById('qr-render');
   qrContainer.innerHTML = '';
   
-  new QRCode(qrContainer, {
-    text: student.id,
-    width: 180,
-    height: 180,
-    colorDark: "#1B2B4B",
-    colorLight: "#ffffff",
-    correctLevel: QRCode.CorrectLevel.H
-  });
+  // Safe validation check if QRCode engine is ready
+  if (typeof QRCode !== 'undefined') {
+    new QRCode(qrContainer, {
+      text: student.id || student.name,
+      width: 180,
+      height: 180,
+      colorDark: "#1B2B4B",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  } else {
+    qrContainer.innerHTML = `<p style="color:red;font-size:12px;">QR Library failed to load. Please verify your internet connection or script dependencies.</p>`;
+  }
   
   openModal('modal-qr');
 }
@@ -892,7 +892,7 @@ function renderClasses() {
   selector.value = selectedVal;
   
   if (!classes.length) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-icon">🏫</div><div class="empty-title">No classes configured</div><div class="empty-sub">Create layouts to categorize log metrics.</div></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">🏫</div><div class="empty-title">No classes configured</div></div>`;
     return;
   }
   
@@ -929,7 +929,7 @@ function saveClass() {
   const teacher = document.getElementById('inp-class-teacher').value.trim();
   const webhook = document.getElementById('inp-class-webhook').value.trim();
   
-  if (!name) { showToast('Class name layout is required'); return; }
+  if (!name) { showToast('Class name is required'); return; }
   
   const newClass = {
     id: 'class_' + Date.now(),
@@ -942,7 +942,7 @@ function saveClass() {
 }
 
 function deleteClass(id) {
-  if (confirm('Deleting this class layout leaves assigned records intact. Confirm?')) {
+  if (confirm('Confirm deleting this class layout?')) {
     classes = classes.filter(c => c.id !== id);
     save();
     renderClasses();
@@ -984,7 +984,7 @@ function filterLog(type, el) {
 }
 
 function exportLog() {
-  if (!logs.length) { showToast('No records exist to compile raw metrics'); return; }
+  if (!logs.length) { showToast('No records exist'); return; }
   const rows = [['Timestamp', 'Student ID', 'Student Name', 'Class / Section', 'Transaction Mode']];
   logs.forEach(l => rows.push([new Date(l.time).toLocaleString('en-PH'), l.studentId, l.studentName, l.className, l.mode]));
   
@@ -1074,7 +1074,7 @@ function shiftSummaryDate(days) {
 function exportSummaryCSV() {
   const dateStr = document.getElementById('summary-date').value;
   const dayLogs = logs.filter(l => l.time.slice(0, 10) === dateStr);
-  if (!dayLogs.length) { showToast('No records found for this chosen date partition'); return; }
+  if (!dayLogs.length) { showToast('No records found'); return; }
   
   const rows = [['Date', 'Time', 'Student Name', 'Student ID', 'Class Partition', 'Mode']];
   dayLogs.forEach(l => {
@@ -1119,10 +1119,11 @@ function processCSVData(file) {
       if (parts.length < 2) return;
       
       const name = parts[0];
-      const id = parts[1];
+      let id = parts[1];
       let className = parts[2] || "Imported Section Block";
       
       if (name.toLowerCase() === 'name' || id.toLowerCase() === 'student id' || id.toLowerCase() === 'lrn') return;
+      if (!id) id = 'ID_' + (Date.now() + index);
       
       let cls = classes.find(c => c.name.toLowerCase() === className.toLowerCase());
       if (!cls) {
@@ -1138,7 +1139,7 @@ function processCSVData(file) {
     
     save();
     renderClasses();
-    showToast(`Successfully processed and bound ${importedCount} profiles!`);
+    showToast(`Successfully processed ${importedCount} profiles!`);
     showPage('students');
   };
   reader.readAsText(file);
