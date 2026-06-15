@@ -1528,8 +1528,6 @@ function renderTermsStudentList() {
   // Show a mini attendance pill for each student across all terms
   box.innerHTML = list.map(s => {
     const initials = s.name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
-    // Count total arrivals across all terms for a quick indicator
-    const totalArr = logs.filter(l => l.studentId === s.id && l.classId === classId && l.type === 'arrival').length;
     return `
       <div class="terms-student-row" onclick="openTermsModal('${s.id}','${classId}')">
         <div class="terms-student-avatar">${initials}</div>
@@ -1537,12 +1535,7 @@ function renderTermsStudentList() {
           <div class="terms-student-name">${s.name}</div>
           ${s.lrn ? `<div class="terms-student-lrn">LRN: ${s.lrn}</div>` : ''}
         </div>
-        <div style="text-align:right;">
-          <span style="font-size:0.72rem; color:var(--arrival); font-weight:600; background:var(--arrival-bg); padding:2px 8px; border-radius:20px; border:1px solid var(--arrival-border);">
-            ☀️ ${totalArr} arrivals
-          </span>
-        </div>
-        <div class="terms-chevron">›</div>
+      <div class="terms-chevron">›</div>
       </div>`;
   }).join('');
 }
@@ -1621,11 +1614,11 @@ function renderTermsModalBody() {
     <div class="term-stat-grid">
       <div class="term-stat-card arrival-card">
         <div class="ts-val">${arrivals.length}</div>
-        <div class="ts-lbl">☀️ Arrivals</div>
+        <div class="ts-lbl">Arrivals</div>
       </div>
       <div class="term-stat-card departure-card">
         <div class="ts-val">${departures.length}</div>
-        <div class="ts-lbl">🌙 Departures</div>
+        <div class="ts-lbl">Departures</div>
       </div>
       <div class="term-stat-card absent-card">
         <div class="ts-val">${absences}</div>
