@@ -253,6 +253,23 @@
 
     details summary { cursor: pointer; font-size: 0.87rem; font-weight: 600; color: var(--primary); }
 
+    /* ── CLICKABLE CLASS ROW ── */
+    .class-row-clickable { cursor: pointer; transition: background 0.15s; }
+    .class-row-clickable:hover td { background: var(--primary-bg); }
+    .class-row-clickable td:first-child { color: var(--primary); }
+
+    /* ── SUMMARY PERIOD TABS ── */
+    .summary-period-tabs { display: flex; border-radius: 10px; overflow: hidden; border: 1.5px solid var(--border); margin-bottom: 1rem; background: var(--bg); }
+    .period-tab {
+      flex: 1; padding: 0.6rem 0.25rem; border: none; background: transparent;
+      font-weight: 600; font-size: 0.82rem; cursor: pointer; color: var(--text-muted);
+      transition: all 0.18s; border-right: 1px solid var(--border);
+    }
+    .period-tab:last-child { border-right: none; }
+    .period-tab.active { background: var(--primary); color: #fff; }
+    .period-tab:not(.active):hover { background: var(--primary-bg); color: var(--primary); }
+    .period-ctrl label { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; display: block; }
+
     /* ── SUMMARY HISTORY ── */
     .history-date-block { margin-bottom: 1.25rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border); }
     .history-date-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
@@ -377,24 +394,11 @@
 
     <div class="card">
       <h2>Registered classes</h2>
+      <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:0.75rem;">Tap a class to view its roster.</p>
       <table id="classes-table">
         <thead><tr><th>Name</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
-    </div>
-
-    <!-- VIEW ENROLLED STUDENTS PER CLASS -->
-    <div class="card">
-      <h2>View class roster</h2>
-      <div class="form-group" style="margin-bottom:0.75rem;">
-        <label for="class-roster-select">Select a class</label>
-        <select id="class-roster-select" onchange="renderClassRoster()">
-          <option value="">— Choose a class —</option>
-        </select>
-      </div>
-      <div id="class-roster-content">
-        <p class="empty" style="padding:1rem 0;">Choose a class above to view enrolled students.</p>
-      </div>
     </div>
   </div>
 
@@ -438,24 +442,64 @@
         <h2 style="margin:0;">Attendance log</h2>
         <button class="btn danger sm" onclick="clearLogs()">Clear all</button>
       </div>
-      <table>
-        <thead><tr><th>Time</th><th>Type</th><th>Class</th><th>Student</th><th>LRN</th></tr></thead>
-        <tbody id="logs-table-body"></tbody>
-      </table>
+      <div style="overflow-x:auto; overflow-y:auto; max-height:65vh; border-radius:8px; border:1px solid var(--border); margin-top:0.5rem;">
+        <table style="margin-top:0; min-width:480px;">
+          <thead style="position:sticky; top:0; z-index:1;">
+            <tr><th>Time</th><th>Type</th><th>Class</th><th>Student</th><th>LRN</th></tr>
+          </thead>
+          <tbody id="logs-table-body"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
   <!-- SUMMARY PAGE -->
   <div id="page-summary" class="page">
     <div class="card">
-      <div class="row-flex" style="margin-bottom:0.5rem;">
-        <h2 style="margin:0;">Attendance summary</h2>
+      <h2 style="margin-bottom:0.75rem;">Attendance summary</h2>
+
+      <!-- Period tabs -->
+      <div class="summary-period-tabs" id="summary-period-tabs">
+        <button class="period-tab active" id="ptab-daily"   onclick="setPeriod('daily')">Daily</button>
+        <button class="period-tab"        id="ptab-weekly"  onclick="setPeriod('weekly')">Weekly</button>
+        <button class="period-tab"        id="ptab-monthly" onclick="setPeriod('monthly')">Monthly</button>
+        <button class="period-tab"        id="ptab-custom"  onclick="setPeriod('custom')">Custom</button>
       </div>
-      <div class="form-group" style="margin-bottom:0.75rem;">
-        <label for="summary-date-filter">Filter by date (optional)</label>
-        <input type="date" id="summary-date-filter" onchange="renderSummary()">
+
+      <!-- Controls per period -->
+      <div id="period-ctrl-daily" class="period-ctrl" style="margin-bottom:0.85rem;">
+        <label for="summary-day-input" style="margin-bottom:0.3rem;">Date</label>
+        <input type="date" id="summary-day-input" onchange="renderSummary()">
       </div>
-      <button class="btn outline sm" onclick="clearSummaryFilter()" style="margin-bottom:1rem;">Show all dates</button>
+      <div id="period-ctrl-weekly" class="period-ctrl" style="display:none; margin-bottom:0.85rem;">
+        <label style="margin-bottom:0.3rem;">Week starting</label>
+        <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+          <button class="btn outline sm" onclick="shiftWeek(-1)">‹ Prev</button>
+          <span id="week-label" style="font-size:0.88rem; font-weight:600; flex:1; text-align:center;"></span>
+          <button class="btn outline sm" onclick="shiftWeek(1)">Next ›</button>
+        </div>
+      </div>
+      <div id="period-ctrl-monthly" class="period-ctrl" style="display:none; margin-bottom:0.85rem;">
+        <label style="margin-bottom:0.3rem;">Month</label>
+        <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+          <button class="btn outline sm" onclick="shiftMonth(-1)">‹ Prev</button>
+          <span id="month-label" style="font-size:0.88rem; font-weight:600; flex:1; text-align:center;"></span>
+          <button class="btn outline sm" onclick="shiftMonth(1)">Next ›</button>
+        </div>
+      </div>
+      <div id="period-ctrl-custom" class="period-ctrl" style="display:none; margin-bottom:0.85rem;">
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+          <div style="flex:1; min-width:130px;">
+            <label for="custom-date-from" style="margin-bottom:0.3rem;">From</label>
+            <input type="date" id="custom-date-from" onchange="renderSummary()">
+          </div>
+          <div style="flex:1; min-width:130px;">
+            <label for="custom-date-to" style="margin-bottom:0.3rem;">To</label>
+            <input type="date" id="custom-date-to" onchange="renderSummary()">
+          </div>
+        </div>
+      </div>
+
       <div id="summary-analytics-content"></div>
     </div>
   </div>
@@ -549,11 +593,10 @@ function showPage(page) {
   }
 
   if (page === 'students') renderStudents();
-  if (page === 'classes')  { renderClasses(); renderClassRoster(); }
+  if (page === 'classes')  renderClasses();
   if (page === 'log')      renderLog();
   if (page === 'summary') {
-    const d = document.getElementById('summary-date-filter');
-    if (!d.value) d.value = todayStr();
+    initSummaryPeriod();
     renderSummary();
   }
   if (page === 'sync') renderSyncPage();
@@ -803,45 +846,49 @@ function renderClasses() {
   tbody.innerHTML = classes.map(c => {
     const count = students.filter(s => s.classId === c.id).length;
     return `
-    <tr>
-      <td><strong>${c.name}</strong><br><span style="font-size:0.75rem;color:var(--text-muted);">${count} student${count !== 1 ? 's' : ''}</span></td>
-      <td style="text-align:right;"><button class="btn danger sm" onclick="removeClass('${c.id}')">Delete</button></td>
+    <tr class="class-row-clickable" onclick="openClassRosterModal('${c.id}')">
+      <td>
+        <strong style="color:var(--primary);">${c.name}</strong><br>
+        <span style="font-size:0.75rem;color:var(--text-muted);">${count} student${count !== 1 ? 's' : ''} · tap to view roster</span>
+      </td>
+      <td style="text-align:right;" onclick="event.stopPropagation()">
+        <button class="btn danger sm" onclick="removeClass('${c.id}')">Delete</button>
+      </td>
     </tr>`;
   }).join('');
 }
 
-function renderClassRoster() {
-  const select  = document.getElementById('class-roster-select');
-  const content = document.getElementById('class-roster-content');
-  const classId = select.value;
-
-  if (!classId) {
-    content.innerHTML = `<p class="empty" style="padding:1rem 0;">Choose a class above to view enrolled students.</p>`;
-    return;
-  }
-
+function openClassRosterModal(classId) {
   const cls      = classes.find(c => c.id === classId);
   const enrolled = students.filter(s => s.classId === classId);
 
+  document.getElementById('modal-title').textContent = `📋 ${cls ? cls.name : 'Class'} — Roster`;
+
   if (!enrolled.length) {
-    content.innerHTML = `<p class="empty" style="padding:1rem 0;">No students enrolled in <strong>${cls ? cls.name : 'this class'}</strong> yet.</p>`;
-    return;
+    document.getElementById('modal-body').innerHTML = `<p class="empty">No students enrolled yet.</p>`;
+  } else {
+    document.getElementById('modal-body').innerHTML = `
+      <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.75rem;">${enrolled.length} student${enrolled.length !== 1 ? 's' : ''} enrolled</p>
+      ${enrolled.map((s, i) => {
+        const initials = s.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+        return `
+        <div class="modal-student-item">
+          <div class="modal-student-avatar">${initials}</div>
+          <div style="flex:1;">
+            <div class="modal-student-name">${s.name}</div>
+            ${s.lrn ? `<div class="modal-student-lrn">LRN: ${s.lrn}</div>` : ''}
+            ${s.guardian ? `<div class="modal-student-lrn">👤 ${s.guardian}</div>` : ''}
+          </div>
+          <span style="font-size:0.75rem;color:var(--text-muted);">#${i + 1}</span>
+        </div>`;
+      }).join('')}`;
   }
 
-  content.innerHTML = `
-    <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:0.6rem;">${enrolled.length} student${enrolled.length !== 1 ? 's' : ''} enrolled</p>
-    <table>
-      <thead><tr><th>#</th><th>Name</th><th>LRN</th></tr></thead>
-      <tbody>
-        ${enrolled.map((s, i) => `
-          <tr>
-            <td style="color:var(--text-muted); font-size:0.78rem;">${i + 1}</td>
-            <td><strong>${s.name}</strong>${s.guardian ? `<br><span style="font-size:0.73rem;color:var(--text-muted);">👤 ${s.guardian}</span>` : ''}</td>
-            <td style="font-family:monospace; font-size:0.78rem; color:var(--text-muted);">${s.lrn || '—'}</td>
-          </tr>`).join('')}
-      </tbody>
-    </table>`;
+  document.getElementById('modal-backdrop').classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
+
+
 
 // ── STUDENTS ──────────────────────────────────────────────────────────────
 function addStudent() {
@@ -922,34 +969,169 @@ function clearLogs() {
   showToast('All logs cleared.');
 }
 
-// ── SUMMARY ───────────────────────────────────────────────────────────────
-function clearSummaryFilter() {
-  document.getElementById('summary-date-filter').value = '';
+// ── SUMMARY PERIOD STATE ─────────────────────────────────────────────────
+let summaryPeriod   = 'daily';
+let weekOffset      = 0;   // weeks from current week
+let monthOffset     = 0;   // months from current month
+
+function initSummaryPeriod() {
+  // Set daily date to today if empty
+  const dayInput = document.getElementById('summary-day-input');
+  if (!dayInput.value) dayInput.value = todayStr();
+  updateWeekLabel();
+  updateMonthLabel();
+}
+
+function setPeriod(period) {
+  summaryPeriod = period;
+  ['daily','weekly','monthly','custom'].forEach(p => {
+    document.getElementById('ptab-' + p).classList.toggle('active', p === period);
+    document.getElementById('period-ctrl-' + p).style.display = p === period ? '' : 'none';
+  });
   renderSummary();
 }
 
+// Week helpers
+function getWeekBounds(offset) {
+  const now  = new Date();
+  const day  = now.getDay(); // 0=Sun
+  const mon  = new Date(now);
+  mon.setDate(now.getDate() - ((day + 6) % 7) + offset * 7);
+  mon.setHours(0,0,0,0);
+  const sun  = new Date(mon);
+  sun.setDate(mon.getDate() + 6);
+  return { from: dateToStr(mon), to: dateToStr(sun) };
+}
+function shiftWeek(dir) { weekOffset += dir; updateWeekLabel(); renderSummary(); }
+function updateWeekLabel() {
+  const { from, to } = getWeekBounds(weekOffset);
+  document.getElementById('week-label').textContent =
+    `${fmtShort(from)} – ${fmtShort(to)}`;
+}
+
+// Month helpers
+function getMonthBounds(offset) {
+  const now = new Date();
+  const y   = now.getFullYear();
+  const m   = now.getMonth() + offset;
+  const from = new Date(y, m, 1);
+  const to   = new Date(y, m + 1, 0);
+  return { from: dateToStr(from), to: dateToStr(to) };
+}
+function shiftMonth(dir) { monthOffset += dir; updateMonthLabel(); renderSummary(); }
+function updateMonthLabel() {
+  const { from } = getMonthBounds(monthOffset);
+  const d = new Date(from + 'T00:00:00');
+  document.getElementById('month-label').textContent =
+    d.toLocaleDateString([], { month: 'long', year: 'numeric' });
+}
+
+function dateToStr(d) { return d.toISOString().slice(0, 10); }
+function fmtShort(dateStr) {
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
+// Get the date range for the active period
+function getActiveDateRange() {
+  if (summaryPeriod === 'daily') {
+    const v = document.getElementById('summary-day-input').value;
+    return v ? { from: v, to: v } : null;
+  }
+  if (summaryPeriod === 'weekly')  return getWeekBounds(weekOffset);
+  if (summaryPeriod === 'monthly') return getMonthBounds(monthOffset);
+  if (summaryPeriod === 'custom') {
+    const from = document.getElementById('custom-date-from').value;
+    const to   = document.getElementById('custom-date-to').value;
+    return (from && to) ? { from, to } : null;
+  }
+  return null;
+}
+
 function renderSummary() {
-  const box     = document.getElementById('summary-analytics-content');
-  const dateVal = document.getElementById('summary-date-filter').value;
+  const box = document.getElementById('summary-analytics-content');
 
   if (!classes.length) {
     box.innerHTML = `<p class="empty">No classes configured yet.</p>`;
     return;
   }
 
-  // Collect all dates that have logs
-  const allDates = dateVal
-    ? [dateVal]
-    : [...new Set(logs.map(l => l.timestamp.slice(0, 10)))].sort((a, b) => b.localeCompare(a));
-
-  if (!allDates.length) {
-    box.innerHTML = `<p class="empty">No attendance data yet.</p>`;
+  const range = getActiveDateRange();
+  if (!range) {
+    box.innerHTML = `<p class="empty">Select a date range to view data.</p>`;
     return;
   }
 
+  // Collect all dates in range that have logs
+  const logsInRange = logs.filter(l => {
+    const d = l.timestamp.slice(0, 10);
+    return d >= range.from && d <= range.to;
+  });
+
+  const allDates = [...new Set(logsInRange.map(l => l.timestamp.slice(0, 10)))]
+    .sort((a, b) => b.localeCompare(a));
+
+  // For weekly/monthly/custom: show aggregated view + date breakdown
+  const isAggregated = summaryPeriod !== 'daily';
+
   let html = '';
+
+  if (isAggregated) {
+    // ── Aggregated totals across range ──
+    html += `<div style="margin-bottom:1.25rem; padding-bottom:1.25rem; border-bottom:2px solid var(--border);">
+      <p style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.75rem;">
+        ${summaryPeriod === 'weekly' ? 'Week total' : summaryPeriod === 'monthly' ? 'Month total' : 'Range total'}
+        <span style="font-weight:400; text-transform:none; margin-left:4px;">(${fmtShort(range.from)} – ${fmtShort(range.to)})</span>
+      </p>`;
+
+    classes.forEach(c => {
+      const classStudents = students.filter(s => s.classId === c.id);
+      const classLogs     = logsInRange.filter(l => l.classId === c.id);
+      if (!classLogs.length && !classStudents.length) return;
+
+      // unique students per type across range
+      const arrivedIds  = new Set(classLogs.filter(l => l.type === 'arrival').map(l => l.studentId));
+      const departedIds = new Set(classLogs.filter(l => l.type === 'departure').map(l => l.studentId));
+      const neverArrived = classStudents.filter(s => !arrivedIds.has(s.id));
+
+      html += `
+        <div class="history-class-row">
+          <div class="history-class-name">${c.name}</div>
+          <div class="stat-row-btns">
+            <button class="stat-btn enrolled" onclick="openModalRange('enrolled','${c.id}','${range.from}','${range.to}','${encodeURIComponent(c.name)}')">
+              <div class="val">${classStudents.length}</div><div class="lbl">Enrolled</div><div class="tap-hint">tap</div>
+            </button>
+            <button class="stat-btn arrived" onclick="openModalRange('arrived','${c.id}','${range.from}','${range.to}','${encodeURIComponent(c.name)}')">
+              <div class="val" style="color:var(--arrival);">${arrivedIds.size}</div><div class="lbl">Arrived</div><div class="tap-hint">tap</div>
+            </button>
+            <button class="stat-btn departed" onclick="openModalRange('departed','${c.id}','${range.from}','${range.to}','${encodeURIComponent(c.name)}')">
+              <div class="val" style="color:var(--departure);">${departedIds.size}</div><div class="lbl">Departed</div><div class="tap-hint">tap</div>
+            </button>
+            <button class="stat-btn absent" onclick="openModalRange('absent','${c.id}','${range.from}','${range.to}','${encodeURIComponent(c.name)}')">
+              <div class="val" style="color:var(--danger);">${neverArrived.length}</div><div class="lbl">Never arrived</div><div class="tap-hint">tap</div>
+            </button>
+          </div>
+        </div>`;
+    });
+
+    html += `</div>`;
+
+    if (!allDates.length) {
+      html += `<p class="empty">No attendance data for this period.</p>`;
+      box.innerHTML = html;
+      return;
+    }
+
+    html += `<p style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.75rem;">Daily breakdown</p>`;
+  }
+
+  if (!allDates.length) {
+    box.innerHTML = `<p class="empty">No attendance data for this period.</p>`;
+    return;
+  }
+
+  // Date-by-date breakdown
   allDates.forEach(dateStr => {
-    const dateLogs = logs.filter(l => l.timestamp.slice(0, 10) === dateStr);
+    const dateLogs = logsInRange.filter(l => l.timestamp.slice(0, 10) === dateStr);
     if (!dateLogs.length) return;
 
     html += `<div class="history-date-block">`;
@@ -962,35 +1144,23 @@ function renderSummary() {
 
       const arrivedIds  = new Set(classLogs.filter(l => l.type === 'arrival').map(l => l.studentId));
       const departedIds = new Set(classLogs.filter(l => l.type === 'departure').map(l => l.studentId));
-      const absentIds   = classStudents.filter(s => !arrivedIds.has(s.id)).map(s => s.id);
+      const absentCount = classStudents.filter(s => !arrivedIds.has(s.id)).length;
 
       html += `
         <div class="history-class-row">
           <div class="history-class-name">${c.name}</div>
           <div class="stat-row-btns">
-            <button class="stat-btn enrolled"
-              onclick="openModal('enrolled','${c.id}','${dateStr}','${encodeURIComponent(c.name)}')">
-              <div class="val">${classStudents.length}</div>
-              <div class="lbl">Enrolled</div>
-              <div class="tap-hint">tap to view</div>
+            <button class="stat-btn enrolled" onclick="openModal('enrolled','${c.id}','${dateStr}','${encodeURIComponent(c.name)}')">
+              <div class="val">${classStudents.length}</div><div class="lbl">Enrolled</div><div class="tap-hint">tap</div>
             </button>
-            <button class="stat-btn arrived"
-              onclick="openModal('arrived','${c.id}','${dateStr}','${encodeURIComponent(c.name)}')">
-              <div class="val" style="color:var(--arrival);">${arrivedIds.size}</div>
-              <div class="lbl">Arrived</div>
-              <div class="tap-hint">tap to view</div>
+            <button class="stat-btn arrived" onclick="openModal('arrived','${c.id}','${dateStr}','${encodeURIComponent(c.name)}')">
+              <div class="val" style="color:var(--arrival);">${arrivedIds.size}</div><div class="lbl">Arrived</div><div class="tap-hint">tap</div>
             </button>
-            <button class="stat-btn departed"
-              onclick="openModal('departed','${c.id}','${dateStr}','${encodeURIComponent(c.name)}')">
-              <div class="val" style="color:var(--departure);">${departedIds.size}</div>
-              <div class="lbl">Departed</div>
-              <div class="tap-hint">tap to view</div>
+            <button class="stat-btn departed" onclick="openModal('departed','${c.id}','${dateStr}','${encodeURIComponent(c.name)}')">
+              <div class="val" style="color:var(--departure);">${departedIds.size}</div><div class="lbl">Departed</div><div class="tap-hint">tap</div>
             </button>
-            <button class="stat-btn absent"
-              onclick="openModal('absent','${c.id}','${dateStr}','${encodeURIComponent(c.name)}')">
-              <div class="val" style="color:var(--danger);">${absentIds.length}</div>
-              <div class="lbl">Absent</div>
-              <div class="tap-hint">tap to view</div>
+            <button class="stat-btn absent" onclick="openModal('absent','${c.id}','${dateStr}','${encodeURIComponent(c.name)}')">
+              <div class="val" style="color:var(--danger);">${absentCount}</div><div class="lbl">Absent</div><div class="tap-hint">tap</div>
             </button>
           </div>
         </div>`;
@@ -1000,6 +1170,59 @@ function renderSummary() {
   });
 
   box.innerHTML = html || `<p class="empty">No data found.</p>`;
+}
+
+// Modal for range (weekly/monthly/custom) — shows unique students across range
+function openModalRange(type, classId, fromDate, toDate, encodedClassName) {
+  const className     = decodeURIComponent(encodedClassName);
+  const classStudents = students.filter(s => s.classId === classId);
+  const rangeLogs     = logs.filter(l =>
+    l.classId === classId &&
+    l.timestamp.slice(0,10) >= fromDate &&
+    l.timestamp.slice(0,10) <= toDate
+  );
+
+  const arrivedIds  = new Set(rangeLogs.filter(l => l.type === 'arrival').map(l => l.studentId));
+  const departedIds = new Set(rangeLogs.filter(l => l.type === 'departure').map(l => l.studentId));
+
+  let title = '';
+  let studentList = [];
+
+  if (type === 'enrolled') {
+    title = `Enrolled — ${className}`;
+    studentList = classStudents;
+  } else if (type === 'arrived') {
+    title = `☀️ Arrived (at least once) — ${className}`;
+    studentList = classStudents.filter(s => arrivedIds.has(s.id));
+  } else if (type === 'departed') {
+    title = `🌙 Departed (at least once) — ${className}`;
+    studentList = classStudents.filter(s => departedIds.has(s.id));
+  } else if (type === 'absent') {
+    title = `Never arrived — ${className}`;
+    studentList = classStudents.filter(s => !arrivedIds.has(s.id));
+  }
+
+  const rangeLabel = `${fmtShort(fromDate)} – ${fmtShort(toDate)}`;
+  document.getElementById('modal-title').textContent = `${title} · ${rangeLabel}`;
+
+  if (!studentList.length) {
+    document.getElementById('modal-body').innerHTML = `<p class="empty">No students in this category.</p>`;
+  } else {
+    document.getElementById('modal-body').innerHTML = studentList.map((s, i) => {
+      const initials = s.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+      return `
+        <div class="modal-student-item">
+          <div class="modal-student-avatar">${initials}</div>
+          <div style="flex:1;">
+            <div class="modal-student-name">${s.name}</div>
+            ${s.lrn ? `<div class="modal-student-lrn">LRN: ${s.lrn}</div>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  document.getElementById('modal-backdrop').classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
 
 // ── MODAL ─────────────────────────────────────────────────────────────────
@@ -1076,10 +1299,6 @@ function populateDropdowns() {
 
   document.getElementById('scanner-class-select').innerHTML = classOpts;
   document.getElementById('student-class-select').innerHTML = classOpts;
-
-  const rosterOpts = `<option value="">— Choose a class —</option>` +
-    classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-  document.getElementById('class-roster-select').innerHTML = rosterOpts;
 
   const filterOpts = `<option value="">All classes</option>` +
     classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
@@ -1182,6 +1401,7 @@ window.addEventListener('DOMContentLoaded', () => {
   logs = logs.map(l => ({ type: 'arrival', studentLrn: '', ...l }));
   saveState();
   populateDropdowns();
+  initSummaryPeriod();
 });
 </script>
 </body>
