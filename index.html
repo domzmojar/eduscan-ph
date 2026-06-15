@@ -900,6 +900,7 @@ function addStudent() {
   if (!classId || !name) return showToast('Class and full name are required.');
 
   students.push({ id: 'student_' + Date.now(), classId, name, lrn, guardian });
+  students.sort((a, b) => a.name.localeCompare(b.name));
   saveState();
 
   ['student-name-input','student-lrn-input','student-guardian-input'].forEach(id => {
@@ -1399,6 +1400,7 @@ function copyScript() {
 // ── BOOT ──────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   logs = logs.map(l => ({ type: 'arrival', studentLrn: '', ...l }));
+  students.sort((a, b) => a.name.localeCompare(b.name));
   saveState();
   populateDropdowns();
   initSummaryPeriod();
