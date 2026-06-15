@@ -305,6 +305,47 @@
     .modal-student-name { font-weight: 600; flex: 1; }
     .modal-student-lrn { font-size: 0.75rem; color: var(--text-muted); font-family: monospace; }
     .modal-student-time { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; }
+
+    /* ── TERMS PAGE ── */
+    .terms-student-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 0.65rem 0.5rem; border-bottom: 1px solid var(--border);
+      cursor: pointer; border-radius: 8px; transition: background 0.15s;
+      margin: 0 -0.5rem;
+    }
+    .terms-student-row:last-child { border-bottom: none; }
+    .terms-student-row:hover { background: var(--primary-bg); }
+    .terms-student-row:hover .terms-student-name { color: var(--primary); }
+    .terms-student-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--primary-bg); color: var(--primary); font-weight: 700; font-size: 0.78rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .terms-student-name { font-weight: 600; font-size: 0.9rem; flex: 1; }
+    .terms-student-lrn { font-size: 0.72rem; color: var(--text-muted); }
+    .terms-chevron { color: var(--text-muted); font-size: 0.85rem; }
+
+    /* Term tab switcher inside modal */
+    .term-tab {
+      flex: 1; padding: 0.65rem 0.25rem; border: none; background: transparent;
+      font-weight: 700; font-size: 0.82rem; cursor: pointer; color: var(--text-muted);
+      text-align: center; border-bottom: 3px solid transparent; transition: all 0.18s; line-height: 1.4;
+    }
+    .term-tab.active { color: var(--primary); border-bottom-color: var(--primary); background: var(--surface); }
+    .term-tab:not(.active):hover { background: var(--primary-bg); color: var(--primary); }
+
+    /* Term stats inside modal */
+    .term-stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin: 1rem 0; }
+    .term-stat-card {
+      border-radius: 10px; padding: 0.85rem 0.5rem; text-align: center; border: 1px solid;
+    }
+    .term-stat-card .ts-val { font-size: 1.8rem; font-weight: 800; line-height: 1; }
+    .term-stat-card .ts-lbl { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
+    .term-stat-card.arrival-card   { background: var(--arrival-bg);   border-color: var(--arrival-border);   color: var(--arrival); }
+    .term-stat-card.departure-card { background: var(--departure-bg); border-color: var(--departure-border); color: var(--departure); }
+    .term-stat-card.absent-card    { background: var(--danger-bg);    border-color: var(--danger-border);    color: var(--danger); }
+
+    .term-day-row { display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid var(--border); font-size: 0.82rem; }
+    .term-day-row:last-child { border-bottom: none; }
+    .term-day-date { color: var(--text-muted); min-width: 80px; }
+    .term-day-badges { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+    .term-section-title { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 1rem 0 0.5rem; }
   </style>
 </head>
 <body>
@@ -320,6 +361,7 @@
   <button class="nav-btn"        id="nav-students" onclick="showPage('students')">Students</button>
   <button class="nav-btn"        id="nav-log"      onclick="showPage('log')">Logs</button>
   <button class="nav-btn"        id="nav-summary"  onclick="showPage('summary')">Summary</button>
+  <button class="nav-btn"        id="nav-terms"    onclick="showPage('terms')">Terms</button>
   <button class="nav-btn"        id="nav-sync"     onclick="showPage('sync')">Sync</button>
 </nav>
 
@@ -535,6 +577,23 @@
     </div>
   </div>
 
+  <!-- TERMS PAGE -->
+  <div id="page-terms" class="page">
+    <div class="card">
+      <h2 style="margin-bottom:0.25rem;">Term Report</h2>
+      <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:1rem;">DepEd 3-term calendar: Term 1 (Jun–Sep) · Term 2 (Oct–Dec) · Term 3 (Jan–Mar)</p>
+      <div class="form-group" style="margin-bottom:0.75rem;">
+        <label for="terms-class-select">Class / Section</label>
+        <select id="terms-class-select" onchange="renderTermsStudentList()">
+          <option value="">— Choose a class —</option>
+        </select>
+      </div>
+      <div id="terms-student-list">
+        <p class="empty" style="padding:1rem 0;">Select a class to view students.</p>
+      </div>
+    </div>
+  </div>
+
 </main>
 
 <div id="toast"></div>
@@ -547,6 +606,26 @@
       <button class="modal-close" onclick="closeModalDirect()">✕</button>
     </div>
     <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<!-- TERMS DETAIL MODAL -->
+<div class="modal-backdrop" id="terms-modal-backdrop" onclick="closeTermsModal(event)">
+  <div class="modal-sheet" style="max-height:88vh;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="terms-modal-name">Student</div>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;" id="terms-modal-meta"></div>
+      </div>
+      <button class="modal-close" onclick="closeTermsModalDirect()">✕</button>
+    </div>
+    <!-- Term switcher tabs -->
+    <div style="display:flex; border-bottom:1px solid var(--border); background:var(--bg);">
+      <button class="term-tab active" id="ttab-1" onclick="switchTermTab(1)">Term 1<br><span style="font-size:0.65rem;font-weight:400;">Jun–Sep</span></button>
+      <button class="term-tab"        id="ttab-2" onclick="switchTermTab(2)">Term 2<br><span style="font-size:0.65rem;font-weight:400;">Oct–Dec</span></button>
+      <button class="term-tab"        id="ttab-3" onclick="switchTermTab(3)">Term 3<br><span style="font-size:0.65rem;font-weight:400;">Jan–Mar</span></button>
+    </div>
+    <div class="modal-body" id="terms-modal-body"></div>
   </div>
 </div>
 
@@ -594,6 +673,7 @@ function showPage(page) {
 
   if (page === 'students') renderStudents();
   if (page === 'classes')  renderClasses();
+  if (page === 'terms')    renderTermsPage();
   if (page === 'log')      renderLog();
   if (page === 'summary') {
     initSummaryPeriod();
@@ -1301,6 +1381,15 @@ function populateDropdowns() {
   document.getElementById('scanner-class-select').innerHTML = classOpts;
   document.getElementById('student-class-select').innerHTML = classOpts;
 
+  // Terms dropdown (only if terms page element exists)
+  const termsEl = document.getElementById('terms-class-select');
+  if (termsEl) {
+    const prev = termsEl.value;
+    termsEl.innerHTML = `<option value="">— Choose a class —</option>` +
+      classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    if (prev && classes.find(c => c.id === prev)) termsEl.value = prev;
+  }
+
   const filterOpts = `<option value="">All classes</option>` +
     classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
   document.getElementById('filter-class-select').innerHTML = filterOpts;
@@ -1395,6 +1484,184 @@ function copyScript() {
   const ta = document.getElementById('gas-code');
   ta.select(); document.execCommand('copy');
   showToast('Script copied.');
+}
+
+// ── TERMS ─────────────────────────────────────────────────────────────────
+const TERMS = [
+  { num: 1, label: 'Term 1', months: [6,7,8,9],   range: 'Jun – Sep' },
+  { num: 2, label: 'Term 2', months: [10,11,12],   range: 'Oct – Dec' },
+  { num: 3, label: 'Term 3', months: [1,2,3],      range: 'Jan – Mar' },
+];
+
+let termsActiveStudentId = null;
+let termsActiveClassId   = null;
+let termsActiveTerm      = 1;
+
+function renderTermsPage() {
+  populateTermsDropdown();
+  renderTermsStudentList();
+}
+
+function populateTermsDropdown() {
+  const sel  = document.getElementById('terms-class-select');
+  const prev = sel.value;
+  sel.innerHTML = `<option value="">— Choose a class —</option>` +
+    classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  if (prev && classes.find(c => c.id === prev)) sel.value = prev;
+}
+
+function renderTermsStudentList() {
+  const classId = document.getElementById('terms-class-select').value;
+  const box     = document.getElementById('terms-student-list');
+
+  if (!classId) {
+    box.innerHTML = `<p class="empty" style="padding:1rem 0;">Select a class to view students.</p>`;
+    return;
+  }
+
+  const list = students.filter(s => s.classId === classId);
+  if (!list.length) {
+    box.innerHTML = `<p class="empty" style="padding:1rem 0;">No students in this class yet.</p>`;
+    return;
+  }
+
+  // Show a mini attendance pill for each student across all terms
+  box.innerHTML = list.map(s => {
+    const initials = s.name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+    // Count total arrivals across all terms for a quick indicator
+    const totalArr = logs.filter(l => l.studentId === s.id && l.classId === classId && l.type === 'arrival').length;
+    return `
+      <div class="terms-student-row" onclick="openTermsModal('${s.id}','${classId}')">
+        <div class="terms-student-avatar">${initials}</div>
+        <div style="flex:1;">
+          <div class="terms-student-name">${s.name}</div>
+          ${s.lrn ? `<div class="terms-student-lrn">LRN: ${s.lrn}</div>` : ''}
+        </div>
+        <div style="text-align:right;">
+          <span style="font-size:0.72rem; color:var(--arrival); font-weight:600; background:var(--arrival-bg); padding:2px 8px; border-radius:20px; border:1px solid var(--arrival-border);">
+            ☀️ ${totalArr} arrivals
+          </span>
+        </div>
+        <div class="terms-chevron">›</div>
+      </div>`;
+  }).join('');
+}
+
+function getTermLogs(studentId, classId, termNum) {
+  const term = TERMS.find(t => t.num === termNum);
+  return logs.filter(l => {
+    if (l.studentId !== studentId || l.classId !== classId) return false;
+    const m = new Date(l.timestamp).getMonth() + 1; // 1-based
+    return term.months.includes(m);
+  });
+}
+
+// Count school days (Mon–Fri) that have ANY log for this class in the term
+function getSchoolDaysInTerm(classId, termNum) {
+  const term = TERMS.find(t => t.num === termNum);
+  const days = new Set(
+    logs
+      .filter(l => {
+        if (l.classId !== classId) return false;
+        const m = new Date(l.timestamp).getMonth() + 1;
+        return term.months.includes(m);
+      })
+      .map(l => l.timestamp.slice(0, 10))
+  );
+  return days;
+}
+
+function openTermsModal(studentId, classId) {
+  termsActiveStudentId = studentId;
+  termsActiveClassId   = classId;
+  termsActiveTerm      = 1;
+
+  const student = students.find(s => s.id === studentId);
+  document.getElementById('terms-modal-name').textContent = student ? student.name : 'Student';
+  document.getElementById('terms-modal-meta').textContent =
+    student && student.lrn ? `LRN: ${student.lrn}` : '';
+
+  renderTermsModalBody();
+  document.getElementById('terms-modal-backdrop').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function switchTermTab(num) {
+  termsActiveTerm = num;
+  [1,2,3].forEach(n => {
+    document.getElementById('ttab-' + n).classList.toggle('active', n === num);
+  });
+  renderTermsModalBody();
+}
+
+function renderTermsModalBody() {
+  const body    = document.getElementById('terms-modal-body');
+  const term    = TERMS.find(t => t.num === termsActiveTerm);
+  const termLogs = getTermLogs(termsActiveStudentId, termsActiveClassId, termsActiveTerm);
+
+  // School days in this term (dates that had any class activity)
+  const schoolDays = getSchoolDaysInTerm(termsActiveClassId, termsActiveTerm);
+
+  const arrivals   = termLogs.filter(l => l.type === 'arrival');
+  const departures = termLogs.filter(l => l.type === 'departure');
+
+  // Absences = school days where this student has no arrival
+  const arrivedDays = new Set(arrivals.map(l => l.timestamp.slice(0,10)));
+  const absences    = [...schoolDays].filter(d => !arrivedDays.has(d)).length;
+
+  // Group logs by date for daily breakdown
+  const allLogDates = [...new Set(termLogs.map(l => l.timestamp.slice(0,10)))].sort((a,b) => b.localeCompare(a));
+
+  let html = `
+    <div style="background:var(--bg); border-radius:8px; padding:0.6rem 0.75rem; margin-bottom:0.25rem;">
+      <span style="font-size:0.78rem; font-weight:700; color:var(--text-muted);">${term.label} · ${term.range}</span>
+      ${schoolDays.size ? `<span style="font-size:0.72rem; color:var(--text-muted); margin-left:8px;">${schoolDays.size} school day${schoolDays.size !== 1 ? 's' : ''} on record</span>` : ''}
+    </div>
+
+    <div class="term-stat-grid">
+      <div class="term-stat-card arrival-card">
+        <div class="ts-val">${arrivals.length}</div>
+        <div class="ts-lbl">☀️ Arrivals</div>
+      </div>
+      <div class="term-stat-card departure-card">
+        <div class="ts-val">${departures.length}</div>
+        <div class="ts-lbl">🌙 Departures</div>
+      </div>
+      <div class="term-stat-card absent-card">
+        <div class="ts-val">${absences}</div>
+        <div class="ts-lbl">Absences</div>
+      </div>
+    </div>`;
+
+  if (allLogDates.length) {
+    html += `<div class="term-section-title">Daily attendance</div>`;
+    allLogDates.forEach(dateStr => {
+      const dayLogs = termLogs.filter(l => l.timestamp.slice(0,10) === dateStr);
+      const arr     = dayLogs.filter(l => l.type === 'arrival');
+      const dep     = dayLogs.filter(l => l.type === 'departure');
+      const dateLabel = new Date(dateStr + 'T00:00:00').toLocaleDateString([], { month:'short', day:'numeric', weekday:'short' });
+      html += `
+        <div class="term-day-row">
+          <span class="term-day-date">${dateLabel}</span>
+          <div class="term-day-badges">
+            ${arr.map(l => `<span class="badge badge-arrival">☀️ ${new Date(l.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>`).join('')}
+            ${dep.map(l => `<span class="badge badge-departure">🌙 ${new Date(l.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>`).join('')}
+          </div>
+        </div>`;
+    });
+  } else {
+    html += `<p class="empty" style="padding:1.5rem 0;">No attendance recorded for ${term.label}.</p>`;
+  }
+
+  body.innerHTML = html;
+}
+
+function closeTermsModal(e) {
+  if (e.target === document.getElementById('terms-modal-backdrop')) closeTermsModalDirect();
+}
+function closeTermsModalDirect() {
+  document.getElementById('terms-modal-backdrop').classList.remove('open');
+  document.body.style.overflow = '';
 }
 
 // ── BOOT ──────────────────────────────────────────────────────────────────
