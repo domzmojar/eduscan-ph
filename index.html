@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EduScan PH - Attendance System</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1d4ed8">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="EduScan PH">
+  <link rel="apple-touch-icon" href="/icon-192-any.png">
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <style>
     :root {
@@ -630,10 +637,98 @@
 </div>
 
 <script>
-// ── STATE ─────────────────────────────────────────────────────────────────
-let classes  = JSON.parse(localStorage.getItem('edu_classes'))  || [];
-let students = JSON.parse(localStorage.getItem('edu_students')) || [];
-let logs     = JSON.parse(localStorage.getItem('edu_logs'))     || [];
+// ── INDEXEDDB ──────────────────────────────────────────────────────────────
+const DB_NAME    = 'EduScanPH';
+const DB_VERSION = 1;
+let   db         = null;
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('classes'))
+        d.createObjectStore('classes',  { keyPath: 'id' });
+      if (!d.objectStoreNames.contains('students'))
+        d.createObjectStore('students', { keyPath: 'id' });
+      if (!d.objectStoreNames.contains('logs'))
+        d.createObjectStore('logs',     { keyPath: 'id', autoIncrement: true });
+      if (!d.objectStoreNames.contains('settings'))
+        d.createObjectStore('settings', { keyPath: 'key' });
+    };
+    req.onsuccess = e => { db = e.target.result; resolve(db); };
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+function dbGetAll(store) {
+  return new Promise((resolve, reject) => {
+    const tx  = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+function dbPutAll(store, items) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readwrite');
+    const os = tx.objectStore(store);
+    items.forEach(item => os.put(item));
+    tx.oncomplete = resolve;
+    tx.onerror    = () => reject(tx.error);
+  });
+}
+
+function dbClear(store) {
+  return new Promise((resolve, reject) => {
+    const tx  = db.transaction(store, 'readwrite');
+    tx.objectStore(store).clear();
+    tx.oncomplete = resolve;
+    tx.onerror    = () => reject(tx.error);
+  });
+}
+
+function dbAdd(store, item) {
+  return new Promise((resolve, reject) => {
+    const tx  = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).add(item);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+function dbDelete(store, key) {
+  return new Promise((resolve, reject) => {
+    const tx  = db.transaction(store, 'readwrite');
+    tx.objectStore(store).delete(key);
+    tx.oncomplete = resolve;
+    tx.onerror    = () => reject(tx.error);
+  });
+}
+
+function dbGetSetting(key) {
+  return new Promise((resolve, reject) => {
+    const tx  = db.transaction('settings', 'readonly');
+    const req = tx.objectStore('settings').get(key);
+    req.onsuccess = () => resolve(req.result ? req.result.value : null);
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+function dbSetSetting(key, value) {
+  return new Promise((resolve, reject) => {
+    const tx  = db.transaction('settings', 'readwrite');
+    tx.objectStore('settings').put({ key, value });
+    tx.oncomplete = resolve;
+    tx.onerror    = () => reject(tx.error);
+  });
+}
+
+// ── IN-MEMORY STATE (loaded from IDB on boot) ─────────────────────────────
+let classes  = [];
+let students = [];
+let logs     = [];
 
 let currentClassId  = null;
 let cameraStream    = null;
@@ -642,11 +737,16 @@ let lastScanned     = null;
 let lastScannedTime = 0;
 let scanMode        = 'arrival';
 
-function saveState() {
-  localStorage.setItem('edu_classes',  JSON.stringify(classes));
-  localStorage.setItem('edu_students', JSON.stringify(students));
-  localStorage.setItem('edu_logs',     JSON.stringify(logs));
+// Save all stores back to IDB
+async function saveState() {
+  await dbPutAll('classes',  classes);
+  await dbPutAll('students', students);
+  // logs are written individually via dbAdd / cleared via dbClear+dbPutAll
 }
+
+// Save just classes
+async function saveClasses()  { await dbPutAll('classes',  classes); }
+async function saveStudents() { await dbPutAll('students', students); }
 
 // ── TOAST ─────────────────────────────────────────────────────────────────
 let toastTimer;
@@ -812,7 +912,7 @@ function formatDate(dateStr) {
 }
 
 // ── QR SCAN HANDLER ───────────────────────────────────────────────────────
-function handleQRScan(rawData) {
+async function handleQRScan(rawData) {
   try {
     const payload = JSON.parse(rawData);
     if (!payload.eduscan) return showToast('Unknown QR — not an EduScan ID.');
@@ -844,17 +944,20 @@ function handleQRScan(rawData) {
     }
 
     const logEntry = {
-      timestamp:    new Date().toISOString(),
-      classId:      currentClassId,
-      className:    (classes.find(c => c.id === currentClassId) || {}).name || '',
-      studentId:    student.id,
-      studentName:  student.name,
-      studentLrn:   student.lrn   || '',
-      type:         scanMode
+      timestamp:   new Date().toISOString(),
+      classId:     currentClassId,
+      className:   (classes.find(c => c.id === currentClassId) || {}).name || '',
+      studentId:   student.id,
+      studentName: student.name,
+      studentLrn:  student.lrn || '',
+      type:        scanMode
     };
 
+    // Add to IDB first, then push to in-memory array with the auto-incremented id
+    const newId = await dbAdd('logs', logEntry);
+    logEntry.id = newId;
     logs.unshift(logEntry);
-    saveState();
+
     if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
 
     const isArrival = scanMode === 'arrival';
@@ -898,22 +1001,26 @@ function renderTodayList() {
 }
 
 // ── CLASSES ───────────────────────────────────────────────────────────────
-function addClass() {
+async function addClass() {
   const input = document.getElementById('class-name-input');
   const name  = input.value.trim();
   if (!name) return showToast('Enter a class name.');
   classes.push({ id: 'class_' + Date.now(), name });
-  saveState(); input.value = '';
+  await saveClasses();
+  input.value = '';
   renderClasses(); populateDropdowns();
   showToast('Class saved.');
 }
 
-function removeClass(id) {
+async function removeClass(id) {
   if (!confirm('Delete this class and all its student and log data?')) return;
   classes  = classes.filter(c => c.id !== id);
   students = students.filter(s => s.classId !== id);
   logs     = logs.filter(l => l.classId !== id);
-  saveState(); renderClasses(); populateDropdowns();
+  await dbClear('classes');  await dbPutAll('classes',  classes);
+  await dbClear('students'); await dbPutAll('students', students);
+  await dbClear('logs');     await dbPutAll('logs',     logs);
+  renderClasses(); populateDropdowns();
   showToast('Class deleted.');
 }
 
@@ -971,7 +1078,7 @@ function openClassRosterModal(classId) {
 
 
 // ── STUDENTS ──────────────────────────────────────────────────────────────
-function addStudent() {
+async function addStudent() {
   const classId  = document.getElementById('student-class-select').value;
   const name     = document.getElementById('student-name-input').value.trim();
   const lrn      = document.getElementById('student-lrn-input').value.trim();
@@ -981,7 +1088,7 @@ function addStudent() {
 
   students.push({ id: 'student_' + Date.now(), classId, name, lrn, guardian });
   students.sort((a, b) => a.name.localeCompare(b.name));
-  saveState();
+  await saveStudents();
 
   ['student-name-input','student-lrn-input','student-guardian-input'].forEach(id => {
     document.getElementById(id).value = '';
@@ -992,11 +1099,13 @@ function addStudent() {
   showToast('Student saved. QR generated.');
 }
 
-function deleteStudent(id) {
+async function deleteStudent(id) {
   if (!confirm('Remove this student?')) return;
   students = students.filter(s => s.id !== id);
   logs     = logs.filter(l => l.studentId !== id);
-  saveState(); renderStudents(); renderClasses();
+  await dbClear('students'); await dbPutAll('students', students);
+  await dbClear('logs');     await dbPutAll('logs',     logs);
+  renderStudents(); renderClasses();
   showToast('Student removed.');
 }
 
@@ -1044,9 +1153,11 @@ function renderLog() {
     </tr>`).join('');
 }
 
-function clearLogs() {
+async function clearLogs() {
   if (!confirm('Clear ALL attendance logs? This cannot be undone.')) return;
-  logs = []; saveState(); renderLog();
+  logs = [];
+  await dbClear('logs');
+  renderLog();
   showToast('All logs cleared.');
 }
 
@@ -1442,21 +1553,22 @@ function doPost(e) {
   }
 }`;
 
-function renderSyncPage() {
-  const savedUrl = localStorage.getItem('edu_sync_url') || '';
+async function renderSyncPage() {
+  const savedUrl = await dbGetSetting('sync_url') || '';
   document.getElementById('sync-url-input').value = savedUrl;
   document.getElementById('gas-code').value = GAS_SCRIPT;
 }
 
-function saveSyncUrl() {
+async function saveSyncUrl() {
   const url = document.getElementById('sync-url-input').value.trim();
   if (!url) return showToast('Paste the Web App URL first.');
-  localStorage.setItem('edu_sync_url', url);
+  await dbSetSetting('sync_url', url);
   showToast('URL saved.');
 }
 
 async function syncToSheets() {
-  const url = localStorage.getItem('edu_sync_url') || document.getElementById('sync-url-input').value.trim();
+  const savedUrl = await dbGetSetting('sync_url');
+  const url = savedUrl || document.getElementById('sync-url-input').value.trim();
   const msg = document.getElementById('sync-status-msg');
   if (!url) { msg.innerHTML = `<div class="sync-status err">No URL saved. Paste the Web App URL first.</div>`; return; }
   if (!logs.length) { msg.innerHTML = `<div class="sync-status info">No logs to sync yet.</div>`; return; }
@@ -1658,13 +1770,69 @@ function closeTermsModalDirect() {
 }
 
 // ── BOOT ──────────────────────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', () => {
-  logs = logs.map(l => ({ type: 'arrival', studentLrn: '', ...l }));
+window.addEventListener('DOMContentLoaded', async () => {
+  await openDB();
+
+  // ── Migrate from localStorage if IDB is empty ──
+  const existingClasses = await dbGetAll('classes');
+  if (existingClasses.length === 0) {
+    const lsClasses  = JSON.parse(localStorage.getItem('edu_classes'))  || [];
+    const lsStudents = JSON.parse(localStorage.getItem('edu_students')) || [];
+    const lsLogs     = JSON.parse(localStorage.getItem('edu_logs'))     || [];
+    if (lsClasses.length || lsStudents.length || lsLogs.length) {
+      // Migrate data
+      if (lsClasses.length)  await dbPutAll('classes',  lsClasses);
+      if (lsStudents.length) await dbPutAll('students', lsStudents);
+      // Logs need id field for autoIncrement store — add one if missing
+      for (const l of lsLogs) {
+        const entry = { type: 'arrival', studentLrn: '', ...l };
+        delete entry.id; // let IDB assign a new numeric id
+        await dbAdd('logs', entry);
+      }
+      // Save sync URL
+      const syncUrl = localStorage.getItem('edu_sync_url');
+      if (syncUrl) await dbSetSetting('sync_url', syncUrl);
+      // Clear localStorage after migration
+      ['edu_classes','edu_students','edu_logs','edu_sync_url'].forEach(k => localStorage.removeItem(k));
+      showToast('Data migrated from old storage ✓');
+    }
+  }
+
+  // ── Load all data into memory ──
+  classes  = await dbGetAll('classes');
+  students = await dbGetAll('students');
+  logs     = await dbGetAll('logs');
+
+  // Migrate old logs missing type field
+  let needsLogFix = false;
+  logs = logs.map(l => {
+    if (!l.type) { needsLogFix = true; return { type: 'arrival', studentLrn: '', ...l }; }
+    return l;
+  });
+  if (needsLogFix) {
+    await dbClear('logs');
+    for (const l of logs) { const e = {...l}; delete e.id; await dbAdd('logs', e); }
+    logs = await dbGetAll('logs');
+  }
+
+  // Sort logs newest first, students alphabetically
+  logs.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
   students.sort((a, b) => a.name.localeCompare(b.name));
-  saveState();
+
   populateDropdowns();
   initSummaryPeriod();
 });
+</script>
+
+<script>
+// ── SERVICE WORKER REGISTRATION ───────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('EduScan SW registered:', reg.scope))
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}
 </script>
 </body>
 </html>
