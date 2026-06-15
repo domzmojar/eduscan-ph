@@ -581,6 +581,15 @@
 
       <div id="sync-status-msg"></div>
 
+      <!-- DIAGNOSTIC TOOL -->
+      <details style="margin-top:0.75rem;">
+        <summary style="font-size:0.87rem; font-weight:600; color:var(--warning);">🔧 Troubleshoot connection</summary>
+        <div style="margin-top:0.75rem; display:flex; flex-direction:column; gap:0.5rem;">
+          <button class="btn full outline" onclick="runDiagnostic()">Run connection test</button>
+          <div id="diag-output" style="font-size:0.78rem; font-family:monospace; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:0.75rem; display:none; white-space:pre-wrap; line-height:1.6;"></div>
+        </div>
+      </details>
+
       <details style="margin-top:1.1rem;">
         <summary>Show Apps Script to paste</summary>
         <textarea id="gas-code" rows="28" readonly style="margin-top:0.6rem; font-size:0.77rem;"></textarea>
@@ -1702,6 +1711,84 @@ function copyScript() {
   const ta = document.getElementById('gas-code');
   ta.select(); document.execCommand('copy');
   showToast('Script copied.');
+}
+
+async function runDiagnostic() {
+  const url = document.getElementById('sync-url-input').value.trim()
+    || (await dbGetSetting('sync_url')) || '';
+  const out = document.getElementById('diag-output');
+  out.style.display = 'block';
+
+  function log(msg) { out.textContent += msg + '\n'; }
+  out.textContent = '';
+
+  log('── EduScan Sync Diagnostic ──\n');
+
+  // 1. URL check
+  if (!url) {
+    log('❌ No URL entered. Paste your Web App URL above first.'); return;
+  }
+  log('✅ URL present');
+  if (!url.startsWith('https://script.google.com/macros/s/')) {
+    log('⚠  URL does not look like an Apps Script Web App URL.');
+    log('   Expected: https://script.google.com/macros/s/..../exec');
+  } else {
+    log('✅ URL format looks correct');
+  }
+
+  // 2. Network / online check
+  if (!navigator.onLine) {
+    log('❌ Device is offline. Connect to internet and retry.'); return;
+  }
+  log('✅ Device is online');
+
+  // 3. Try text/plain fetch (correct method)
+  log('\n── Test 1: text/plain POST (correct method) ──');
+  try {
+    const r = await fetch(url, {
+      method:  'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body:    JSON.stringify({ action: 'ping' })
+    });
+    log(`   HTTP status: ${r.status} ${r.statusText}`);
+    const text = await r.text();
+    log(`   Raw response: ${text.slice(0, 200)}`);
+    try {
+      const json = JSON.parse(text);
+      if (json.pong || json.success) {
+        log('✅ Connection successful! Script is reachable.');
+      } else if (json.error) {
+        log(`⚠  Script returned error: ${json.error}`);
+      }
+    } catch {
+      log('⚠  Response is not JSON — script may have a syntax error.');
+    }
+  } catch(e) {
+    log(`❌ Fetch failed: ${e.message}`);
+    log('   Possible causes:');
+    log('   • Wrong URL (copy again from Deploy → Manage deployments)');
+    log('   • Script not deployed yet (Deploy → New deployment)');
+    log('   • Access not set to "Anyone" in deployment settings');
+  }
+
+  // 4. Try application/json fetch (old broken method — for comparison)
+  log('\n── Test 2: application/json POST (old method — expect CORS error) ──');
+  try {
+    const r2 = await fetch(url, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ action: 'ping' })
+    });
+    log(`   HTTP status: ${r2.status}`);
+  } catch(e) {
+    log(`   As expected, failed with: ${e.message}`);
+  }
+
+  log('\n── Checklist ──');
+  log('□ Pasted the NEW script from "Show Apps Script" section?');
+  log('□ Created a NEW deployment (not reused old one)?');
+  log('□ Set "Who has access" to Anyone (not just anyone with link)?');
+  log('□ Copied URL ending in /exec (not /dev)?');
 }
 
 // ── TERMS ─────────────────────────────────────────────────────────────────
