@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EduScan PH - Attendance System</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1d4ed8">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="EduScan PH">
+  <link rel="apple-touch-icon" href="/icon-192-any.png">
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <style>
     :root {
@@ -550,49 +557,28 @@
   <div id="page-sync" class="page">
     <div class="card">
       <h2>Sync to Google Sheets</h2>
-
-      <!-- AUTO-SYNC STATUS BAR -->
-      <div id="autosync-bar" style="display:none; align-items:center; justify-content:space-between; background:var(--success-bg); border:1px solid var(--success-border); border-radius:8px; padding:0.6rem 0.85rem; margin-bottom:1rem; gap:0.5rem; flex-wrap:wrap;">
-        <span style="font-size:0.82rem; color:var(--success); font-weight:600;">🔄 Auto-sync active</span>
-        <span id="autosync-last" style="font-size:0.75rem; color:var(--text-muted);"></span>
-        <button class="btn danger sm" onclick="disableAutoSync()">Disable</button>
-      </div>
-
       <div class="instruction-block">
         <p style="font-size:0.87rem; font-weight:600; margin-bottom:0.6rem;">One-time setup:</p>
         <ol>
           <li>Open <strong>Google Sheets</strong> → create a new spreadsheet.</li>
-          <li>Click <strong>Extensions → Apps Script</strong>. Delete existing code.</li>
-          <li>Paste the script below, then <strong>Save (Ctrl+S)</strong>.</li>
-          <li>Click <strong>Deploy → New deployment → Web app</strong>. Set "Who has access" to <code>Anyone</code>. Click Deploy and copy the <strong>Web App URL</strong>.</li>
-          <li>Paste the URL below, tap <strong>Save &amp; enable auto-sync</strong>.</li>
+          <li>Click <strong>Extensions → Apps Script</strong>. Delete the existing code.</li>
+          <li>Paste the script below (tap "Show script"), then save.</li>
+          <li><strong>Deploy → New deployment → Web app.</strong> Set "Who has access" to <code>Anyone</code>. Copy the Web App URL.</li>
+          <li>Paste that URL below and tap <strong>Save URL</strong>, then <strong>Push logs</strong>.</li>
         </ol>
       </div>
-
       <div class="form-group">
         <label>Web App URL</label>
         <input type="url" id="sync-url-input" placeholder="https://script.google.com/macros/s/...">
       </div>
-
-      <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem; flex-wrap:wrap;">
-        <button class="btn full" onclick="saveSyncUrl()">💾 Save &amp; enable auto-sync</button>
-        <button class="btn full success" id="sync-btn" onclick="syncToSheets()">⬆ Push all logs now</button>
+      <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem;">
+        <button class="btn full" onclick="saveSyncUrl()">Save URL</button>
+        <button class="btn full success" id="sync-btn" onclick="syncToSheets()">Push logs</button>
       </div>
-
       <div id="sync-status-msg"></div>
-
-      <!-- DIAGNOSTIC TOOL -->
-      <details style="margin-top:0.75rem;">
-        <summary style="font-size:0.87rem; font-weight:600; color:var(--warning);">🔧 Troubleshoot connection</summary>
-        <div style="margin-top:0.75rem; display:flex; flex-direction:column; gap:0.5rem;">
-          <button class="btn full outline" onclick="runDiagnostic()">Run connection test</button>
-          <div id="diag-output" style="font-size:0.78rem; font-family:monospace; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:0.75rem; display:none; white-space:pre-wrap; line-height:1.6;"></div>
-        </div>
-      </details>
-
       <details style="margin-top:1.1rem;">
         <summary>Show Apps Script to paste</summary>
-        <textarea id="gas-code" rows="28" readonly style="margin-top:0.6rem; font-size:0.77rem;"></textarea>
+        <textarea id="gas-code" rows="24" readonly style="margin-top:0.6rem; font-size:0.77rem;"></textarea>
         <button class="btn sm" style="margin-top:0.5rem;" onclick="copyScript()">Copy script</button>
       </details>
     </div>
@@ -973,7 +959,6 @@ async function handleQRScan(rawData) {
     logs.unshift(logEntry);
 
     if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
-    scheduleAutoSync();
 
     const isArrival = scanMode === 'arrival';
     showFeedback(
@@ -1528,12 +1513,10 @@ function populateDropdowns() {
 
 // ── SYNC ──────────────────────────────────────────────────────────────────
 const GAS_SCRIPT = `// EduScan PH — Google Apps Script
-// Paste in Extensions → Apps Script, save, then Deploy as Web App (access: Anyone)
-// IMPORTANT: After editing, always create a NEW deployment — do not re-use old ones.
+// Paste in Extensions → Apps Script, deploy as Web App (access: Anyone)
 
 function doPost(e) {
   try {
-    // NOTE: request uses text/plain to avoid CORS preflight — still valid JSON
     const data  = JSON.parse(e.postData.contents);
     const ss    = SpreadsheetApp.getActiveSpreadsheet();
     let sheet   = ss.getSheetByName('Attendance');
@@ -1541,44 +1524,27 @@ function doPost(e) {
     if (!sheet) {
       sheet = ss.insertSheet('Attendance');
       sheet.appendRow(['Timestamp','Date','Time','Type','Class','Student Name','LRN']);
-      sheet.getRange(1,1,1,7).setFontWeight('bold');
       sheet.setFrozenRows(1);
     }
 
-    if (data.action === 'ping') {
-      return ContentService
-        .createTextOutput(JSON.stringify({ success: true, pong: true }))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-
-    // Dedup: collect existing timestamps from sheet to avoid duplicates
-    const lastRow = sheet.getLastRow();
-    const existing = new Set();
-    if (lastRow > 1) {
-      sheet.getRange(2, 1, lastRow - 1, 1).getValues()
-        .forEach(r => existing.add(r[0]));
-    }
-
-    const rows = data.logs
-      .filter(l => !existing.has(l.timestamp))
-      .map(l => {
-        const d = new Date(l.timestamp);
-        return [
-          l.timestamp,
-          Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy-MM-dd'),
-          Utilities.formatDate(d, Session.getScriptTimeZone(), 'HH:mm:ss'),
-          l.type === 'departure' ? 'Departure' : 'Arrival',
-          l.className,
-          l.studentName,
-          l.studentLrn || ''
-        ];
-      });
+    const rows = data.logs.map(l => {
+      const d = new Date(l.timestamp);
+      return [
+        l.timestamp,
+        Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy-MM-dd'),
+        Utilities.formatDate(d, Session.getScriptTimeZone(), 'HH:mm:ss'),
+        l.type === 'departure' ? 'Departure' : 'Arrival',
+        l.className,
+        l.studentName,
+        l.studentLrn  || ''
+      ];
+    });
 
     if (rows.length > 0)
       sheet.getRange(sheet.getLastRow()+1, 1, rows.length, 7).setValues(rows);
 
     return ContentService
-      .createTextOutput(JSON.stringify({ success: true, added: rows.length, skipped: data.logs.length - rows.length }))
+      .createTextOutput(JSON.stringify({ success: true, added: rows.length }))
       .setMimeType(ContentService.MimeType.JSON);
   } catch(err) {
     return ContentService
@@ -1587,208 +1553,49 @@ function doPost(e) {
   }
 }`;
 
-// ── AUTO-SYNC STATE ────────────────────────────────────────────────────────
-let autoSyncEnabled  = false;
-let autoSyncTimer    = null;
-const AUTO_SYNC_DELAY = 10000; // push 10s after last scan (debounced)
-
 async function renderSyncPage() {
   const savedUrl = await dbGetSetting('sync_url') || '';
-  const autoSync = await dbGetSetting('auto_sync');
   document.getElementById('sync-url-input').value = savedUrl;
   document.getElementById('gas-code').value = GAS_SCRIPT;
-  autoSyncEnabled = !!autoSync;
-  updateAutoSyncBar();
-}
-
-function updateAutoSyncBar() {
-  const bar = document.getElementById('autosync-bar');
-  if (autoSyncEnabled) {
-    bar.style.display = 'flex';
-    updateAutoSyncLastLabel();
-  } else {
-    bar.style.display = 'none';
-  }
-}
-
-async function updateAutoSyncLastLabel() {
-  const last = await dbGetSetting('last_sync_time');
-  const el   = document.getElementById('autosync-last');
-  if (el) el.textContent = last ? `Last synced: ${new Date(last).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}` : 'Not synced yet';
 }
 
 async function saveSyncUrl() {
   const url = document.getElementById('sync-url-input').value.trim();
   if (!url) return showToast('Paste the Web App URL first.');
   await dbSetSetting('sync_url', url);
-  await dbSetSetting('auto_sync', true);
-  autoSyncEnabled = true;
-  updateAutoSyncBar();
-  showToast('URL saved. Auto-sync enabled ✓');
-  // Immediately do a ping test
-  pingAndSync(url);
+  showToast('URL saved.');
 }
 
-async function disableAutoSync() {
-  await dbSetSetting('auto_sync', false);
-  autoSyncEnabled = false;
-  clearTimeout(autoSyncTimer);
-  updateAutoSyncBar();
-  showToast('Auto-sync disabled.');
-}
-
-// Called after every new scan log is written
-function scheduleAutoSync() {
-  if (!autoSyncEnabled) return;
-  clearTimeout(autoSyncTimer);
-  autoSyncTimer = setTimeout(() => syncToSheets(true), AUTO_SYNC_DELAY);
-}
-
-async function pingAndSync(url) {
-  try {
-    // Use text/plain to bypass CORS preflight
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'ping' })
-    });
-    const result = await resp.json();
-    if (result.pong) {
-      showToast('✓ Connected to Google Sheets!');
-      syncToSheets(true);
-    }
-  } catch(err) {
-    showToast('⚠ Could not reach Google Sheets. Check the URL.');
-  }
-}
-
-async function syncToSheets(silent = false) {
+async function syncToSheets() {
   const savedUrl = await dbGetSetting('sync_url');
-  const url = savedUrl || document.getElementById('sync-url-input')?.value.trim();
+  const url = savedUrl || document.getElementById('sync-url-input').value.trim();
   const msg = document.getElementById('sync-status-msg');
-
-  if (!url) {
-    if (msg) msg.innerHTML = `<div class="sync-status err">No URL saved. Paste the Web App URL first.</div>`;
-    return;
-  }
-  if (!logs.length) {
-    if (msg && !silent) msg.innerHTML = `<div class="sync-status info">No logs to sync yet.</div>`;
-    return;
-  }
+  if (!url) { msg.innerHTML = `<div class="sync-status err">No URL saved. Paste the Web App URL first.</div>`; return; }
+  if (!logs.length) { msg.innerHTML = `<div class="sync-status info">No logs to sync yet.</div>`; return; }
 
   const btn = document.getElementById('sync-btn');
-  if (btn && !silent) { btn.disabled = true; btn.textContent = 'Pushing…'; }
-  if (msg && !silent) msg.innerHTML = `<div class="sync-status info">Connecting to Google Sheets…</div>`;
+  btn.disabled = true; btn.textContent = 'Pushing…';
+  msg.innerHTML = `<div class="sync-status info">Connecting to Google Sheets…</div>`;
 
   try {
-    // KEY FIX: use text/plain to skip CORS preflight — GAS still parses it as JSON
-    const resp = await fetch(url, {
-      method:  'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body:    JSON.stringify({ logs })
-    });
+    const resp   = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ logs }) });
     const result = await resp.json();
-
     if (result.success) {
-      await dbSetSetting('last_sync_time', new Date().toISOString());
-      updateAutoSyncLastLabel();
-      const note = result.skipped > 0 ? ` (${result.skipped} duplicates skipped)` : '';
-      if (msg && !silent) msg.innerHTML = `<div class="sync-status ok">✓ ${result.added} records pushed to Google Sheets${note}.</div>`;
-      if (silent && result.added > 0) showToast(`☁ Synced ${result.added} record${result.added !== 1 ? 's' : ''} to Sheets`);
+      msg.innerHTML = `<div class="sync-status ok">✓ ${result.added} records pushed to Google Sheets.</div>`;
+      showToast(`${result.added} records synced.`);
     } else {
-      if (msg && !silent) msg.innerHTML = `<div class="sync-status err">Script error: ${result.error}</div>`;
-      if (silent) showToast('⚠ Sheets sync failed.');
+      msg.innerHTML = `<div class="sync-status err">Script error: ${result.error}</div>`;
     }
   } catch(err) {
-    if (msg && !silent) msg.innerHTML = `<div class="sync-status err">Network error — check the URL is a valid Apps Script Web App deployment URL.</div>`;
-    if (silent) showToast('⚠ Sheets sync — network error.');
+    msg.innerHTML = `<div class="sync-status err">Network error — check the URL and make sure access is set to "Anyone".</div>`;
   }
-
-  if (btn && !silent) { btn.disabled = false; btn.textContent = '⬆ Push all logs now'; }
+  btn.disabled = false; btn.textContent = 'Push logs';
 }
 
 function copyScript() {
   const ta = document.getElementById('gas-code');
   ta.select(); document.execCommand('copy');
   showToast('Script copied.');
-}
-
-async function runDiagnostic() {
-  const url = document.getElementById('sync-url-input').value.trim()
-    || (await dbGetSetting('sync_url')) || '';
-  const out = document.getElementById('diag-output');
-  out.style.display = 'block';
-
-  function log(msg) { out.textContent += msg + '\n'; }
-  out.textContent = '';
-
-  log('── EduScan Sync Diagnostic ──\n');
-
-  // 1. URL check
-  if (!url) {
-    log('❌ No URL entered. Paste your Web App URL above first.'); return;
-  }
-  log('✅ URL present');
-  if (!url.startsWith('https://script.google.com/macros/s/')) {
-    log('⚠  URL does not look like an Apps Script Web App URL.');
-    log('   Expected: https://script.google.com/macros/s/..../exec');
-  } else {
-    log('✅ URL format looks correct');
-  }
-
-  // 2. Network / online check
-  if (!navigator.onLine) {
-    log('❌ Device is offline. Connect to internet and retry.'); return;
-  }
-  log('✅ Device is online');
-
-  // 3. Try text/plain fetch (correct method)
-  log('\n── Test 1: text/plain POST (correct method) ──');
-  try {
-    const r = await fetch(url, {
-      method:  'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body:    JSON.stringify({ action: 'ping' })
-    });
-    log(`   HTTP status: ${r.status} ${r.statusText}`);
-    const text = await r.text();
-    log(`   Raw response: ${text.slice(0, 200)}`);
-    try {
-      const json = JSON.parse(text);
-      if (json.pong || json.success) {
-        log('✅ Connection successful! Script is reachable.');
-      } else if (json.error) {
-        log(`⚠  Script returned error: ${json.error}`);
-      }
-    } catch {
-      log('⚠  Response is not JSON — script may have a syntax error.');
-    }
-  } catch(e) {
-    log(`❌ Fetch failed: ${e.message}`);
-    log('   Possible causes:');
-    log('   • Wrong URL (copy again from Deploy → Manage deployments)');
-    log('   • Script not deployed yet (Deploy → New deployment)');
-    log('   • Access not set to "Anyone" in deployment settings');
-  }
-
-  // 4. Try application/json fetch (old broken method — for comparison)
-  log('\n── Test 2: application/json POST (old method — expect CORS error) ──');
-  try {
-    const r2 = await fetch(url, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ action: 'ping' })
-    });
-    log(`   HTTP status: ${r2.status}`);
-  } catch(e) {
-    log(`   As expected, failed with: ${e.message}`);
-  }
-
-  log('\n── Checklist ──');
-  log('□ Pasted the NEW script from "Show Apps Script" section?');
-  log('□ Created a NEW deployment (not reused old one)?');
-  log('□ Set "Who has access" to Anyone (not just anyone with link)?');
-  log('□ Copied URL ending in /exec (not /dev)?');
 }
 
 // ── TERMS ─────────────────────────────────────────────────────────────────
@@ -2012,18 +1819,18 @@ window.addEventListener('DOMContentLoaded', async () => {
   logs.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
   students.sort((a, b) => a.name.localeCompare(b.name));
 
-  // Restore auto-sync state
-  autoSyncEnabled = !!(await dbGetSetting('auto_sync'));
-
   populateDropdowns();
   initSummaryPeriod();
 });
 </script>
 
 <script>
+// ── SERVICE WORKER REGISTRATION ───────────────────────────────────────────
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('EduScan SW registered:', reg.scope))
+      .catch(err => console.warn('SW registration failed:', err));
   });
 }
 </script>
