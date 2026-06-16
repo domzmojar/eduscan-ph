@@ -177,6 +177,7 @@
     .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 0.73rem; font-weight: 600; }
     .badge-arrival   { background: var(--arrival-bg);   color: var(--arrival);   border: 1px solid var(--arrival-border); }
     .badge-departure { background: var(--departure-bg); color: var(--departure); border: 1px solid var(--departure-border); }
+    .badge-late      { background: #fff7ed; color: #c2410c; border: 1px solid #fdba74; }
     .badge-class     { background: var(--primary-bg);   color: var(--primary); }
 
     #toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px); background: #1e293b; color: white; padding: 0.65rem 1.25rem; border-radius: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: transform 0.3s ease; z-index: 1000; pointer-events: none; font-size: 0.85rem; white-space: nowrap; max-width: 90vw; text-overflow: ellipsis; overflow: hidden; }
@@ -470,6 +471,17 @@
         <label for="class-name-input">Class / section name</label>
         <input type="text" id="class-name-input" placeholder="e.g. Grade 7 - Sampaguita">
       </div>
+      <div style="display:flex; gap:0.5rem;">
+        <div class="form-group" style="flex:1;">
+          <label for="class-start-time">Class start time</label>
+          <input type="time" id="class-start-time" value="07:30">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label for="class-grace-mins">Grace period (mins)</label>
+          <input type="number" id="class-grace-mins" value="5" min="0" max="60" style="width:100%; padding:0.65rem 0.75rem; border:1px solid var(--border); border-radius:8px; font-size:0.95rem;">
+        </div>
+      </div>
+      <p style="font-size:0.75rem; color:var(--text-muted); margin-top:-0.5rem; margin-bottom:0.9rem;">Arrivals after start time + grace period are flagged as Late.</p>
       <button class="btn full" onclick="addClass()">Save class</button>
     </div>
 
@@ -526,7 +538,7 @@
       <div style="overflow-x:auto; overflow-y:auto; max-height:65vh; border-radius:8px; border:1px solid var(--border); margin-top:0.5rem;">
         <table style="margin-top:0; min-width:480px;">
           <thead style="position:sticky; top:0; z-index:1;">
-            <tr><th>Time</th><th>Type</th><th>Class</th><th>Student</th><th>LRN</th></tr>
+            <tr><th>Time</th><th>Type</th><th>Class</th><th>Student</th><th>LRN</th><th></th></tr>
           </thead>
           <tbody id="logs-table-body"></tbody>
         </table>
@@ -682,11 +694,20 @@
         <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">Offline-first attendance tracker</div>
       </div>
 
-      <!-- Install button (shown when browser supports it) -->
+      <!-- Install button: hidden until beforeinstallprompt fires -->
       <button id="pwa-install-btn" class="btn full" onclick="triggerPWAInstall()"
-        style="background:linear-gradient(135deg,#1d4ed8,#3b82f6); font-size:1rem; padding:0.85rem; border-radius:12px;">
+        style="display:none; background:linear-gradient(135deg,#1d4ed8,#3b82f6); font-size:1rem; padding:0.85rem; border-radius:12px;">
         ⬇ Install App
       </button>
+      <!-- Already installed -->
+      <div id="pwa-installed-msg" style="display:none; background:var(--success-bg); border:1px solid var(--success-border); border-radius:10px; padding:0.85rem; color:var(--success); font-weight:600; font-size:0.9rem;">
+        ✅ EduScan PH is already installed!
+      </div>
+      <!-- Fallback hint (iOS Safari, etc.) -->
+      <div id="pwa-manual-hint" style="display:none; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:0.85rem; font-size:0.82rem; color:var(--text-muted); line-height:1.6;">
+        <strong style="color:var(--text);">To install:</strong><br>
+        <span id="pwa-hint-text"></span>
+      </div>
     </div>
 
     <!-- Manual export -->
@@ -759,7 +780,72 @@
   </div>
 </div>
 
-<!-- TERMS DETAIL MODAL -->
+<!-- EDIT CLASS MODAL -->
+<div class="modal-backdrop" id="edit-class-modal" onclick="closeEditClassModal(event)">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <span class="modal-title">Edit Class</span>
+      <button class="modal-close" onclick="closeEditClassModalDirect()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-class-id">
+      <div class="form-group">
+        <label for="edit-class-name">Class / section name</label>
+        <input type="text" id="edit-class-name" placeholder="e.g. Grade 7 - Sampaguita">
+      </div>
+      <div style="display:flex; gap:0.5rem;">
+        <div class="form-group" style="flex:1;">
+          <label for="edit-class-start-time">Class start time</label>
+          <input type="time" id="edit-class-start-time">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label for="edit-class-grace-mins">Grace period (mins)</label>
+          <input type="number" id="edit-class-grace-mins" min="0" max="60" style="width:100%; padding:0.65rem 0.75rem; border:1px solid var(--border); border-radius:8px; font-size:0.95rem;">
+        </div>
+      </div>
+      <p style="font-size:0.75rem; color:var(--text-muted); margin-top:-0.5rem; margin-bottom:1rem;">Arrivals after start time + grace period are flagged ⏰ Late.</p>
+      <button class="btn full" onclick="saveEditClass()">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT LOG MODAL -->
+<div class="modal-backdrop" id="edit-log-modal" onclick="closeEditLogModal(event)">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <span class="modal-title">Edit Attendance Record</span>
+      <button class="modal-close" onclick="closeEditLogModalDirect()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-log-id">
+      <div class="form-group">
+        <label>Student</label>
+        <div id="edit-log-student-name" style="font-weight:700; font-size:0.95rem; padding:0.4rem 0;"></div>
+      </div>
+      <div class="form-group">
+        <label for="edit-log-type">Record type</label>
+        <select id="edit-log-type">
+          <option value="arrival">☀️ Arrival</option>
+          <option value="departure">🌙 Departure</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="edit-log-time">Time</label>
+        <input type="time" id="edit-log-time">
+      </div>
+      <div class="form-group">
+        <label for="edit-log-date">Date</label>
+        <input type="date" id="edit-log-date">
+      </div>
+      <div class="form-group" style="display:flex; align-items:center; gap:10px; margin-bottom:1rem;">
+        <input type="checkbox" id="edit-log-is-late" style="width:18px;height:18px;cursor:pointer;">
+        <label for="edit-log-is-late" style="text-transform:none; font-size:0.9rem; font-weight:600; color:var(--text); cursor:pointer; margin:0;">⏰ Mark as Late</label>
+      </div>
+      <button class="btn full" onclick="saveEditLog()">Save changes</button>
+      <button class="btn full danger" style="margin-top:0.5rem;" onclick="deleteLogEntry()">Delete this record</button>
+    </div>
+  </div>
+</div>
 <div class="modal-backdrop" id="terms-modal-backdrop" onclick="closeTermsModal(event)">
   <div class="modal-sheet" style="max-height:88vh;">
     <div class="modal-header">
@@ -1119,8 +1205,22 @@ async function handleQRScan(rawData) {
       studentId:   student.id,
       studentName: student.name,
       studentLrn:  student.lrn || '',
-      type:        scanMode
+      type:        scanMode,
+      isLate:      false
     };
+
+    // Auto-detect late arrival
+    if (scanMode === 'arrival') {
+      const cls = classes.find(c => c.id === currentClassId);
+      if (cls && cls.startTime) {
+        const now       = new Date();
+        const [h, m]    = cls.startTime.split(':').map(Number);
+        const grace     = cls.graceMins != null ? cls.graceMins : 5;
+        const cutoffMin = h * 60 + m + grace;
+        const nowMin    = now.getHours() * 60 + now.getMinutes();
+        if (nowMin > cutoffMin) logEntry.isLate = true;
+      }
+    }
 
     // Add to IDB first, then push to in-memory array with the auto-incremented id
     const newId = await dbAdd('logs', logEntry);
@@ -1132,11 +1232,14 @@ async function handleQRScan(rawData) {
     checkAutoExport('scan');
 
     const isArrival = scanMode === 'arrival';
+    const lateTag   = (isArrival && logEntry.isLate)
+      ? ` <span class="badge badge-late" style="font-size:0.75rem;">⏰ Late</span>` : '';
     showFeedback(
       isArrival ? 'ok' : 'ok-dep',
       isArrival ? '☀️ Arrival recorded' : '🌙 Departure recorded',
-      `<strong>${student.name}</strong>${student.lrn ? ' · LRN ' + student.lrn : ''}<br>` +
-      `<span style="font-size:0.82rem;">${new Date(logEntry.timestamp).toLocaleTimeString()}</span>`
+      `<strong>${student.name}</strong>${student.lrn ? ' · LRN ' + student.lrn : ''}${lateTag}<br>` +
+      `<span style="font-size:0.82rem;">${new Date(logEntry.timestamp).toLocaleTimeString()}</span>` +
+      `<br><button class="btn outline sm" style="margin-top:6px;" onclick="openEditLogModal(${logEntry.id})">✏️ Edit this record</button>`
     );
     renderTodayList();
 
@@ -1161,22 +1264,29 @@ function renderTodayList() {
   if (!todayLog.length) { box.style.display = 'none'; return; }
 
   box.style.display = 'block';
-  items.innerHTML = todayLog.map(l => `
+  items.innerHTML = todayLog.map(l => {
+    const lateTag = (l.type === 'arrival' && l.isLate)
+      ? `<span class="badge badge-late" style="font-size:0.68rem;">⏰ Late</span>` : '';
+    return `
     <div class="today-item">
       <span>${l.studentName}${l.studentLrn ? ' <span style="color:var(--text-muted);font-size:0.75rem;">· ' + l.studentLrn + '</span>' : ''}</span>
       <div style="display:flex; align-items:center; gap:5px;">
+        ${lateTag}
         <span style="color:var(--text-muted); font-size:0.76rem;">${new Date(l.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>
         <span class="badge badge-${l.type}">${l.type === 'arrival' ? '☀️ Arrival' : '🌙 Departure'}</span>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // ── CLASSES ───────────────────────────────────────────────────────────────
 async function addClass() {
-  const input = document.getElementById('class-name-input');
-  const name  = input.value.trim();
+  const input     = document.getElementById('class-name-input');
+  const name      = input.value.trim();
+  const startTime = document.getElementById('class-start-time').value || '07:30';
+  const graceMins = parseInt(document.getElementById('class-grace-mins').value) || 5;
   if (!name) return showToast('Enter a class name.');
-  classes.push({ id: 'class_' + Date.now(), name });
+  classes.push({ id: 'class_' + Date.now(), name, startTime, graceMins });
   await saveClasses();
   input.value = '';
   renderClasses(); populateDropdowns();
@@ -1202,14 +1312,19 @@ function renderClasses() {
     return;
   }
   tbody.innerHTML = classes.map(c => {
-    const count = students.filter(s => s.classId === c.id).length;
+    const count     = students.filter(s => s.classId === c.id).length;
+    const startTime = c.startTime || '—';
+    const grace     = c.graceMins != null ? `${c.graceMins}m grace` : '';
     return `
     <tr class="class-row-clickable" onclick="openClassRosterModal('${c.id}')">
       <td>
         <strong style="color:var(--primary);">${c.name}</strong><br>
-        <span style="font-size:0.75rem;color:var(--text-muted);">${count} student${count !== 1 ? 's' : ''} · tap to view roster</span>
+        <span style="font-size:0.75rem;color:var(--text-muted);">
+          ${count} student${count !== 1 ? 's' : ''} · starts ${startTime}${grace ? ' · ' + grace : ''} · tap to view roster
+        </span>
       </td>
-      <td style="text-align:right;" onclick="event.stopPropagation()">
+      <td style="text-align:right; white-space:nowrap;" onclick="event.stopPropagation()">
+        <button class="btn outline sm" style="margin-right:4px;" onclick="openEditClassModal('${c.id}')">Edit</button>
         <button class="btn danger sm" onclick="removeClass('${c.id}')">Delete</button>
       </td>
     </tr>`;
@@ -1312,16 +1427,21 @@ function renderLog() {
     tbody.innerHTML = `<tr><td colspan="5" class="empty">No logs yet.</td></tr>`;
     return;
   }
-  tbody.innerHTML = logs.map(l => `
+  tbody.innerHTML = logs.map(l => {
+    const lateTag = (l.type === 'arrival' && l.isLate)
+      ? ` <span class="badge badge-late" style="font-size:0.68rem;">⏰ Late</span>` : '';
+    return `
     <tr>
       <td style="color:var(--text-muted);font-size:0.78rem;white-space:nowrap;">
         ${new Date(l.timestamp).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}
       </td>
-      <td><span class="badge badge-${l.type || 'arrival'}">${l.type === 'departure' ? '🌙 Dep.' : '☀️ Arr.'}</span></td>
+      <td><span class="badge badge-${l.type || 'arrival'}">${l.type === 'departure' ? '🌙 Dep.' : '☀️ Arr.'}</span>${lateTag}</td>
       <td><span class="badge badge-class" style="font-size:0.7rem;">${l.className || '—'}</span></td>
       <td><strong>${l.studentName}</strong></td>
       <td style="font-size:0.78rem;color:var(--text-muted);font-family:monospace;">${l.studentLrn || '—'}</td>
-    </tr>`).join('');
+      <td style="text-align:right;"><button class="btn outline sm" onclick="openEditLogModal(${l.id})">✏️</button></td>
+    </tr>`;
+  }).join('');
 }
 
 async function clearLogs() {
@@ -1655,6 +1775,103 @@ function closeModalDirect() {
   document.body.style.overflow = '';
 }
 
+// ── EDIT CLASS MODAL ──────────────────────────────────────────────────────
+function openEditClassModal(classId) {
+  const cls = classes.find(c => c.id === classId);
+  if (!cls) return;
+  document.getElementById('edit-class-id').value         = cls.id;
+  document.getElementById('edit-class-name').value       = cls.name;
+  document.getElementById('edit-class-start-time').value = cls.startTime || '07:30';
+  document.getElementById('edit-class-grace-mins').value = cls.graceMins != null ? cls.graceMins : 5;
+  document.getElementById('edit-class-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+async function saveEditClass() {
+  const id        = document.getElementById('edit-class-id').value;
+  const name      = document.getElementById('edit-class-name').value.trim();
+  const startTime = document.getElementById('edit-class-start-time').value || '07:30';
+  const graceMins = parseInt(document.getElementById('edit-class-grace-mins').value) || 0;
+  if (!name) return showToast('Class name cannot be empty.');
+  const cls = classes.find(c => c.id === id);
+  if (!cls) return;
+  cls.name      = name;
+  cls.startTime = startTime;
+  cls.graceMins = graceMins;
+  await saveClasses();
+  closeEditClassModalDirect();
+  renderClasses();
+  populateDropdowns();
+  showToast('Class updated.');
+}
+
+function closeEditClassModal(e) {
+  if (e.target === document.getElementById('edit-class-modal')) closeEditClassModalDirect();
+}
+function closeEditClassModalDirect() {
+  document.getElementById('edit-class-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ── EDIT LOG MODAL ────────────────────────────────────────────────────────
+function openEditLogModal(logId) {
+  const log = logs.find(l => l.id === logId);
+  if (!log) return showToast('Record not found.');
+  const ts = new Date(log.timestamp);
+  document.getElementById('edit-log-id').value           = logId;
+  document.getElementById('edit-log-student-name').textContent = log.studentName + (log.studentLrn ? ` · LRN ${log.studentLrn}` : '');
+  document.getElementById('edit-log-type').value         = log.type || 'arrival';
+  document.getElementById('edit-log-time').value         = ts.toTimeString().slice(0,5);
+  document.getElementById('edit-log-date').value         = ts.toISOString().slice(0,10);
+  document.getElementById('edit-log-is-late').checked    = !!log.isLate;
+  document.getElementById('edit-log-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+async function saveEditLog() {
+  const logId   = parseInt(document.getElementById('edit-log-id').value);
+  const type    = document.getElementById('edit-log-type').value;
+  const timeVal = document.getElementById('edit-log-time').value;
+  const dateVal = document.getElementById('edit-log-date').value;
+  const isLate  = document.getElementById('edit-log-is-late').checked;
+
+  if (!timeVal || !dateVal) return showToast('Date and time are required.');
+
+  const log = logs.find(l => l.id === logId);
+  if (!log) return;
+
+  // Build new timestamp preserving seconds as :00
+  log.timestamp = new Date(`${dateVal}T${timeVal}:00`).toISOString();
+  log.type      = type;
+  log.isLate    = isLate;
+
+  await dbPutAll('logs', [log]);
+
+  closeEditLogModalDirect();
+  renderLog();
+  renderTodayList();
+  showToast('Record updated.');
+}
+
+async function deleteLogEntry() {
+  const logId = parseInt(document.getElementById('edit-log-id').value);
+  if (!confirm('Delete this attendance record?')) return;
+  logs = logs.filter(l => l.id !== logId);
+  await dbDelete('logs', logId);
+  closeEditLogModalDirect();
+  renderLog();
+  renderTodayList();
+  showToast('Record deleted.');
+}
+
+function closeEditLogModal(e) {
+  if (e.target === document.getElementById('edit-log-modal')) closeEditLogModalDirect();
+}
+function closeEditLogModalDirect() {
+  document.getElementById('edit-log-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
 // ── DROPDOWNS ─────────────────────────────────────────────────────────────
 function populateDropdowns() {
   const classOpts = `<option value="">— Choose a class —</option>` +
@@ -1897,36 +2114,66 @@ function copyScript() {
 // ── PWA INSTALL ───────────────────────────────────────────────────────────
 let pwaInstallPrompt = null;
 
+function updatePWAInstallUI() {
+  const installBtn  = document.getElementById('pwa-install-btn');
+  const installedMsg = document.getElementById('pwa-installed-msg');
+  const manualHint  = document.getElementById('pwa-manual-hint');
+  const hintText    = document.getElementById('pwa-hint-text');
+  const headerBtn   = document.getElementById('header-install-btn');
+  const headerChip  = document.getElementById('header-installed-chip');
+
+  const standalone = window.matchMedia('(display-mode: standalone)').matches ||
+                     window.navigator.standalone === true;
+
+  if (standalone) {
+    if (installBtn)   installBtn.style.display   = 'none';
+    if (installedMsg) installedMsg.style.display  = 'block';
+    if (manualHint)   manualHint.style.display    = 'none';
+    if (headerBtn)    headerBtn.style.display      = 'none';
+    if (headerChip)   headerChip.style.display     = 'inline-flex';
+  } else if (pwaInstallPrompt) {
+    if (installBtn)   installBtn.style.display   = 'flex';
+    if (installedMsg) installedMsg.style.display  = 'none';
+    if (manualHint)   manualHint.style.display    = 'none';
+    if (headerBtn)    headerBtn.style.display      = 'inline-flex';
+    if (headerChip)   headerChip.style.display     = 'none';
+  } else {
+    // No prompt available — show manual instructions
+    if (installBtn)   installBtn.style.display   = 'none';
+    if (installedMsg) installedMsg.style.display  = 'none';
+    if (headerBtn)    headerBtn.style.display      = 'none';
+    if (headerChip)   headerChip.style.display     = 'none';
+    if (manualHint && hintText) {
+      manualHint.style.display = 'block';
+      const ua = navigator.userAgent;
+      if (/iPhone|iPad/.test(ua) || (ua.includes('Mac') && navigator.maxTouchPoints > 1)) {
+        hintText.innerHTML = 'Tap the <strong>Share</strong> button in Safari, then tap <strong>Add to Home Screen</strong>.';
+      } else if (ua.includes('Android')) {
+        hintText.innerHTML = 'Tap the <strong>⋮ menu</strong> in Chrome, then tap <strong>Add to Home screen</strong>.';
+      } else {
+        hintText.innerHTML = 'Click the <strong>install icon ⊕</strong> in your browser address bar, or use the browser menu → <strong>Install app</strong>.';
+      }
+    }
+  }
+}
+
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   pwaInstallPrompt = e;
-  // Show header install button once prompt is ready
-  const btn = document.getElementById('header-install-btn');
-  if (btn) btn.style.display = 'inline-flex';
+  updatePWAInstallUI();
 });
 
 window.addEventListener('appinstalled', () => {
   pwaInstallPrompt = null;
-  const btn  = document.getElementById('header-install-btn');
-  const chip = document.getElementById('header-installed-chip');
-  if (btn)  btn.style.display  = 'none';
-  if (chip) chip.style.display = 'inline-flex';
+  updatePWAInstallUI();
   showToast('✅ EduScan PH installed!');
 });
 
-function isInStandaloneMode() {
-  return window.matchMedia('(display-mode: standalone)').matches ||
-         window.navigator.standalone === true;
-}
-
 async function triggerPWAInstall() {
-  if (pwaInstallPrompt) {
-    pwaInstallPrompt.prompt();
-    const { outcome } = await pwaInstallPrompt.userChoice;
-    if (outcome === 'accepted') pwaInstallPrompt = null;
-  } else {
-    showToast('Use your browser menu → "Add to Home Screen" to install.');
-  }
+  if (!pwaInstallPrompt) return;
+  pwaInstallPrompt.prompt();
+  const { outcome } = await pwaInstallPrompt.userChoice;
+  if (outcome === 'accepted') pwaInstallPrompt = null;
 }
 
 // ── Render download page (refresh auto-export status) ──
@@ -1948,13 +2195,7 @@ async function renderDownloadPage() {
     bar.style.display = 'none';
   }
 
-  // Show installed chip in header if already running as PWA
-  if (isInStandaloneMode()) {
-    const btn  = document.getElementById('header-install-btn');
-    const chip = document.getElementById('header-installed-chip');
-    if (btn)  btn.style.display  = 'none';
-    if (chip) chip.style.display = 'inline-flex';
-  }
+  updatePWAInstallUI();
 }
 
 // ── Download the app HTML itself ──
@@ -2365,6 +2606,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   populateDropdowns();
   initSummaryPeriod();
   checkAutoExport('boot');
+  updatePWAInstallUI();
 });
 </script>
 
