@@ -836,6 +836,7 @@
     </div>
     <div class="modal-body">
       <input type="hidden" id="edit-log-id">
+      <input type="hidden" id="edit-log-original-timestamp">
       <div class="form-group">
         <label>Student</label>
         <div id="edit-log-student-name" style="font-weight:700; font-size:0.95rem; padding:0.4rem 0;"></div>
@@ -1857,7 +1858,8 @@ function openEditLogModal(logId) {
   const log = logs.find(l => l.id === logId);
   if (!log) return showToast('Record not found.');
   const ts = new Date(log.timestamp);
-  document.getElementById('edit-log-id').value           = logId;
+  document.getElementById('edit-log-id').value                  = logId;
+  document.getElementById('edit-log-original-timestamp').value   = log.timestamp;
   document.getElementById('edit-log-student-name').textContent = log.studentName + (log.studentLrn ? ` · LRN ${log.studentLrn}` : '');
   document.getElementById('edit-log-type').value         = log.type || 'arrival';
   document.getElementById('edit-log-time').value         = ts.toTimeString().slice(0,5);
@@ -1868,7 +1870,8 @@ function openEditLogModal(logId) {
 }
 
 async function saveEditLog() {
-  const logId   = parseInt(document.getElementById('edit-log-id').value);
+  const logId            = parseInt(document.getElementById('edit-log-id').value);
+  const originalTs       = document.getElementById('edit-log-original-timestamp').value;
   const type    = document.getElementById('edit-log-type').value;
   const timeVal = document.getElementById('edit-log-time').value;
   const dateVal = document.getElementById('edit-log-date').value;
@@ -1879,7 +1882,7 @@ async function saveEditLog() {
   const log = logs.find(l => l.id === logId);
   if (!log) return;
 
-  // Build new timestamp preserving seconds as :00
+  // Build new timestamp
   log.timestamp = new Date(`${dateVal}T${timeVal}:00`).toISOString();
   log.type      = type;
   log.isLate    = isLate;
@@ -1889,12 +1892,10 @@ async function saveEditLog() {
   closeEditLogModalDirect();
   renderLog();
   renderTodayList();
-  // Refresh summary if it's visible
   if (document.getElementById('page-summary').classList.contains('active')) renderSummary();
-  // Refresh terms modal body if open
   if (document.getElementById('terms-modal-backdrop').classList.contains('open')) renderTermsModalBody();
-  // Push the updated record to Google Sheets (will overwrite the existing row by timestamp)
-  syncSingleLog(log);
+  // Pass original timestamp so the sheet can find and overwrite the correct row
+  syncSingleLog(log, originalTs);
   showToast('Record updated.');
 }
 
@@ -1977,7 +1978,6 @@ function doPost(e) {
     // ── Migrate: if sheet exists but only has 7 columns, insert the Late column ──
     const headerRow = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
     if (!headerRow.includes('Late')) {
-      // Insert a new column after column 4 (Type), shift everything right
       sheet.insertColumnAfter(4);
       sheet.getRange(1, 5).setValue('Late').setFontWeight('bold');
     }
@@ -1990,18 +1990,16 @@ function doPost(e) {
     }
 
     // ── Build a map of existing rows: timestamp → row number ──
-    // (used for both dedup on insert and lookup on update)
     const lastRow = sheet.getLastRow();
     const timestampToRow = {};
     if (lastRow > 1) {
       sheet.getRange(2, 1, lastRow - 1, 1)
         .getValues()
-        .forEach((r, i) => { if (r[0]) timestampToRow[r[0]] = i + 2; }); // +2: 1-based + header
+        .forEach((r, i) => { if (r[0]) timestampToRow[r[0]] = i + 2; });
     }
 
     let added   = 0;
     let updated = 0;
-    let skipped = 0;
 
     for (const l of (data.logs || [])) {
       const d        = new Date(l.timestamp);
@@ -2020,21 +2018,26 @@ function doPost(e) {
         l.studentLrn  || ''
       ];
 
-      if (timestampToRow[l.timestamp]) {
-        // ── Row already exists → update it in place ──
-        const rowNum = timestampToRow[l.timestamp];
-        sheet.getRange(rowNum, 1, 1, 8).setValues([rowData]);
+      // Use _originalTimestamp (sent on edits) to find the existing row,
+      // fall back to the current timestamp for normal inserts.
+      const lookupKey = l._originalTimestamp || l.timestamp;
+
+      if (timestampToRow[lookupKey]) {
+        // Row exists → overwrite it in place (handles late flag changes, time edits, etc.)
+        sheet.getRange(timestampToRow[lookupKey], 1, 1, 8).setValues([rowData]);
+        // If the timestamp itself changed, update our map
+        timestampToRow[l.timestamp] = timestampToRow[lookupKey];
         updated++;
       } else {
-        // ── New row → append ──
+        // New row → append
         sheet.getRange(sheet.getLastRow() + 1, 1, 1, 8).setValues([rowData]);
-        timestampToRow[l.timestamp] = sheet.getLastRow(); // track it for this batch
+        timestampToRow[l.timestamp] = sheet.getLastRow();
         added++;
       }
     }
 
     return ContentService
-      .createTextOutput(JSON.stringify({ success: true, added, updated, skipped }))
+      .createTextOutput(JSON.stringify({ success: true, added, updated }))
       .setMimeType(ContentService.MimeType.JSON);
 
   } catch (error) {
@@ -2121,15 +2124,18 @@ async function disableAutoSync() {
 }
 
 // Push one specific log entry to Google Sheets (used after edits)
-async function syncSingleLog(log) {
+// originalTimestamp = the timestamp the sheet already has on file for this row
+async function syncSingleLog(log, originalTimestamp) {
   if (!autoSyncEnabled) return;
   const url = await dbGetSetting('sync_url');
   if (!url) return;
   try {
+    // Send the log with an extra field so the sheet can find the original row
+    const payload = { ...log, _originalTimestamp: originalTimestamp || log.timestamp };
     await fetch(url, {
       method:  'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body:    JSON.stringify({ logs: [log] })
+      body:    JSON.stringify({ logs: [payload] })
     });
   } catch(e) {
     // Silent — user will see it on next manual push if offline
