@@ -1893,6 +1893,8 @@ async function saveEditLog() {
   if (document.getElementById('page-summary').classList.contains('active')) renderSummary();
   // Refresh terms modal body if open
   if (document.getElementById('terms-modal-backdrop').classList.contains('open')) renderTermsModalBody();
+  // Push the updated record to Google Sheets (will overwrite the existing row by timestamp)
+  syncSingleLog(log);
   showToast('Record updated.');
 }
 
@@ -1946,7 +1948,6 @@ function populateDropdowns() {
 
 // ── SYNC ──────────────────────────────────────────────────────────────────
 const GAS_SCRIPT = `// EduScan PH — Google Apps Script
-// Based on the same pattern as Sublimation Shop Manager PH.
 // Paste this in Extensions → Apps Script (bound to your spreadsheet), save, then deploy.
 
 const SPREADSHEET_ID = ''; // Paste your Spreadsheet ID here, e.g. '15KHWKGQ_qH3...'
@@ -1964,48 +1965,76 @@ function doPost(e) {
     const ss    = getSpreadsheet();
     let sheet   = ss.getSheetByName('Attendance');
 
+    // ── Create sheet with headers if it doesn't exist yet ──
     if (!sheet) {
       sheet = ss.insertSheet('Attendance');
-      const header = sheet.getRange(1, 1, 1, 7);
-      header.setValues([['Timestamp','Date','Time','Type','Class','Student Name','LRN']]);
+      const header = sheet.getRange(1, 1, 1, 8);
+      header.setValues([['Timestamp', 'Date', 'Time', 'Type', 'Late', 'Class', 'Student Name', 'LRN']]);
       header.setFontWeight('bold');
       sheet.setFrozenRows(1);
     }
 
+    // ── Migrate: if sheet exists but only has 7 columns, insert the Late column ──
+    const headerRow = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    if (!headerRow.includes('Late')) {
+      // Insert a new column after column 4 (Type), shift everything right
+      sheet.insertColumnAfter(4);
+      sheet.getRange(1, 5).setValue('Late').setFontWeight('bold');
+    }
+
+    // ── Ping: connection test ──
     if (data.action === 'ping') {
       return ContentService
         .createTextOutput(JSON.stringify({ success: true, pong: true }))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
-    // Dedup by timestamp to prevent double-inserts
+    // ── Build a map of existing rows: timestamp → row number ──
+    // (used for both dedup on insert and lookup on update)
     const lastRow = sheet.getLastRow();
-    const existing = new Set();
+    const timestampToRow = {};
     if (lastRow > 1) {
       sheet.getRange(2, 1, lastRow - 1, 1)
-        .getValues().forEach(r => r[0] && existing.add(r[0]));
+        .getValues()
+        .forEach((r, i) => { if (r[0]) timestampToRow[r[0]] = i + 2; }); // +2: 1-based + header
     }
 
-    const rows = (data.logs || [])
-      .filter(l => !existing.has(l.timestamp))
-      .map(l => {
-        const d = new Date(l.timestamp);
-        return [
-          l.timestamp,
-          Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy-MM-dd'),
-          Utilities.formatDate(d, Session.getScriptTimeZone(), 'HH:mm:ss'),
-          l.type === 'departure' ? 'Departure' : 'Arrival',
-          l.className    || '',
-          l.studentName  || '',
-          l.studentLrn   || ''
-        ];
-      });
+    let added   = 0;
+    let updated = 0;
+    let skipped = 0;
 
-    if (rows.length > 0)
-      sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 7).setValues(rows);
+    for (const l of (data.logs || [])) {
+      const d        = new Date(l.timestamp);
+      const dateStr  = Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+      const timeStr  = Utilities.formatDate(d, Session.getScriptTimeZone(), 'HH:mm:ss');
+      const typeStr  = l.type === 'departure' ? 'Departure' : 'Arrival';
+      const lateStr  = (l.type === 'arrival' && l.isLate) ? 'Yes' : '';
+      const rowData  = [
+        l.timestamp,
+        dateStr,
+        timeStr,
+        typeStr,
+        lateStr,
+        l.className   || '',
+        l.studentName || '',
+        l.studentLrn  || ''
+      ];
+
+      if (timestampToRow[l.timestamp]) {
+        // ── Row already exists → update it in place ──
+        const rowNum = timestampToRow[l.timestamp];
+        sheet.getRange(rowNum, 1, 1, 8).setValues([rowData]);
+        updated++;
+      } else {
+        // ── New row → append ──
+        sheet.getRange(sheet.getLastRow() + 1, 1, 1, 8).setValues([rowData]);
+        timestampToRow[l.timestamp] = sheet.getLastRow(); // track it for this batch
+        added++;
+      }
+    }
 
     return ContentService
-      .createTextOutput(JSON.stringify({ success: true, added: rows.length, skipped: (data.logs || []).length - rows.length }))
+      .createTextOutput(JSON.stringify({ success: true, added, updated, skipped }))
       .setMimeType(ContentService.MimeType.JSON);
 
   } catch (error) {
@@ -2013,7 +2042,8 @@ function doPost(e) {
       .createTextOutput(JSON.stringify({ success: false, error: error.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
-}`;
+}
+`;
 
 // ── AUTO-SYNC STATE ────────────────────────────────────────────────────────
 let autoSyncEnabled = false;
@@ -2088,6 +2118,22 @@ async function disableAutoSync() {
   clearTimeout(autoSyncTimer);
   updateAutoSyncBar();
   showToast('Auto-sync disabled.');
+}
+
+// Push one specific log entry to Google Sheets (used after edits)
+async function syncSingleLog(log) {
+  if (!autoSyncEnabled) return;
+  const url = await dbGetSetting('sync_url');
+  if (!url) return;
+  try {
+    await fetch(url, {
+      method:  'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body:    JSON.stringify({ logs: [log] })
+    });
+  } catch(e) {
+    // Silent — user will see it on next manual push if offline
+  }
 }
 
 function scheduleAutoSync() {
