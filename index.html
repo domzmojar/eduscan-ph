@@ -465,13 +465,13 @@
         <label for="class-name-input">Class / section name</label>
         <input type="text" id="class-name-input" placeholder="e.g. Grade 7 - Sampaguita">
       </div>
-      <div style="display:flex; gap:0.5rem;">
-        <div class="form-group" style="flex:1;">
-          <label for="class-start-time">Class start time</label>
-          <input type="time" id="class-start-time" value="07:30">
+      <div style="display:flex; gap:0.5rem; align-items:flex-start;">
+        <div class="form-group" style="flex:1; min-width:0;">
+          <label for="class-start-time">Start time</label>
+          <input type="time" id="class-start-time" value="07:30" style="width:100%;">
         </div>
-        <div class="form-group" style="flex:1;">
-          <label for="class-grace-mins">Grace period (mins)</label>
+        <div class="form-group" style="width:110px; flex-shrink:0;">
+          <label for="class-grace-mins" style="white-space:nowrap;">Grace (min)</label>
           <input type="number" id="class-grace-mins" value="5" min="0" max="60" style="width:100%; padding:0.65rem 0.75rem; border:1px solid var(--border); border-radius:8px; font-size:0.95rem;">
         </div>
       </div>
@@ -787,13 +787,13 @@
         <label for="edit-class-name">Class / section name</label>
         <input type="text" id="edit-class-name" placeholder="e.g. Grade 7 - Sampaguita">
       </div>
-      <div style="display:flex; gap:0.5rem;">
-        <div class="form-group" style="flex:1;">
-          <label for="edit-class-start-time">Class start time</label>
-          <input type="time" id="edit-class-start-time">
+      <div style="display:flex; gap:0.5rem; align-items:flex-start;">
+        <div class="form-group" style="flex:1; min-width:0;">
+          <label for="edit-class-start-time">Start time</label>
+          <input type="time" id="edit-class-start-time" style="width:100%;">
         </div>
-        <div class="form-group" style="flex:1;">
-          <label for="edit-class-grace-mins">Grace period (mins)</label>
+        <div class="form-group" style="width:110px; flex-shrink:0;">
+          <label for="edit-class-grace-mins" style="white-space:nowrap;">Grace (min)</label>
           <input type="number" id="edit-class-grace-mins" min="0" max="60" style="width:100%; padding:0.65rem 0.75rem; border:1px solid var(--border); border-radius:8px; font-size:0.95rem;">
         </div>
       </div>
