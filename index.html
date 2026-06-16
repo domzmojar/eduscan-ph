@@ -465,17 +465,29 @@
         <label for="class-name-input">Class / section name</label>
         <input type="text" id="class-name-input" placeholder="e.g. Grade 7 - Sampaguita">
       </div>
-      <div style="display:flex; gap:0.5rem; align-items:flex-start;">
-        <div class="form-group" style="flex:1; min-width:0;">
-          <label for="class-start-time">Start time</label>
-          <input type="time" id="class-start-time" value="07:30" style="width:100%;">
+      <div class="form-group">
+        <label>Schedule</label>
+        <div style="display:flex; align-items:center; gap:0; border:1px solid var(--border); border-radius:8px; overflow:hidden; background:var(--surface);">
+          <div style="display:flex; align-items:center; gap:8px; padding:0.6rem 0.75rem; flex:1; border-right:1px solid var(--border);">
+            <span style="font-size:1rem; line-height:1;">🕐</span>
+            <div style="flex:1; min-width:0;">
+              <div style="font-size:0.7rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:2px;">Start time</div>
+              <input type="time" id="class-start-time" value="07:30" style="border:none; outline:none; background:transparent; font-size:0.95rem; font-weight:600; color:var(--text); width:100%; padding:0;">
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; padding:0.6rem 0.75rem; width:130px; flex-shrink:0;">
+            <span style="font-size:1rem; line-height:1;">⏳</span>
+            <div style="flex:1; min-width:0;">
+              <div style="font-size:0.7rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:2px;">Grace</div>
+              <div style="display:flex; align-items:baseline; gap:3px;">
+                <input type="number" id="class-grace-mins" value="5" min="0" max="60" style="border:none; outline:none; background:transparent; font-size:0.95rem; font-weight:600; color:var(--text); width:36px; padding:0;">
+                <span style="font-size:0.72rem; color:var(--text-muted); font-weight:500;">min</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="form-group" style="width:110px; flex-shrink:0;">
-          <label for="class-grace-mins" style="white-space:nowrap;">Grace (min)</label>
-          <input type="number" id="class-grace-mins" value="5" min="0" max="60" style="width:100%; padding:0.65rem 0.75rem; border:1px solid var(--border); border-radius:8px; font-size:0.95rem;">
-        </div>
+        <p style="font-size:0.73rem; color:var(--text-muted); margin-top:0.4rem;">Late flag triggers after start + grace window.</p>
       </div>
-      <p style="font-size:0.75rem; color:var(--text-muted); margin-top:-0.5rem; margin-bottom:0.9rem;">Arrivals after start time + grace period are flagged as Late.</p>
       <button class="btn full" onclick="addClass()">Save class</button>
     </div>
 
@@ -787,17 +799,29 @@
         <label for="edit-class-name">Class / section name</label>
         <input type="text" id="edit-class-name" placeholder="e.g. Grade 7 - Sampaguita">
       </div>
-      <div style="display:flex; gap:0.5rem; align-items:flex-start;">
-        <div class="form-group" style="flex:1; min-width:0;">
-          <label for="edit-class-start-time">Start time</label>
-          <input type="time" id="edit-class-start-time" style="width:100%;">
+      <div class="form-group">
+        <label>Schedule</label>
+        <div style="display:flex; align-items:center; gap:0; border:1px solid var(--border); border-radius:8px; overflow:hidden; background:var(--surface);">
+          <div style="display:flex; align-items:center; gap:8px; padding:0.6rem 0.75rem; flex:1; border-right:1px solid var(--border);">
+            <span style="font-size:1rem; line-height:1;">🕐</span>
+            <div style="flex:1; min-width:0;">
+              <div style="font-size:0.7rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:2px;">Start time</div>
+              <input type="time" id="edit-class-start-time" style="border:none; outline:none; background:transparent; font-size:0.95rem; font-weight:600; color:var(--text); width:100%; padding:0;">
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; padding:0.6rem 0.75rem; width:130px; flex-shrink:0;">
+            <span style="font-size:1rem; line-height:1;">⏳</span>
+            <div style="flex:1; min-width:0;">
+              <div style="font-size:0.7rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:2px;">Grace</div>
+              <div style="display:flex; align-items:baseline; gap:3px;">
+                <input type="number" id="edit-class-grace-mins" min="0" max="60" style="border:none; outline:none; background:transparent; font-size:0.95rem; font-weight:600; color:var(--text); width:36px; padding:0;">
+                <span style="font-size:0.72rem; color:var(--text-muted); font-weight:500;">min</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="form-group" style="width:110px; flex-shrink:0;">
-          <label for="edit-class-grace-mins" style="white-space:nowrap;">Grace (min)</label>
-          <input type="number" id="edit-class-grace-mins" min="0" max="60" style="width:100%; padding:0.65rem 0.75rem; border:1px solid var(--border); border-radius:8px; font-size:0.95rem;">
-        </div>
+        <p style="font-size:0.73rem; color:var(--text-muted); margin-top:0.4rem; margin-bottom:0.75rem;">Late flag triggers after start + grace window.</p>
       </div>
-      <p style="font-size:0.75rem; color:var(--text-muted); margin-top:-0.5rem; margin-bottom:1rem;">Arrivals after start time + grace period are flagged ⏰ Late.</p>
       <button class="btn full" onclick="saveEditClass()">Save changes</button>
     </div>
   </div>
@@ -1569,16 +1593,20 @@ function renderSummary() {
       const arrivedIds  = new Set(classLogs.filter(l => l.type === 'arrival').map(l => l.studentId));
       const departedIds = new Set(classLogs.filter(l => l.type === 'departure').map(l => l.studentId));
       const neverArrived = classStudents.filter(s => !arrivedIds.has(s.id));
+      const lateCount   = classLogs.filter(l => l.type === 'arrival' && l.isLate).length;
 
       html += `
         <div class="history-class-row">
           <div class="history-class-name">${c.name}</div>
-          <div class="stat-row-btns">
+          <div class="stat-row-btns" style="grid-template-columns: repeat(5, 1fr);">
             <button class="stat-btn enrolled" onclick="openModalRange('enrolled','${c.id}','${range.from}','${range.to}','${encodeURIComponent(c.name)}')">
               <div class="val">${classStudents.length}</div><div class="lbl">Enrolled</div><div class="tap-hint">tap</div>
             </button>
             <button class="stat-btn arrived" onclick="openModalRange('arrived','${c.id}','${range.from}','${range.to}','${encodeURIComponent(c.name)}')">
               <div class="val" style="color:var(--arrival);">${arrivedIds.size}</div><div class="lbl">Arrived</div><div class="tap-hint">tap</div>
+            </button>
+            <button class="stat-btn" style="background:var(--bg); border-radius:8px; padding:0.65rem 0.75rem; text-align:center; border:2px solid transparent; cursor:default;">
+              <div class="val" style="color:#c2410c; font-size:1.4rem; font-weight:700;">${lateCount}</div><div class="lbl" style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">Late</div>
             </button>
             <button class="stat-btn departed" onclick="openModalRange('departed','${c.id}','${range.from}','${range.to}','${encodeURIComponent(c.name)}')">
               <div class="val" style="color:var(--departure);">${departedIds.size}</div><div class="lbl">Departed</div><div class="tap-hint">tap</div>
@@ -1622,16 +1650,20 @@ function renderSummary() {
       const arrivedIds  = new Set(classLogs.filter(l => l.type === 'arrival').map(l => l.studentId));
       const departedIds = new Set(classLogs.filter(l => l.type === 'departure').map(l => l.studentId));
       const absentCount = classStudents.filter(s => !arrivedIds.has(s.id)).length;
+      const lateCount   = classLogs.filter(l => l.type === 'arrival' && l.isLate).length;
 
       html += `
         <div class="history-class-row">
           <div class="history-class-name">${c.name}</div>
-          <div class="stat-row-btns">
+          <div class="stat-row-btns" style="grid-template-columns: repeat(5, 1fr);">
             <button class="stat-btn enrolled" onclick="openModal('enrolled','${c.id}','${dateStr}','${encodeURIComponent(c.name)}')">
               <div class="val">${classStudents.length}</div><div class="lbl">Enrolled</div><div class="tap-hint">tap</div>
             </button>
             <button class="stat-btn arrived" onclick="openModal('arrived','${c.id}','${dateStr}','${encodeURIComponent(c.name)}')">
               <div class="val" style="color:var(--arrival);">${arrivedIds.size}</div><div class="lbl">Arrived</div><div class="tap-hint">tap</div>
+            </button>
+            <button class="stat-btn" style="background:var(--bg); border-radius:8px; padding:0.65rem 0.75rem; text-align:center; border:2px solid transparent; cursor:default;">
+              <div class="val" style="color:#c2410c; font-size:1.4rem; font-weight:700;">${lateCount}</div><div class="lbl" style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">Late</div>
             </button>
             <button class="stat-btn departed" onclick="openModal('departed','${c.id}','${dateStr}','${encodeURIComponent(c.name)}')">
               <div class="val" style="color:var(--departure);">${departedIds.size}</div><div class="lbl">Departed</div><div class="tap-hint">tap</div>
@@ -1687,11 +1719,15 @@ function openModalRange(type, classId, fromDate, toDate, encodedClassName) {
   } else {
     document.getElementById('modal-body').innerHTML = studentList.map((s, i) => {
       const initials = s.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+      // Count late arrivals for this student in range
+      const lateCount = rangeLogs.filter(l => l.studentId === s.id && l.type === 'arrival' && l.isLate).length;
+      const lateTag   = (type === 'arrived' && lateCount > 0)
+        ? `<span class="badge badge-late" style="font-size:0.68rem; margin-left:4px;">⏰ ${lateCount}× late</span>` : '';
       return `
         <div class="modal-student-item">
           <div class="modal-student-avatar">${initials}</div>
           <div style="flex:1;">
-            <div class="modal-student-name">${s.name}</div>
+            <div class="modal-student-name">${s.name}${lateTag}</div>
             ${s.lrn ? `<div class="modal-student-lrn">LRN: ${s.lrn}</div>` : ''}
           </div>
         </div>`;
@@ -1739,20 +1775,31 @@ function openModal(type, classId, dateStr, encodedClassName) {
   } else {
     document.getElementById('modal-body').innerHTML = studentList.map((s, i) => {
       let timeStr = '';
+      let isLate  = false;
+      let logId   = null;
       if (showTime) {
-        const logType = type === 'arrived' ? 'arrival' : 'departure';
+        const logType  = type === 'arrived' ? 'arrival' : 'departure';
         const logEntry = dateLogs.find(l => l.studentId === s.id && l.type === logType);
-        if (logEntry) timeStr = new Date(logEntry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        if (logEntry) {
+          timeStr = new Date(logEntry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          isLate  = !!(logEntry.isLate);
+          logId   = logEntry.id;
+        }
       }
       const initials = s.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+      const lateTag  = (type === 'arrived' && isLate)
+        ? `<span class="badge badge-late" style="font-size:0.68rem; margin-left:4px;">⏰ Late</span>` : '';
+      const editBtn  = logId != null
+        ? `<button class="btn outline sm" style="padding:2px 7px; font-size:0.72rem;" onclick="closeModalDirect(); openEditLogModal(${logId})">✏️</button>` : '';
       return `
         <div class="modal-student-item">
           <div class="modal-student-avatar">${initials}</div>
           <div style="flex:1;">
-            <div class="modal-student-name">${s.name}</div>
+            <div class="modal-student-name">${s.name}${lateTag}</div>
             ${s.lrn ? `<div class="modal-student-lrn">LRN: ${s.lrn}</div>` : ''}
           </div>
-          ${timeStr ? `<div class="modal-student-time">${timeStr}</div>` : ''}
+          ${timeStr ? `<div class="modal-student-time" style="margin-right:6px;">${timeStr}</div>` : ''}
+          ${editBtn}
         </div>`;
     }).join('');
   }
@@ -1844,6 +1891,10 @@ async function saveEditLog() {
   closeEditLogModalDirect();
   renderLog();
   renderTodayList();
+  // Refresh summary if it's visible
+  if (document.getElementById('page-summary').classList.contains('active')) renderSummary();
+  // Refresh terms modal body if open
+  if (document.getElementById('terms-modal-backdrop').classList.contains('open')) renderTermsModalBody();
   showToast('Record updated.');
 }
 
@@ -1855,6 +1906,8 @@ async function deleteLogEntry() {
   closeEditLogModalDirect();
   renderLog();
   renderTodayList();
+  if (document.getElementById('page-summary').classList.contains('active')) renderSummary();
+  if (document.getElementById('terms-modal-backdrop').classList.contains('open')) renderTermsModalBody();
   showToast('Record deleted.');
 }
 
@@ -2475,6 +2528,7 @@ function renderTermsModalBody() {
 
   const arrivals   = termLogs.filter(l => l.type === 'arrival');
   const departures = termLogs.filter(l => l.type === 'departure');
+  const lateCount  = arrivals.filter(l => l.isLate).length;
 
   // Absences = school days where this student has no arrival
   const arrivedDays = new Set(arrivals.map(l => l.timestamp.slice(0,10)));
@@ -2489,7 +2543,7 @@ function renderTermsModalBody() {
       ${schoolDays.size ? `<span style="font-size:0.72rem; color:var(--text-muted); margin-left:8px;">${schoolDays.size} school day${schoolDays.size !== 1 ? 's' : ''} on record</span>` : ''}
     </div>
 
-    <div class="term-stat-grid">
+    <div class="term-stat-grid" style="grid-template-columns: repeat(4, 1fr);">
       <div class="term-stat-card arrival-card">
         <div class="ts-val">${arrivals.length}</div>
         <div class="ts-lbl">Arrivals</div>
@@ -2497,6 +2551,10 @@ function renderTermsModalBody() {
       <div class="term-stat-card departure-card">
         <div class="ts-val">${departures.length}</div>
         <div class="ts-lbl">Departures</div>
+      </div>
+      <div class="term-stat-card" style="background:#fff7ed; border-color:#fdba74; color:#c2410c;">
+        <div class="ts-val">${lateCount}</div>
+        <div class="ts-lbl">Late</div>
       </div>
       <div class="term-stat-card absent-card">
         <div class="ts-val">${absences}</div>
@@ -2515,7 +2573,10 @@ function renderTermsModalBody() {
         <div class="term-day-row">
           <span class="term-day-date">${dateLabel}</span>
           <div class="term-day-badges">
-            ${arr.map(l => `<span class="badge badge-arrival">☀️ ${new Date(l.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>`).join('')}
+            ${arr.map(l => {
+              const lateTag = l.isLate ? `<span class="badge badge-late" style="font-size:0.65rem;">⏰ Late</span>` : '';
+              return `<span class="badge badge-arrival">☀️ ${new Date(l.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>${lateTag}`;
+            }).join('')}
             ${dep.map(l => `<span class="badge badge-departure">🌙 ${new Date(l.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>`).join('')}
           </div>
         </div>`;
