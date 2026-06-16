@@ -4,13 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EduScan PH - Attendance System</title>
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#1d4ed8">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="EduScan PH">
-  <link rel="apple-touch-icon" href="/icon-192-any.png">
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <style>
     :root {
@@ -81,6 +74,7 @@
     .btn.sm { padding: 0.3rem 0.6rem; font-size: 0.78rem; border-radius: 6px; }
     .btn.outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
     .btn.outline:hover { background: var(--primary-bg); }
+    label.btn.outline { display: flex; }
 
     /* ── SCAN MODE TOGGLE ── */
     .mode-toggle { display: flex; border-radius: 14px; overflow: hidden; border: 2px solid var(--border); margin-bottom: 1rem; background: var(--bg); gap: 0; }
@@ -370,6 +364,7 @@
   <button class="nav-btn"        id="nav-summary"  onclick="showPage('summary')">Summary</button>
   <button class="nav-btn"        id="nav-terms"    onclick="showPage('terms')">Terms</button>
   <button class="nav-btn"        id="nav-sync"     onclick="showPage('sync')">Sync</button>
+  <button class="nav-btn"        id="nav-download" onclick="showPage('download')">Download</button>
 </nav>
 
 <main>
@@ -620,6 +615,74 @@
     </div>
   </div>
 
+  <!-- DOWNLOAD PAGE -->
+  <div id="page-download" class="page">
+
+    <!-- Download the app -->
+    <div class="card">
+      <h2 style="margin-bottom:0.25rem;">📲 Download App</h2>
+      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1rem;">Save EduScan PH as a standalone HTML file — works offline with no internet needed.</p>
+      <button class="btn full" onclick="downloadApp()" style="background:#0f172a;">
+        ⬇ Download eduscan-ph.html
+      </button>
+      <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.6rem; text-align:center;">Open the file in any browser. Your data stays in the browser's IndexedDB.</p>
+    </div>
+
+    <!-- Manual export -->
+    <div class="card">
+      <h2 style="margin-bottom:0.25rem;">📦 Export Data</h2>
+      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1rem;">Export all your data as a JSON backup file — includes classes, students, logs, and settings.</p>
+
+      <div style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1rem;">
+        <button class="btn full" onclick="exportData('all')" style="background:#0369a1;">
+          📦 Export everything (JSON)
+        </button>
+        <div style="display:flex; gap:0.5rem;">
+          <button class="btn full outline" onclick="exportData('logs')">📋 Logs only</button>
+          <button class="btn full outline" onclick="exportData('students')">👥 Students only</button>
+        </div>
+      </div>
+
+      <div id="export-status-msg"></div>
+    </div>
+
+    <!-- Auto-export -->
+    <div class="card">
+      <h2 style="margin-bottom:0.25rem;">⏱ Auto-Export</h2>
+      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1rem;">Automatically download a JSON backup on a schedule.</p>
+
+      <!-- Auto-export status bar -->
+      <div id="autoexport-bar" style="display:none; align-items:center; justify-content:space-between; background:var(--success-bg); border:1px solid var(--success-border); border-radius:8px; padding:0.6rem 0.85rem; margin-bottom:1rem; gap:0.5rem; flex-wrap:wrap;">
+        <span style="font-size:0.82rem; color:var(--success); font-weight:600;">⏱ Auto-export active</span>
+        <span id="autoexport-last" style="font-size:0.75rem; color:var(--text-muted);"></span>
+        <button class="btn danger sm" onclick="disableAutoExport()">Disable</button>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0.75rem;">
+        <label for="autoexport-interval">Export every</label>
+        <select id="autoexport-interval">
+          <option value="daily">Daily (when app is opened)</option>
+          <option value="weekly">Weekly (when app is opened)</option>
+          <option value="each_scan">After every scan</option>
+        </select>
+      </div>
+
+      <button class="btn full success" onclick="enableAutoExport()">⏱ Enable auto-export</button>
+    </div>
+
+    <!-- Import / restore -->
+    <div class="card">
+      <h2 style="margin-bottom:0.25rem;">📥 Import / Restore</h2>
+      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1rem;">Restore data from a previously exported JSON file. <strong>This will merge with existing data.</strong></p>
+      <label for="import-file-input" class="btn full outline" style="cursor:pointer; text-align:center;">
+        📂 Choose backup file (.json)
+      </label>
+      <input type="file" id="import-file-input" accept=".json" style="display:none;" onchange="importData(event)">
+      <div id="import-status-msg" style="margin-top:0.6rem;"></div>
+    </div>
+
+  </div>
+
 </main>
 
 <div id="toast"></div>
@@ -793,6 +856,7 @@ function showPage(page) {
   if (page === 'students') renderStudents();
   if (page === 'classes')  renderClasses();
   if (page === 'terms')    renderTermsPage();
+  if (page === 'download') renderDownloadPage();
   if (page === 'log')      renderLog();
   if (page === 'summary') {
     initSummaryPeriod();
@@ -979,6 +1043,7 @@ async function handleQRScan(rawData) {
 
     if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
     scheduleAutoSync();
+    checkAutoExport('scan');
 
     const isArrival = scanMode === 'arrival';
     showFeedback(
@@ -1741,6 +1806,209 @@ function copyScript() {
   showToast('Script copied.');
 }
 
+// ── DOWNLOAD / EXPORT / IMPORT ────────────────────────────────────────────
+
+// ── Render download page (refresh auto-export status) ──
+async function renderDownloadPage() {
+  const enabled  = await dbGetSetting('autoexport_enabled');
+  const interval = await dbGetSetting('autoexport_interval') || 'daily';
+  const last     = await dbGetSetting('autoexport_last');
+  const bar      = document.getElementById('autoexport-bar');
+  const sel      = document.getElementById('autoexport-interval');
+
+  sel.value = interval;
+
+  if (enabled) {
+    bar.style.display = 'flex';
+    document.getElementById('autoexport-last').textContent = last
+      ? `Last export: ${new Date(last).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}`
+      : 'Not exported yet this session';
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+// ── Download the app HTML itself ──
+function downloadApp() {
+  // Fetch the current page's HTML source and offer it as a download
+  fetch(window.location.href)
+    .then(r => r.text())
+    .then(html => {
+      triggerDownload(new Blob([html], { type: 'text/html' }), 'eduscan-ph.html');
+      showToast('App downloaded ✓');
+    })
+    .catch(() => {
+      // Fallback: just link to the current URL
+      const a = document.createElement('a');
+      a.href     = window.location.href;
+      a.download = 'eduscan-ph.html';
+      a.click();
+    });
+}
+
+// ── Manual export ──
+async function exportData(type = 'all') {
+  const msg  = document.getElementById('export-status-msg');
+  const now  = new Date();
+  const stamp = now.toISOString().slice(0,10);
+
+  let payload = {};
+  let filename = '';
+
+  if (type === 'all') {
+    const syncUrl     = await dbGetSetting('sync_url')      || '';
+    const syncSheetId = await dbGetSetting('sync_sheet_id') || '';
+    payload = {
+      exportedAt: now.toISOString(),
+      version:    'eduscan-ph-v1',
+      classes,
+      students,
+      logs,
+      settings: { syncUrl, syncSheetId }
+    };
+    filename = `eduscan-backup-${stamp}.json`;
+  } else if (type === 'logs') {
+    payload  = { exportedAt: now.toISOString(), logs };
+    filename = `eduscan-logs-${stamp}.json`;
+  } else if (type === 'students') {
+    payload  = { exportedAt: now.toISOString(), classes, students };
+    filename = `eduscan-students-${stamp}.json`;
+  }
+
+  triggerDownload(
+    new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }),
+    filename
+  );
+
+  await dbSetSetting('autoexport_last', now.toISOString());
+  if (type === 'all') renderDownloadPage();
+
+  msg.innerHTML = `<div class="sync-status ok">✅ Exported <strong>${filename}</strong></div>`;
+  setTimeout(() => msg.innerHTML = '', 4000);
+  showToast(`Downloaded ${filename}`);
+}
+
+// ── Auto-export ──
+async function enableAutoExport() {
+  const interval = document.getElementById('autoexport-interval').value;
+  await dbSetSetting('autoexport_enabled',  true);
+  await dbSetSetting('autoexport_interval', interval);
+  renderDownloadPage();
+  showToast(`Auto-export enabled (${interval}) ✓`);
+}
+
+async function disableAutoExport() {
+  await dbSetSetting('autoexport_enabled', false);
+  document.getElementById('autoexport-bar').style.display = 'none';
+  showToast('Auto-export disabled.');
+}
+
+// Called on boot and after each scan (if each_scan mode)
+async function checkAutoExport(trigger = 'boot') {
+  const enabled  = await dbGetSetting('autoexport_enabled');
+  if (!enabled) return;
+  const interval = await dbGetSetting('autoexport_interval') || 'daily';
+  const last     = await dbGetSetting('autoexport_last');
+
+  if (interval === 'each_scan' && trigger === 'scan') {
+    await exportData('all'); return;
+  }
+
+  if (!last) { await exportData('all'); return; }
+
+  const lastDate = new Date(last);
+  const now      = new Date();
+
+  if (interval === 'daily') {
+    if (lastDate.toDateString() !== now.toDateString()) await exportData('all');
+  } else if (interval === 'weekly') {
+    const diffDays = (now - lastDate) / (1000 * 60 * 60 * 24);
+    if (diffDays >= 7) await exportData('all');
+  }
+}
+
+// ── Import / restore ──
+async function importData(event) {
+  const file = event.target.files[0];
+  const msg  = document.getElementById('import-status-msg');
+  if (!file) return;
+
+  try {
+    const text    = await file.text();
+    const payload = JSON.parse(text);
+
+    // Validate it looks like an EduScan export
+    if (!payload.version && !payload.classes && !payload.logs) {
+      msg.innerHTML = `<div class="sync-status err">This doesn't look like an EduScan backup file.</div>`;
+      return;
+    }
+
+    let importedClasses = 0, importedStudents = 0, importedLogs = 0;
+
+    // Merge classes (skip duplicates by id)
+    if (payload.classes?.length) {
+      const existingIds = new Set(classes.map(c => c.id));
+      const newClasses  = payload.classes.filter(c => !existingIds.has(c.id));
+      classes.push(...newClasses);
+      await dbPutAll('classes', classes);
+      importedClasses = newClasses.length;
+    }
+
+    // Merge students (skip duplicates by id)
+    if (payload.students?.length) {
+      const existingIds  = new Set(students.map(s => s.id));
+      const newStudents  = payload.students.filter(s => !existingIds.has(s.id));
+      students.push(...newStudents);
+      students.sort((a, b) => a.name.localeCompare(b.name));
+      await dbPutAll('students', students);
+      importedStudents = newStudents.length;
+    }
+
+    // Merge logs (skip duplicates by timestamp+studentId)
+    if (payload.logs?.length) {
+      const existingKeys = new Set(logs.map(l => `${l.timestamp}|${l.studentId}`));
+      const newLogs      = payload.logs.filter(l => !existingKeys.has(`${l.timestamp}|${l.studentId}`));
+      for (const l of newLogs) {
+        const entry = { ...l }; delete entry.id;
+        const newId = await dbAdd('logs', entry);
+        entry.id = newId;
+        logs.push(entry);
+      }
+      logs.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+      importedLogs = newLogs.length;
+    }
+
+    // Restore settings if present
+    if (payload.settings?.syncUrl)     await dbSetSetting('sync_url',      payload.settings.syncUrl);
+    if (payload.settings?.syncSheetId) await dbSetSetting('sync_sheet_id', payload.settings.syncSheetId);
+
+    populateDropdowns();
+    msg.innerHTML = `<div class="sync-status ok">
+      ✅ Import complete:<br>
+      ${importedClasses} classes · ${importedStudents} students · ${importedLogs} logs added
+    </div>`;
+    showToast('Import complete ✓');
+
+  } catch(e) {
+    msg.innerHTML = `<div class="sync-status err">Failed to read file: ${e.message}</div>`;
+  }
+
+  // Reset file input so the same file can be re-imported if needed
+  event.target.value = '';
+}
+
+// ── Shared download helper ──
+function triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement('a');
+  a.href     = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 // ── TERMS ─────────────────────────────────────────────────────────────────
 const TERMS = [
   { num: 1, label: 'Term 1', months: [6,7,8,9],   range: 'Jun – Sep' },
@@ -1967,32 +2235,14 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   populateDropdowns();
   initSummaryPeriod();
+  checkAutoExport('boot');
 });
 </script>
 
 <script>
-// ── SERVICE WORKER REGISTRATION ───────────────────────────────────────────
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(reg => {
-      // Check for a new SW version on every page load
-      reg.update();
-
-      reg.addEventListener('updatefound', () => {
-        const newWorker = reg.installing;
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            // New version ready — skip waiting and reload
-            newWorker.postMessage({ type: 'SKIP_WAITING' });
-          }
-        });
-      });
-    }).catch(err => console.warn('SW registration failed:', err));
-
-    // When SW takes control, reload to serve latest version
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      window.location.reload();
-    });
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
   });
 }
 </script>
