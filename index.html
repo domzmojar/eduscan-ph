@@ -2171,9 +2171,10 @@ window.addEventListener('appinstalled', () => {
 
 async function triggerPWAInstall() {
   if (!pwaInstallPrompt) return;
-  pwaInstallPrompt.prompt();
+  await pwaInstallPrompt.prompt();
   const { outcome } = await pwaInstallPrompt.userChoice;
   if (outcome === 'accepted') pwaInstallPrompt = null;
+  updatePWAInstallUI();
 }
 
 // ── Render download page (refresh auto-export status) ──
