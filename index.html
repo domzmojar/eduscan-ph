@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EduScan PH - Attendance System</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1d4ed8">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="EduScan PH">
+  <link rel="apple-touch-icon" href="/icon-192-any.png">
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <style>
     :root {
@@ -74,7 +81,6 @@
     .btn.sm { padding: 0.3rem 0.6rem; font-size: 0.78rem; border-radius: 6px; }
     .btn.outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
     .btn.outline:hover { background: var(--primary-bg); }
-    label.btn.outline { display: flex; }
 
     /* ── SCAN MODE TOGGLE ── */
     .mode-toggle { display: flex; border-radius: 14px; overflow: hidden; border: 2px solid var(--border); margin-bottom: 1rem; background: var(--bg); gap: 0; }
@@ -177,7 +183,6 @@
     .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 0.73rem; font-weight: 600; }
     .badge-arrival   { background: var(--arrival-bg);   color: var(--arrival);   border: 1px solid var(--arrival-border); }
     .badge-departure { background: var(--departure-bg); color: var(--departure); border: 1px solid var(--departure-border); }
-    .badge-late      { background: #fff7ed; color: #c2410c; border: 1px solid #fdba74; }
     .badge-class     { background: var(--primary-bg);   color: var(--primary); }
 
     #toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px); background: #1e293b; color: white; padding: 0.65rem 1.25rem; border-radius: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: transform 0.3s ease; z-index: 1000; pointer-events: none; font-size: 0.85rem; white-space: nowrap; max-width: 90vw; text-overflow: ellipsis; overflow: hidden; }
@@ -352,46 +357,9 @@
 </head>
 <body>
 
-<header style="display:flex; align-items:center; justify-content:space-between; padding: 0.65rem 1rem;">
-  <div style="display:flex; align-items:center; gap:10px;">
-    <!-- App logo -->
-    <div style="
-      width:40px; height:40px; border-radius:10px; flex-shrink:0;
-      background:linear-gradient(145deg,#1d4ed8,#3b82f6);
-      display:flex; align-items:center; justify-content:center;
-      box-shadow:0 2px 8px rgba(29,78,216,0.3);
-    ">
-      <svg width="24" height="24" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="13" y="16" width="26" height="30" rx="3" fill="white" opacity="0.95"/>
-        <rect x="20" y="11" width="12" height="8" rx="2" fill="white" opacity="0.95"/>
-        <rect x="20" y="13" width="12" height="4" rx="1" fill="#1d4ed8"/>
-        <rect x="17" y="25" width="18" height="2.5" rx="1.25" fill="#1d4ed8" opacity="0.7"/>
-        <rect x="17" y="31" width="18" height="2.5" rx="1.25" fill="#1d4ed8" opacity="0.7"/>
-        <rect x="17" y="37" width="11" height="2.5" rx="1.25" fill="#1d4ed8" opacity="0.7"/>
-        <path d="M30 38 L33 41 L39 35" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </div>
-    <div style="text-align:left;">
-      <div style="font-size:1.05rem; font-weight:800; color:var(--primary); letter-spacing:-0.02em; line-height:1.1;">EduScan PH</div>
-      <div style="font-size:0.7rem; color:var(--text-muted); line-height:1;">Offline-first attendance tracker</div>
-    </div>
-  </div>
-
-  <!-- Install button (shown by JS when prompt is available) -->
-  <button id="header-install-btn" onclick="triggerPWAInstall()"
-    style="display:none; align-items:center; gap:5px; background:linear-gradient(135deg,#1d4ed8,#3b82f6);
-    color:white; border:none; border-radius:8px; padding:0.45rem 0.85rem;
-    font-size:0.8rem; font-weight:700; cursor:pointer; box-shadow:0 2px 8px rgba(29,78,216,0.3);
-    white-space:nowrap;">
-    ⬇ Install
-  </button>
-  <!-- Already installed chip -->
-  <div id="header-installed-chip"
-    style="display:none; align-items:center; gap:4px; background:var(--success-bg);
-    border:1px solid var(--success-border); border-radius:8px; padding:0.35rem 0.7rem;
-    font-size:0.75rem; font-weight:700; color:var(--success); white-space:nowrap;">
-    ✅ Installed
-  </div>
+<header>
+  <h1>📋 EduScan PH</h1>
+  <p>Offline-first student attendance tracker</p>
 </header>
 
 <nav>
@@ -402,7 +370,6 @@
   <button class="nav-btn"        id="nav-summary"  onclick="showPage('summary')">Summary</button>
   <button class="nav-btn"        id="nav-terms"    onclick="showPage('terms')">Terms</button>
   <button class="nav-btn"        id="nav-sync"     onclick="showPage('sync')">Sync</button>
-  <button class="nav-btn"        id="nav-download" onclick="showPage('download')">Download</button>
 </nav>
 
 <main>
@@ -471,17 +438,6 @@
         <label for="class-name-input">Class / section name</label>
         <input type="text" id="class-name-input" placeholder="e.g. Grade 7 - Sampaguita">
       </div>
-      <div style="display:flex; gap:0.5rem;">
-        <div class="form-group" style="flex:1;">
-          <label for="class-start-time">Class start time</label>
-          <input type="time" id="class-start-time" value="07:30">
-        </div>
-        <div class="form-group" style="flex:1;">
-          <label for="class-grace-mins">Grace period (mins)</label>
-          <input type="number" id="class-grace-mins" value="5" min="0" max="60" style="width:100%; padding:0.65rem 0.75rem; border:1px solid var(--border); border-radius:8px; font-size:0.95rem;">
-        </div>
-      </div>
-      <p style="font-size:0.75rem; color:var(--text-muted); margin-top:-0.5rem; margin-bottom:0.9rem;">Arrivals after start time + grace period are flagged as Late.</p>
       <button class="btn full" onclick="addClass()">Save class</button>
     </div>
 
@@ -538,7 +494,7 @@
       <div style="overflow-x:auto; overflow-y:auto; max-height:65vh; border-radius:8px; border:1px solid var(--border); margin-top:0.5rem;">
         <table style="margin-top:0; min-width:480px;">
           <thead style="position:sticky; top:0; z-index:1;">
-            <tr><th>Time</th><th>Type</th><th>Class</th><th>Student</th><th>LRN</th><th></th></tr>
+            <tr><th>Time</th><th>Type</th><th>Class</th><th>Student</th><th>LRN</th></tr>
           </thead>
           <tbody id="logs-table-body"></tbody>
         </table>
@@ -601,47 +557,28 @@
   <div id="page-sync" class="page">
     <div class="card">
       <h2>Sync to Google Sheets</h2>
-
-      <!-- AUTO-SYNC STATUS BAR -->
-      <div id="autosync-bar" style="display:none; align-items:center; justify-content:space-between; background:var(--success-bg); border:1px solid var(--success-border); border-radius:8px; padding:0.6rem 0.85rem; margin-bottom:1rem; gap:0.5rem; flex-wrap:wrap;">
-        <span style="font-size:0.82rem; color:var(--success); font-weight:600;">🔄 Auto-sync active</span>
-        <span id="autosync-last" style="font-size:0.75rem; color:var(--text-muted);"></span>
-        <button class="btn danger sm" onclick="disableAutoSync()">Disable</button>
-      </div>
-
       <div class="instruction-block">
         <p style="font-size:0.87rem; font-weight:600; margin-bottom:0.6rem;">One-time setup:</p>
         <ol>
           <li>Open <strong>Google Sheets</strong> → create a new spreadsheet.</li>
-          <li>Copy the <strong>Spreadsheet ID</strong> from the URL — it's the long string between <code>/d/</code> and <code>/edit</code>:<br>
-            <code style="font-size:0.72rem; word-break:break-all; display:block; margin-top:4px;">docs.google.com/spreadsheets/d/<strong style="color:var(--primary);">15KHWKGQ_qH3sxC…</strong>/edit</code>
-          </li>
-          <li>Click <strong>Extensions → Apps Script</strong>. Delete all existing code. Paste the script below and <strong>Save (Ctrl+S)</strong>.</li>
-          <li>Click <strong>Deploy → New deployment</strong>. Type: <em>Web app</em>. Execute as: <em>Me</em>. Who has access: <em>Anyone</em>. Click Deploy → authorize when prompted.</li>
-          <li>Copy the <strong>Web App URL</strong> (ends in <code>/exec</code>).</li>
-          <li>Paste both the Spreadsheet ID and Web App URL below → tap <strong>Save &amp; enable auto-sync</strong>.</li>
+          <li>Click <strong>Extensions → Apps Script</strong>. Delete the existing code.</li>
+          <li>Paste the script below (tap "Show script"), then save.</li>
+          <li><strong>Deploy → New deployment → Web app.</strong> Set "Who has access" to <code>Anyone</code>. Copy the Web App URL.</li>
+          <li>Paste that URL below and tap <strong>Save URL</strong>, then <strong>Push logs</strong>.</li>
         </ol>
-      </div>
-
-      <div class="form-group">
-        <label>Spreadsheet ID</label>
-        <input type="text" id="sync-sheet-id" placeholder="e.g. 15KHWKGQ_qH3sxC_GGPfbduB5HWdXHD6YGtbX1pPgu3Y">
       </div>
       <div class="form-group">
         <label>Web App URL</label>
-        <input type="url" id="sync-url-input" placeholder="https://script.google.com/macros/s/.../exec">
+        <input type="url" id="sync-url-input" placeholder="https://script.google.com/macros/s/...">
       </div>
-
-      <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem; flex-wrap:wrap;">
-        <button class="btn full" onclick="saveSyncUrl()">💾 Save &amp; enable auto-sync</button>
-        <button class="btn full success" id="sync-btn" onclick="syncToSheets()">⬆ Push unsynced logs</button>
+      <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem;">
+        <button class="btn full" onclick="saveSyncUrl()">Save URL</button>
+        <button class="btn full success" id="sync-btn" onclick="syncToSheets()">Push logs</button>
       </div>
-
       <div id="sync-status-msg"></div>
-
-      <details style="margin-top:1rem;">
+      <details style="margin-top:1.1rem;">
         <summary>Show Apps Script to paste</summary>
-        <textarea id="gas-code" rows="22" readonly style="margin-top:0.6rem; font-size:0.77rem;"></textarea>
+        <textarea id="gas-code" rows="24" readonly style="margin-top:0.6rem; font-size:0.77rem;"></textarea>
         <button class="btn sm" style="margin-top:0.5rem;" onclick="copyScript()">Copy script</button>
       </details>
     </div>
@@ -664,107 +601,6 @@
     </div>
   </div>
 
-  <!-- DOWNLOAD PAGE -->
-  <div id="page-download" class="page">
-
-    <!-- PWA Install Card -->
-    <div class="card" style="text-align:center;">
-      <!-- App logo -->
-      <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:1.1rem;">
-        <div style="
-          width:88px; height:88px; border-radius:22px;
-          background:linear-gradient(145deg,#1d4ed8,#3b82f6);
-          display:flex; align-items:center; justify-content:center;
-          box-shadow:0 6px 24px rgba(29,78,216,0.35); margin-bottom:0.75rem;
-          position:relative; overflow:hidden;
-        ">
-          <!-- Clipboard icon in SVG -->
-          <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="13" y="16" width="26" height="30" rx="3" fill="white" opacity="0.95"/>
-            <rect x="20" y="11" width="12" height="8" rx="2" fill="white" opacity="0.95"/>
-            <rect x="20" y="13" width="12" height="4" rx="1" fill="#1d4ed8"/>
-            <rect x="17" y="25" width="18" height="2.5" rx="1.25" fill="#1d4ed8" opacity="0.7"/>
-            <rect x="17" y="31" width="18" height="2.5" rx="1.25" fill="#1d4ed8" opacity="0.7"/>
-            <rect x="17" y="37" width="11" height="2.5" rx="1.25" fill="#1d4ed8" opacity="0.7"/>
-            <!-- Checkmark -->
-            <path d="M30 38 L33 41 L39 35" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <div style="font-size:1.15rem; font-weight:800; color:var(--text);">EduScan PH</div>
-        <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">Offline-first attendance tracker</div>
-      </div>
-
-      <!-- Install button: hidden until beforeinstallprompt fires -->
-      <button id="pwa-install-btn" class="btn full" onclick="triggerPWAInstall()"
-        style="display:none; background:linear-gradient(135deg,#1d4ed8,#3b82f6); font-size:1rem; padding:0.85rem; border-radius:12px;">
-        ⬇ Install App
-      </button>
-      <!-- Already installed -->
-      <div id="pwa-installed-msg" style="display:none; background:var(--success-bg); border:1px solid var(--success-border); border-radius:10px; padding:0.85rem; color:var(--success); font-weight:600; font-size:0.9rem;">
-        ✅ EduScan PH is already installed!
-      </div>
-      <!-- Fallback hint (iOS Safari, etc.) -->
-      <div id="pwa-manual-hint" style="display:none; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:0.85rem; font-size:0.82rem; color:var(--text-muted); line-height:1.6;">
-        <strong style="color:var(--text);">To install:</strong><br>
-        <span id="pwa-hint-text"></span>
-      </div>
-    </div>
-
-    <!-- Manual export -->
-    <div class="card">
-      <h2 style="margin-bottom:0.25rem;">📦 Export Data</h2>
-      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1rem;">Export all your data as a JSON backup file — includes classes, students, logs, and settings.</p>
-
-      <div style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1rem;">
-        <button class="btn full" onclick="exportData('all')" style="background:#0369a1;">
-          📦 Export everything (JSON)
-        </button>
-        <div style="display:flex; gap:0.5rem;">
-          <button class="btn full outline" onclick="exportData('logs')">📋 Logs only</button>
-          <button class="btn full outline" onclick="exportData('students')">👥 Students only</button>
-        </div>
-      </div>
-
-      <div id="export-status-msg"></div>
-    </div>
-
-    <!-- Auto-export -->
-    <div class="card">
-      <h2 style="margin-bottom:0.25rem;">⏱ Auto-Export</h2>
-      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1rem;">Automatically download a JSON backup on a schedule.</p>
-
-      <!-- Auto-export status bar -->
-      <div id="autoexport-bar" style="display:none; align-items:center; justify-content:space-between; background:var(--success-bg); border:1px solid var(--success-border); border-radius:8px; padding:0.6rem 0.85rem; margin-bottom:1rem; gap:0.5rem; flex-wrap:wrap;">
-        <span style="font-size:0.82rem; color:var(--success); font-weight:600;">⏱ Auto-export active</span>
-        <span id="autoexport-last" style="font-size:0.75rem; color:var(--text-muted);"></span>
-        <button class="btn danger sm" onclick="disableAutoExport()">Disable</button>
-      </div>
-
-      <div class="form-group" style="margin-bottom:0.75rem;">
-        <label for="autoexport-interval">Export every</label>
-        <select id="autoexport-interval">
-          <option value="daily">Daily (when app is opened)</option>
-          <option value="weekly">Weekly (when app is opened)</option>
-          <option value="each_scan">After every scan</option>
-        </select>
-      </div>
-
-      <button class="btn full success" onclick="enableAutoExport()">⏱ Enable auto-export</button>
-    </div>
-
-    <!-- Import / restore -->
-    <div class="card">
-      <h2 style="margin-bottom:0.25rem;">📥 Import / Restore</h2>
-      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1rem;">Restore data from a previously exported JSON file. <strong>This will merge with existing data.</strong></p>
-      <label for="import-file-input" class="btn full outline" style="cursor:pointer; text-align:center;">
-        📂 Choose backup file (.json)
-      </label>
-      <input type="file" id="import-file-input" accept=".json" style="display:none;" onchange="importData(event)">
-      <div id="import-status-msg" style="margin-top:0.6rem;"></div>
-    </div>
-
-  </div>
-
 </main>
 
 <div id="toast"></div>
@@ -780,72 +616,7 @@
   </div>
 </div>
 
-<!-- EDIT CLASS MODAL -->
-<div class="modal-backdrop" id="edit-class-modal" onclick="closeEditClassModal(event)">
-  <div class="modal-sheet">
-    <div class="modal-header">
-      <span class="modal-title">Edit Class</span>
-      <button class="modal-close" onclick="closeEditClassModalDirect()">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="edit-class-id">
-      <div class="form-group">
-        <label for="edit-class-name">Class / section name</label>
-        <input type="text" id="edit-class-name" placeholder="e.g. Grade 7 - Sampaguita">
-      </div>
-      <div style="display:flex; gap:0.5rem;">
-        <div class="form-group" style="flex:1;">
-          <label for="edit-class-start-time">Class start time</label>
-          <input type="time" id="edit-class-start-time">
-        </div>
-        <div class="form-group" style="flex:1;">
-          <label for="edit-class-grace-mins">Grace period (mins)</label>
-          <input type="number" id="edit-class-grace-mins" min="0" max="60" style="width:100%; padding:0.65rem 0.75rem; border:1px solid var(--border); border-radius:8px; font-size:0.95rem;">
-        </div>
-      </div>
-      <p style="font-size:0.75rem; color:var(--text-muted); margin-top:-0.5rem; margin-bottom:1rem;">Arrivals after start time + grace period are flagged ⏰ Late.</p>
-      <button class="btn full" onclick="saveEditClass()">Save changes</button>
-    </div>
-  </div>
-</div>
-
-<!-- EDIT LOG MODAL -->
-<div class="modal-backdrop" id="edit-log-modal" onclick="closeEditLogModal(event)">
-  <div class="modal-sheet">
-    <div class="modal-header">
-      <span class="modal-title">Edit Attendance Record</span>
-      <button class="modal-close" onclick="closeEditLogModalDirect()">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="edit-log-id">
-      <div class="form-group">
-        <label>Student</label>
-        <div id="edit-log-student-name" style="font-weight:700; font-size:0.95rem; padding:0.4rem 0;"></div>
-      </div>
-      <div class="form-group">
-        <label for="edit-log-type">Record type</label>
-        <select id="edit-log-type">
-          <option value="arrival">☀️ Arrival</option>
-          <option value="departure">🌙 Departure</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="edit-log-time">Time</label>
-        <input type="time" id="edit-log-time">
-      </div>
-      <div class="form-group">
-        <label for="edit-log-date">Date</label>
-        <input type="date" id="edit-log-date">
-      </div>
-      <div class="form-group" style="display:flex; align-items:center; gap:10px; margin-bottom:1rem;">
-        <input type="checkbox" id="edit-log-is-late" style="width:18px;height:18px;cursor:pointer;">
-        <label for="edit-log-is-late" style="text-transform:none; font-size:0.9rem; font-weight:600; color:var(--text); cursor:pointer; margin:0;">⏰ Mark as Late</label>
-      </div>
-      <button class="btn full" onclick="saveEditLog()">Save changes</button>
-      <button class="btn full danger" style="margin-top:0.5rem;" onclick="deleteLogEntry()">Delete this record</button>
-    </div>
-  </div>
-</div>
+<!-- TERMS DETAIL MODAL -->
 <div class="modal-backdrop" id="terms-modal-backdrop" onclick="closeTermsModal(event)">
   <div class="modal-sheet" style="max-height:88vh;">
     <div class="modal-header">
@@ -1003,7 +774,6 @@ function showPage(page) {
   if (page === 'students') renderStudents();
   if (page === 'classes')  renderClasses();
   if (page === 'terms')    renderTermsPage();
-  if (page === 'download') renderDownloadPage();
   if (page === 'log')      renderLog();
   if (page === 'summary') {
     initSummaryPeriod();
@@ -1107,16 +877,7 @@ function stopCameraManual() {
 }
 
 function handleScanAreaClick() {
-  if (!currentClassId) {
-    showToast('📋 Please select or add a class first.');
-    // Briefly shake the class select to draw attention
-    const sel = document.getElementById('scanner-class-select');
-    sel.style.transition = 'box-shadow 0.15s';
-    sel.style.boxShadow  = '0 0 0 3px rgba(245,158,11,0.5)';
-    setTimeout(() => { sel.style.boxShadow = ''; }, 1500);
-    return;
-  }
-  if (!scanning) startCamera();
+  if (!scanning && currentClassId) startCamera();
 }
 
 function scanFrameLoop() {
@@ -1143,24 +904,8 @@ function scanFrameLoop() {
 }
 
 // ── DATE HELPERS ──────────────────────────────────────────────────────────
-// ── DATE HELPERS (Philippine time — UTC+8) ────────────────────────────────
-function todayStr() {
-  // Use local date in PH timezone, not UTC
-  const now = new Date();
-  const ph  = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
-  return ph.getFullYear() + '-' +
-    String(ph.getMonth() + 1).padStart(2, '0') + '-' +
-    String(ph.getDate()).padStart(2, '0');
-}
-function sameDay(isoTimestamp, dateStr) {
-  // Convert the stored UTC timestamp to PH local date before comparing
-  const d  = new Date(isoTimestamp);
-  const ph = new Date(d.toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
-  const phStr = ph.getFullYear() + '-' +
-    String(ph.getMonth() + 1).padStart(2, '0') + '-' +
-    String(ph.getDate()).padStart(2, '0');
-  return phStr === dateStr;
-}
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+function sameDay(iso, dateStr) { return iso.slice(0, 10) === dateStr; }
 function formatDate(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
   return d.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -1205,22 +950,8 @@ async function handleQRScan(rawData) {
       studentId:   student.id,
       studentName: student.name,
       studentLrn:  student.lrn || '',
-      type:        scanMode,
-      isLate:      false
+      type:        scanMode
     };
-
-    // Auto-detect late arrival
-    if (scanMode === 'arrival') {
-      const cls = classes.find(c => c.id === currentClassId);
-      if (cls && cls.startTime) {
-        const now       = new Date();
-        const [h, m]    = cls.startTime.split(':').map(Number);
-        const grace     = cls.graceMins != null ? cls.graceMins : 5;
-        const cutoffMin = h * 60 + m + grace;
-        const nowMin    = now.getHours() * 60 + now.getMinutes();
-        if (nowMin > cutoffMin) logEntry.isLate = true;
-      }
-    }
 
     // Add to IDB first, then push to in-memory array with the auto-incremented id
     const newId = await dbAdd('logs', logEntry);
@@ -1228,18 +959,13 @@ async function handleQRScan(rawData) {
     logs.unshift(logEntry);
 
     if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
-    scheduleAutoSync();
-    checkAutoExport('scan');
 
     const isArrival = scanMode === 'arrival';
-    const lateTag   = (isArrival && logEntry.isLate)
-      ? ` <span class="badge badge-late" style="font-size:0.75rem;">⏰ Late</span>` : '';
     showFeedback(
       isArrival ? 'ok' : 'ok-dep',
       isArrival ? '☀️ Arrival recorded' : '🌙 Departure recorded',
-      `<strong>${student.name}</strong>${student.lrn ? ' · LRN ' + student.lrn : ''}${lateTag}<br>` +
-      `<span style="font-size:0.82rem;">${new Date(logEntry.timestamp).toLocaleTimeString()}</span>` +
-      `<br><button class="btn outline sm" style="margin-top:6px;" onclick="openEditLogModal(${logEntry.id})">✏️ Edit this record</button>`
+      `<strong>${student.name}</strong>${student.lrn ? ' · LRN ' + student.lrn : ''}<br>` +
+      `<span style="font-size:0.82rem;">${new Date(logEntry.timestamp).toLocaleTimeString()}</span>`
     );
     renderTodayList();
 
@@ -1264,29 +990,22 @@ function renderTodayList() {
   if (!todayLog.length) { box.style.display = 'none'; return; }
 
   box.style.display = 'block';
-  items.innerHTML = todayLog.map(l => {
-    const lateTag = (l.type === 'arrival' && l.isLate)
-      ? `<span class="badge badge-late" style="font-size:0.68rem;">⏰ Late</span>` : '';
-    return `
+  items.innerHTML = todayLog.map(l => `
     <div class="today-item">
       <span>${l.studentName}${l.studentLrn ? ' <span style="color:var(--text-muted);font-size:0.75rem;">· ' + l.studentLrn + '</span>' : ''}</span>
       <div style="display:flex; align-items:center; gap:5px;">
-        ${lateTag}
         <span style="color:var(--text-muted); font-size:0.76rem;">${new Date(l.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>
         <span class="badge badge-${l.type}">${l.type === 'arrival' ? '☀️ Arrival' : '🌙 Departure'}</span>
       </div>
-    </div>`;
-  }).join('');
+    </div>`).join('');
 }
 
 // ── CLASSES ───────────────────────────────────────────────────────────────
 async function addClass() {
-  const input     = document.getElementById('class-name-input');
-  const name      = input.value.trim();
-  const startTime = document.getElementById('class-start-time').value || '07:30';
-  const graceMins = parseInt(document.getElementById('class-grace-mins').value) || 5;
+  const input = document.getElementById('class-name-input');
+  const name  = input.value.trim();
   if (!name) return showToast('Enter a class name.');
-  classes.push({ id: 'class_' + Date.now(), name, startTime, graceMins });
+  classes.push({ id: 'class_' + Date.now(), name });
   await saveClasses();
   input.value = '';
   renderClasses(); populateDropdowns();
@@ -1312,19 +1031,14 @@ function renderClasses() {
     return;
   }
   tbody.innerHTML = classes.map(c => {
-    const count     = students.filter(s => s.classId === c.id).length;
-    const startTime = c.startTime || '—';
-    const grace     = c.graceMins != null ? `${c.graceMins}m grace` : '';
+    const count = students.filter(s => s.classId === c.id).length;
     return `
     <tr class="class-row-clickable" onclick="openClassRosterModal('${c.id}')">
       <td>
         <strong style="color:var(--primary);">${c.name}</strong><br>
-        <span style="font-size:0.75rem;color:var(--text-muted);">
-          ${count} student${count !== 1 ? 's' : ''} · starts ${startTime}${grace ? ' · ' + grace : ''} · tap to view roster
-        </span>
+        <span style="font-size:0.75rem;color:var(--text-muted);">${count} student${count !== 1 ? 's' : ''} · tap to view roster</span>
       </td>
-      <td style="text-align:right; white-space:nowrap;" onclick="event.stopPropagation()">
-        <button class="btn outline sm" style="margin-right:4px;" onclick="openEditClassModal('${c.id}')">Edit</button>
+      <td style="text-align:right;" onclick="event.stopPropagation()">
         <button class="btn danger sm" onclick="removeClass('${c.id}')">Delete</button>
       </td>
     </tr>`;
@@ -1427,21 +1141,16 @@ function renderLog() {
     tbody.innerHTML = `<tr><td colspan="5" class="empty">No logs yet.</td></tr>`;
     return;
   }
-  tbody.innerHTML = logs.map(l => {
-    const lateTag = (l.type === 'arrival' && l.isLate)
-      ? ` <span class="badge badge-late" style="font-size:0.68rem;">⏰ Late</span>` : '';
-    return `
+  tbody.innerHTML = logs.map(l => `
     <tr>
       <td style="color:var(--text-muted);font-size:0.78rem;white-space:nowrap;">
         ${new Date(l.timestamp).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}
       </td>
-      <td><span class="badge badge-${l.type || 'arrival'}">${l.type === 'departure' ? '🌙 Dep.' : '☀️ Arr.'}</span>${lateTag}</td>
+      <td><span class="badge badge-${l.type || 'arrival'}">${l.type === 'departure' ? '🌙 Dep.' : '☀️ Arr.'}</span></td>
       <td><span class="badge badge-class" style="font-size:0.7rem;">${l.className || '—'}</span></td>
       <td><strong>${l.studentName}</strong></td>
       <td style="font-size:0.78rem;color:var(--text-muted);font-family:monospace;">${l.studentLrn || '—'}</td>
-      <td style="text-align:right;"><button class="btn outline sm" onclick="openEditLogModal(${l.id})">✏️</button></td>
-    </tr>`;
-  }).join('');
+    </tr>`).join('');
 }
 
 async function clearLogs() {
@@ -1775,103 +1484,6 @@ function closeModalDirect() {
   document.body.style.overflow = '';
 }
 
-// ── EDIT CLASS MODAL ──────────────────────────────────────────────────────
-function openEditClassModal(classId) {
-  const cls = classes.find(c => c.id === classId);
-  if (!cls) return;
-  document.getElementById('edit-class-id').value         = cls.id;
-  document.getElementById('edit-class-name').value       = cls.name;
-  document.getElementById('edit-class-start-time').value = cls.startTime || '07:30';
-  document.getElementById('edit-class-grace-mins').value = cls.graceMins != null ? cls.graceMins : 5;
-  document.getElementById('edit-class-modal').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-async function saveEditClass() {
-  const id        = document.getElementById('edit-class-id').value;
-  const name      = document.getElementById('edit-class-name').value.trim();
-  const startTime = document.getElementById('edit-class-start-time').value || '07:30';
-  const graceMins = parseInt(document.getElementById('edit-class-grace-mins').value) || 0;
-  if (!name) return showToast('Class name cannot be empty.');
-  const cls = classes.find(c => c.id === id);
-  if (!cls) return;
-  cls.name      = name;
-  cls.startTime = startTime;
-  cls.graceMins = graceMins;
-  await saveClasses();
-  closeEditClassModalDirect();
-  renderClasses();
-  populateDropdowns();
-  showToast('Class updated.');
-}
-
-function closeEditClassModal(e) {
-  if (e.target === document.getElementById('edit-class-modal')) closeEditClassModalDirect();
-}
-function closeEditClassModalDirect() {
-  document.getElementById('edit-class-modal').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-// ── EDIT LOG MODAL ────────────────────────────────────────────────────────
-function openEditLogModal(logId) {
-  const log = logs.find(l => l.id === logId);
-  if (!log) return showToast('Record not found.');
-  const ts = new Date(log.timestamp);
-  document.getElementById('edit-log-id').value           = logId;
-  document.getElementById('edit-log-student-name').textContent = log.studentName + (log.studentLrn ? ` · LRN ${log.studentLrn}` : '');
-  document.getElementById('edit-log-type').value         = log.type || 'arrival';
-  document.getElementById('edit-log-time').value         = ts.toTimeString().slice(0,5);
-  document.getElementById('edit-log-date').value         = ts.toISOString().slice(0,10);
-  document.getElementById('edit-log-is-late').checked    = !!log.isLate;
-  document.getElementById('edit-log-modal').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-async function saveEditLog() {
-  const logId   = parseInt(document.getElementById('edit-log-id').value);
-  const type    = document.getElementById('edit-log-type').value;
-  const timeVal = document.getElementById('edit-log-time').value;
-  const dateVal = document.getElementById('edit-log-date').value;
-  const isLate  = document.getElementById('edit-log-is-late').checked;
-
-  if (!timeVal || !dateVal) return showToast('Date and time are required.');
-
-  const log = logs.find(l => l.id === logId);
-  if (!log) return;
-
-  // Build new timestamp preserving seconds as :00
-  log.timestamp = new Date(`${dateVal}T${timeVal}:00`).toISOString();
-  log.type      = type;
-  log.isLate    = isLate;
-
-  await dbPutAll('logs', [log]);
-
-  closeEditLogModalDirect();
-  renderLog();
-  renderTodayList();
-  showToast('Record updated.');
-}
-
-async function deleteLogEntry() {
-  const logId = parseInt(document.getElementById('edit-log-id').value);
-  if (!confirm('Delete this attendance record?')) return;
-  logs = logs.filter(l => l.id !== logId);
-  await dbDelete('logs', logId);
-  closeEditLogModalDirect();
-  renderLog();
-  renderTodayList();
-  showToast('Record deleted.');
-}
-
-function closeEditLogModal(e) {
-  if (e.target === document.getElementById('edit-log-modal')) closeEditLogModalDirect();
-}
-function closeEditLogModalDirect() {
-  document.getElementById('edit-log-modal').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
 // ── DROPDOWNS ─────────────────────────────────────────────────────────────
 function populateDropdowns() {
   const classOpts = `<option value="">— Choose a class —</option>` +
@@ -1901,483 +1513,89 @@ function populateDropdowns() {
 
 // ── SYNC ──────────────────────────────────────────────────────────────────
 const GAS_SCRIPT = `// EduScan PH — Google Apps Script
-// Based on the same pattern as Sublimation Shop Manager PH.
-// Paste this in Extensions → Apps Script (bound to your spreadsheet), save, then deploy.
-
-const SPREADSHEET_ID = ''; // Paste your Spreadsheet ID here, e.g. '15KHWKGQ_qH3...'
-                            // OR leave blank — the script will use the sheet it is bound to.
-
-function getSpreadsheet() {
-  return SPREADSHEET_ID
-    ? SpreadsheetApp.openById(SPREADSHEET_ID)
-    : SpreadsheetApp.getActiveSpreadsheet();
-}
+// Paste in Extensions → Apps Script, deploy as Web App (access: Anyone)
 
 function doPost(e) {
   try {
     const data  = JSON.parse(e.postData.contents);
-    const ss    = getSpreadsheet();
+    const ss    = SpreadsheetApp.getActiveSpreadsheet();
     let sheet   = ss.getSheetByName('Attendance');
 
     if (!sheet) {
       sheet = ss.insertSheet('Attendance');
-      const header = sheet.getRange(1, 1, 1, 7);
-      header.setValues([['Timestamp','Date','Time','Type','Class','Student Name','LRN']]);
-      header.setFontWeight('bold');
+      sheet.appendRow(['Timestamp','Date','Time','Type','Class','Student Name','LRN']);
       sheet.setFrozenRows(1);
     }
 
-    if (data.action === 'ping') {
-      return ContentService
-        .createTextOutput(JSON.stringify({ success: true, pong: true }))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-
-    // Dedup by timestamp to prevent double-inserts
-    const lastRow = sheet.getLastRow();
-    const existing = new Set();
-    if (lastRow > 1) {
-      sheet.getRange(2, 1, lastRow - 1, 1)
-        .getValues().forEach(r => r[0] && existing.add(r[0]));
-    }
-
-    const rows = (data.logs || [])
-      .filter(l => !existing.has(l.timestamp))
-      .map(l => {
-        const d = new Date(l.timestamp);
-        return [
-          l.timestamp,
-          Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy-MM-dd'),
-          Utilities.formatDate(d, Session.getScriptTimeZone(), 'HH:mm:ss'),
-          l.type === 'departure' ? 'Departure' : 'Arrival',
-          l.className    || '',
-          l.studentName  || '',
-          l.studentLrn   || ''
-        ];
-      });
+    const rows = data.logs.map(l => {
+      const d = new Date(l.timestamp);
+      return [
+        l.timestamp,
+        Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy-MM-dd'),
+        Utilities.formatDate(d, Session.getScriptTimeZone(), 'HH:mm:ss'),
+        l.type === 'departure' ? 'Departure' : 'Arrival',
+        l.className,
+        l.studentName,
+        l.studentLrn  || ''
+      ];
+    });
 
     if (rows.length > 0)
-      sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 7).setValues(rows);
+      sheet.getRange(sheet.getLastRow()+1, 1, rows.length, 7).setValues(rows);
 
     return ContentService
-      .createTextOutput(JSON.stringify({ success: true, added: rows.length, skipped: (data.logs || []).length - rows.length }))
+      .createTextOutput(JSON.stringify({ success: true, added: rows.length }))
       .setMimeType(ContentService.MimeType.JSON);
-
-  } catch (error) {
+  } catch(err) {
     return ContentService
-      .createTextOutput(JSON.stringify({ success: false, error: error.message }))
+      .createTextOutput(JSON.stringify({ success: false, error: err.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }`;
 
-// ── AUTO-SYNC STATE ────────────────────────────────────────────────────────
-let autoSyncEnabled = false;
-let autoSyncTimer   = null;
-const AUTO_SYNC_DELAY = 8000;
-
 async function renderSyncPage() {
-  const savedUrl     = await dbGetSetting('sync_url')      || '';
-  const savedSheetId = await dbGetSetting('sync_sheet_id') || '';
-  const autoSync     = await dbGetSetting('auto_sync');
+  const savedUrl = await dbGetSetting('sync_url') || '';
   document.getElementById('sync-url-input').value = savedUrl;
-  document.getElementById('sync-sheet-id').value  = savedSheetId;
   document.getElementById('gas-code').value = GAS_SCRIPT;
-  autoSyncEnabled = !!autoSync;
-  updateAutoSyncBar();
-}
-
-function updateAutoSyncBar() {
-  const bar = document.getElementById('autosync-bar');
-  if (autoSyncEnabled) { bar.style.display = 'flex'; updateAutoSyncLastLabel(); }
-  else                 { bar.style.display = 'none'; }
-}
-
-async function updateAutoSyncLastLabel() {
-  const last = await dbGetSetting('last_sync_time');
-  const el   = document.getElementById('autosync-last');
-  if (el) el.textContent = last
-    ? `Last synced: ${new Date(last).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}`
-    : 'Not synced yet';
 }
 
 async function saveSyncUrl() {
-  const url     = document.getElementById('sync-url-input').value.trim();
-  const sheetId = document.getElementById('sync-sheet-id').value.trim();
-  const msg     = document.getElementById('sync-status-msg');
-
+  const url = document.getElementById('sync-url-input').value.trim();
   if (!url) return showToast('Paste the Web App URL first.');
-  if (!url.includes('script.google.com')) {
-    msg.innerHTML = `<div class="sync-status err">That doesn't look like a Web App URL. It should contain script.google.com and end in /exec.</div>`;
-    return;
-  }
-
-  await dbSetSetting('sync_url',      url);
-  await dbSetSetting('sync_sheet_id', sheetId);
-  await dbSetSetting('auto_sync',     true);
-  autoSyncEnabled = true;
-  updateAutoSyncBar();
-
-  // Ping test
-  msg.innerHTML = `<div class="sync-status info">Testing connection…</div>`;
-  try {
-    const resp = await fetch(url, {
-      method:  'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body:    JSON.stringify({ action: 'ping' })
-    });
-    const result = await resp.json();
-    if (result.pong || result.success) {
-      msg.innerHTML = `<div class="sync-status ok">✅ Connected! Auto-sync enabled — logs will push automatically after each scan.</div>`;
-      showToast('Connected to Google Sheets ✓');
-    } else {
-      msg.innerHTML = `<div class="sync-status err">Script error: ${result.error || 'Unknown error'}</div>`;
-    }
-  } catch(e) {
-    msg.innerHTML = `<div class="sync-status err">Could not reach the script. Double-check the Web App URL ends in <code>/exec</code> and access is set to <em>Anyone</em>.</div>`;
-  }
+  await dbSetSetting('sync_url', url);
+  showToast('URL saved.');
 }
 
-async function disableAutoSync() {
-  await dbSetSetting('auto_sync', false);
-  autoSyncEnabled = false;
-  clearTimeout(autoSyncTimer);
-  updateAutoSyncBar();
-  showToast('Auto-sync disabled.');
-}
-
-function scheduleAutoSync() {
-  if (!autoSyncEnabled) return;
-  clearTimeout(autoSyncTimer);
-  autoSyncTimer = setTimeout(() => syncToSheets(true), AUTO_SYNC_DELAY);
-}
-
-async function syncToSheets(silent = false) {
-  const url = await dbGetSetting('sync_url');
+async function syncToSheets() {
+  const savedUrl = await dbGetSetting('sync_url');
+  const url = savedUrl || document.getElementById('sync-url-input').value.trim();
   const msg = document.getElementById('sync-status-msg');
-
-  if (!url) {
-    if (!silent) msg.innerHTML = `<div class="sync-status err">No URL saved. Complete the setup above first.</div>`;
-    return;
-  }
-  if (!logs.length) {
-    if (!silent) msg.innerHTML = `<div class="sync-status info">No logs to sync yet.</div>`;
-    return;
-  }
-
-  // Only push logs newer than last sync
-  const lastSync = await dbGetSetting('last_sync_time');
-  const toSync   = lastSync ? logs.filter(l => l.timestamp > lastSync) : [...logs];
-
-  if (!toSync.length) {
-    if (!silent) msg.innerHTML = `<div class="sync-status ok">✅ All logs already synced.</div>`;
-    return;
-  }
+  if (!url) { msg.innerHTML = `<div class="sync-status err">No URL saved. Paste the Web App URL first.</div>`; return; }
+  if (!logs.length) { msg.innerHTML = `<div class="sync-status info">No logs to sync yet.</div>`; return; }
 
   const btn = document.getElementById('sync-btn');
-  if (btn && !silent) { btn.disabled = true; btn.textContent = `Pushing ${toSync.length} records…`; }
-  if (!silent) msg.innerHTML = `<div class="sync-status info">Pushing ${toSync.length} records to Google Sheets…</div>`;
+  btn.disabled = true; btn.textContent = 'Pushing…';
+  msg.innerHTML = `<div class="sync-status info">Connecting to Google Sheets…</div>`;
 
   try {
-    const resp = await fetch(url, {
-      method:  'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body:    JSON.stringify({ logs: toSync })
-    });
+    const resp   = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ logs }) });
     const result = await resp.json();
-
     if (result.success) {
-      await dbSetSetting('last_sync_time', new Date().toISOString());
-      updateAutoSyncLastLabel();
-      const note = result.skipped > 0 ? ` (${result.skipped} already in sheet)` : '';
-      if (!silent) msg.innerHTML = `<div class="sync-status ok">✅ ${result.added} record${result.added !== 1 ? 's' : ''} added to Google Sheets${note}.</div>`;
-      if (silent && result.added > 0) showToast(`☁ ${result.added} record${result.added !== 1 ? 's' : ''} synced`);
+      msg.innerHTML = `<div class="sync-status ok">✓ ${result.added} records pushed to Google Sheets.</div>`;
+      showToast(`${result.added} records synced.`);
     } else {
-      if (!silent) msg.innerHTML = `<div class="sync-status err">Script error: ${result.error}</div>`;
-      if (silent) showToast('⚠ Sync failed — check the Sync tab.');
+      msg.innerHTML = `<div class="sync-status err">Script error: ${result.error}</div>`;
     }
-  } catch(e) {
-    if (!silent) msg.innerHTML = `<div class="sync-status err">Network error. Make sure you're online and the URL is correct.</div>`;
-    if (silent) showToast('⚠ Sync — network error.');
+  } catch(err) {
+    msg.innerHTML = `<div class="sync-status err">Network error — check the URL and make sure access is set to "Anyone".</div>`;
   }
-
-  if (btn && !silent) { btn.disabled = false; btn.textContent = '⬆ Push unsynced logs'; }
+  btn.disabled = false; btn.textContent = 'Push logs';
 }
 
 function copyScript() {
   const ta = document.getElementById('gas-code');
   ta.select(); document.execCommand('copy');
   showToast('Script copied.');
-}
-
-// ── DOWNLOAD / EXPORT / IMPORT ────────────────────────────────────────────
-
-// ── PWA INSTALL ───────────────────────────────────────────────────────────
-let pwaInstallPrompt = null;
-
-function updatePWAInstallUI() {
-  const installBtn  = document.getElementById('pwa-install-btn');
-  const installedMsg = document.getElementById('pwa-installed-msg');
-  const manualHint  = document.getElementById('pwa-manual-hint');
-  const hintText    = document.getElementById('pwa-hint-text');
-  const headerBtn   = document.getElementById('header-install-btn');
-  const headerChip  = document.getElementById('header-installed-chip');
-
-  const standalone = window.matchMedia('(display-mode: standalone)').matches ||
-                     window.navigator.standalone === true;
-
-  if (standalone) {
-    if (installBtn)   installBtn.style.display   = 'none';
-    if (installedMsg) installedMsg.style.display  = 'block';
-    if (manualHint)   manualHint.style.display    = 'none';
-    if (headerBtn)    headerBtn.style.display      = 'none';
-    if (headerChip)   headerChip.style.display     = 'inline-flex';
-  } else if (pwaInstallPrompt) {
-    if (installBtn)   installBtn.style.display   = 'flex';
-    if (installedMsg) installedMsg.style.display  = 'none';
-    if (manualHint)   manualHint.style.display    = 'none';
-    if (headerBtn)    headerBtn.style.display      = 'inline-flex';
-    if (headerChip)   headerChip.style.display     = 'none';
-  } else {
-    // No prompt available — show manual instructions
-    if (installBtn)   installBtn.style.display   = 'none';
-    if (installedMsg) installedMsg.style.display  = 'none';
-    if (headerBtn)    headerBtn.style.display      = 'none';
-    if (headerChip)   headerChip.style.display     = 'none';
-    if (manualHint && hintText) {
-      manualHint.style.display = 'block';
-      const ua = navigator.userAgent;
-      if (/iPhone|iPad/.test(ua) || (ua.includes('Mac') && navigator.maxTouchPoints > 1)) {
-        hintText.innerHTML = 'Tap the <strong>Share</strong> button in Safari, then tap <strong>Add to Home Screen</strong>.';
-      } else if (ua.includes('Android')) {
-        hintText.innerHTML = 'Tap the <strong>⋮ menu</strong> in Chrome, then tap <strong>Add to Home screen</strong>.';
-      } else {
-        hintText.innerHTML = 'Click the <strong>install icon ⊕</strong> in your browser address bar, or use the browser menu → <strong>Install app</strong>.';
-      }
-    }
-  }
-}
-
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  pwaInstallPrompt = e;
-  updatePWAInstallUI();
-});
-
-window.addEventListener('appinstalled', () => {
-  pwaInstallPrompt = null;
-  updatePWAInstallUI();
-  showToast('✅ EduScan PH installed!');
-});
-
-async function triggerPWAInstall() {
-  if (!pwaInstallPrompt) return;
-  await pwaInstallPrompt.prompt();
-  const { outcome } = await pwaInstallPrompt.userChoice;
-  if (outcome === 'accepted') pwaInstallPrompt = null;
-  updatePWAInstallUI();
-}
-
-// ── Render download page (refresh auto-export status) ──
-async function renderDownloadPage() {
-  const enabled  = await dbGetSetting('autoexport_enabled');
-  const interval = await dbGetSetting('autoexport_interval') || 'daily';
-  const last     = await dbGetSetting('autoexport_last');
-  const bar      = document.getElementById('autoexport-bar');
-  const sel      = document.getElementById('autoexport-interval');
-
-  sel.value = interval;
-
-  if (enabled) {
-    bar.style.display = 'flex';
-    document.getElementById('autoexport-last').textContent = last
-      ? `Last export: ${new Date(last).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}`
-      : 'Not exported yet this session';
-  } else {
-    bar.style.display = 'none';
-  }
-
-  updatePWAInstallUI();
-}
-
-// ── Download the app HTML itself ──
-function downloadApp() {
-  // Fetch the current page's HTML source and offer it as a download
-  fetch(window.location.href)
-    .then(r => r.text())
-    .then(html => {
-      triggerDownload(new Blob([html], { type: 'text/html' }), 'eduscan-ph.html');
-      showToast('App downloaded ✓');
-    })
-    .catch(() => {
-      // Fallback: just link to the current URL
-      const a = document.createElement('a');
-      a.href     = window.location.href;
-      a.download = 'eduscan-ph.html';
-      a.click();
-    });
-}
-
-// ── Manual export ──
-async function exportData(type = 'all') {
-  const msg  = document.getElementById('export-status-msg');
-  const now  = new Date();
-  const stamp = now.toISOString().slice(0,10);
-
-  let payload = {};
-  let filename = '';
-
-  if (type === 'all') {
-    const syncUrl     = await dbGetSetting('sync_url')      || '';
-    const syncSheetId = await dbGetSetting('sync_sheet_id') || '';
-    payload = {
-      exportedAt: now.toISOString(),
-      version:    'eduscan-ph-v1',
-      classes,
-      students,
-      logs,
-      settings: { syncUrl, syncSheetId }
-    };
-    filename = `eduscan-backup-${stamp}.json`;
-  } else if (type === 'logs') {
-    payload  = { exportedAt: now.toISOString(), logs };
-    filename = `eduscan-logs-${stamp}.json`;
-  } else if (type === 'students') {
-    payload  = { exportedAt: now.toISOString(), classes, students };
-    filename = `eduscan-students-${stamp}.json`;
-  }
-
-  triggerDownload(
-    new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }),
-    filename
-  );
-
-  await dbSetSetting('autoexport_last', now.toISOString());
-  if (type === 'all') renderDownloadPage();
-
-  msg.innerHTML = `<div class="sync-status ok">✅ Exported <strong>${filename}</strong></div>`;
-  setTimeout(() => msg.innerHTML = '', 4000);
-  showToast(`Downloaded ${filename}`);
-}
-
-// ── Auto-export ──
-async function enableAutoExport() {
-  const interval = document.getElementById('autoexport-interval').value;
-  await dbSetSetting('autoexport_enabled',  true);
-  await dbSetSetting('autoexport_interval', interval);
-  renderDownloadPage();
-  showToast(`Auto-export enabled (${interval}) ✓`);
-}
-
-async function disableAutoExport() {
-  await dbSetSetting('autoexport_enabled', false);
-  document.getElementById('autoexport-bar').style.display = 'none';
-  showToast('Auto-export disabled.');
-}
-
-// Called on boot and after each scan (if each_scan mode)
-async function checkAutoExport(trigger = 'boot') {
-  const enabled  = await dbGetSetting('autoexport_enabled');
-  if (!enabled) return;
-  const interval = await dbGetSetting('autoexport_interval') || 'daily';
-  const last     = await dbGetSetting('autoexport_last');
-
-  if (interval === 'each_scan' && trigger === 'scan') {
-    await exportData('all'); return;
-  }
-
-  if (!last) { await exportData('all'); return; }
-
-  const lastDate = new Date(last);
-  const now      = new Date();
-
-  if (interval === 'daily') {
-    if (lastDate.toDateString() !== now.toDateString()) await exportData('all');
-  } else if (interval === 'weekly') {
-    const diffDays = (now - lastDate) / (1000 * 60 * 60 * 24);
-    if (diffDays >= 7) await exportData('all');
-  }
-}
-
-// ── Import / restore ──
-async function importData(event) {
-  const file = event.target.files[0];
-  const msg  = document.getElementById('import-status-msg');
-  if (!file) return;
-
-  try {
-    const text    = await file.text();
-    const payload = JSON.parse(text);
-
-    // Validate it looks like an EduScan export
-    if (!payload.version && !payload.classes && !payload.logs) {
-      msg.innerHTML = `<div class="sync-status err">This doesn't look like an EduScan backup file.</div>`;
-      return;
-    }
-
-    let importedClasses = 0, importedStudents = 0, importedLogs = 0;
-
-    // Merge classes (skip duplicates by id)
-    if (payload.classes?.length) {
-      const existingIds = new Set(classes.map(c => c.id));
-      const newClasses  = payload.classes.filter(c => !existingIds.has(c.id));
-      classes.push(...newClasses);
-      await dbPutAll('classes', classes);
-      importedClasses = newClasses.length;
-    }
-
-    // Merge students (skip duplicates by id)
-    if (payload.students?.length) {
-      const existingIds  = new Set(students.map(s => s.id));
-      const newStudents  = payload.students.filter(s => !existingIds.has(s.id));
-      students.push(...newStudents);
-      students.sort((a, b) => a.name.localeCompare(b.name));
-      await dbPutAll('students', students);
-      importedStudents = newStudents.length;
-    }
-
-    // Merge logs (skip duplicates by timestamp+studentId)
-    if (payload.logs?.length) {
-      const existingKeys = new Set(logs.map(l => `${l.timestamp}|${l.studentId}`));
-      const newLogs      = payload.logs.filter(l => !existingKeys.has(`${l.timestamp}|${l.studentId}`));
-      for (const l of newLogs) {
-        const entry = { ...l }; delete entry.id;
-        const newId = await dbAdd('logs', entry);
-        entry.id = newId;
-        logs.push(entry);
-      }
-      logs.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
-      importedLogs = newLogs.length;
-    }
-
-    // Restore settings if present
-    if (payload.settings?.syncUrl)     await dbSetSetting('sync_url',      payload.settings.syncUrl);
-    if (payload.settings?.syncSheetId) await dbSetSetting('sync_sheet_id', payload.settings.syncSheetId);
-
-    populateDropdowns();
-    msg.innerHTML = `<div class="sync-status ok">
-      ✅ Import complete:<br>
-      ${importedClasses} classes · ${importedStudents} students · ${importedLogs} logs added
-    </div>`;
-    showToast('Import complete ✓');
-
-  } catch(e) {
-    msg.innerHTML = `<div class="sync-status err">Failed to read file: ${e.message}</div>`;
-  }
-
-  // Reset file input so the same file can be re-imported if needed
-  event.target.value = '';
-}
-
-// ── Shared download helper ──
-function triggerDownload(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const a   = document.createElement('a');
-  a.href     = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 // ── TERMS ─────────────────────────────────────────────────────────────────
@@ -2601,20 +1819,18 @@ window.addEventListener('DOMContentLoaded', async () => {
   logs.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
   students.sort((a, b) => a.name.localeCompare(b.name));
 
-  // Restore auto-sync state
-  autoSyncEnabled = !!(await dbGetSetting('auto_sync'));
-
   populateDropdowns();
   initSummaryPeriod();
-  checkAutoExport('boot');
-  updatePWAInstallUI();
 });
 </script>
 
 <script>
+// ── SERVICE WORKER REGISTRATION ───────────────────────────────────────────
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('EduScan SW registered:', reg.scope))
+      .catch(err => console.warn('SW registration failed:', err));
   });
 }
 </script>
