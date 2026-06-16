@@ -1598,21 +1598,20 @@ function renderSummary() {
       html += `
         <div class="history-class-row">
           <div class="history-class-name">${c.name}</div>
-          <div class="stat-row-btns" style="grid-template-columns: repeat(5, 1fr);">
+          <div class="stat-row-btns">
             <button class="stat-btn enrolled" onclick="openModalRange('enrolled','${c.id}','${range.from}','${range.to}','${encodeURIComponent(c.name)}')">
               <div class="val">${classStudents.length}</div><div class="lbl">Enrolled</div><div class="tap-hint">tap</div>
             </button>
             <button class="stat-btn arrived" onclick="openModalRange('arrived','${c.id}','${range.from}','${range.to}','${encodeURIComponent(c.name)}')">
-              <div class="val" style="color:var(--arrival);">${arrivedIds.size}</div><div class="lbl">Arrived</div><div class="tap-hint">tap</div>
-            </button>
-            <button class="stat-btn" style="background:var(--bg); border-radius:8px; padding:0.65rem 0.75rem; text-align:center; border:2px solid transparent; cursor:default;">
-              <div class="val" style="color:#c2410c; font-size:1.4rem; font-weight:700;">${lateCount}</div><div class="lbl" style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">Late</div>
+              <div class="val" style="color:var(--arrival);">${arrivedIds.size}</div>
+              <div class="lbl">Arrived${lateCount > 0 ? ` <span style="color:#c2410c;font-size:0.65rem;font-weight:700;">· ${lateCount} late</span>` : ''}</div>
+              <div class="tap-hint">tap</div>
             </button>
             <button class="stat-btn departed" onclick="openModalRange('departed','${c.id}','${range.from}','${range.to}','${encodeURIComponent(c.name)}')">
               <div class="val" style="color:var(--departure);">${departedIds.size}</div><div class="lbl">Departed</div><div class="tap-hint">tap</div>
             </button>
             <button class="stat-btn absent" onclick="openModalRange('absent','${c.id}','${range.from}','${range.to}','${encodeURIComponent(c.name)}')">
-              <div class="val" style="color:var(--danger);">${neverArrived.length}</div><div class="lbl">Never arrived</div><div class="tap-hint">tap</div>
+              <div class="val" style="color:var(--danger);">${neverArrived.length}</div><div class="lbl">Absent</div><div class="tap-hint">tap</div>
             </button>
           </div>
         </div>`;
@@ -1655,15 +1654,14 @@ function renderSummary() {
       html += `
         <div class="history-class-row">
           <div class="history-class-name">${c.name}</div>
-          <div class="stat-row-btns" style="grid-template-columns: repeat(5, 1fr);">
+          <div class="stat-row-btns">
             <button class="stat-btn enrolled" onclick="openModal('enrolled','${c.id}','${dateStr}','${encodeURIComponent(c.name)}')">
               <div class="val">${classStudents.length}</div><div class="lbl">Enrolled</div><div class="tap-hint">tap</div>
             </button>
             <button class="stat-btn arrived" onclick="openModal('arrived','${c.id}','${dateStr}','${encodeURIComponent(c.name)}')">
-              <div class="val" style="color:var(--arrival);">${arrivedIds.size}</div><div class="lbl">Arrived</div><div class="tap-hint">tap</div>
-            </button>
-            <button class="stat-btn" style="background:var(--bg); border-radius:8px; padding:0.65rem 0.75rem; text-align:center; border:2px solid transparent; cursor:default;">
-              <div class="val" style="color:#c2410c; font-size:1.4rem; font-weight:700;">${lateCount}</div><div class="lbl" style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">Late</div>
+              <div class="val" style="color:var(--arrival);">${arrivedIds.size}</div>
+              <div class="lbl">Arrived${lateCount > 0 ? ` <span style="color:#c2410c;font-size:0.65rem;font-weight:700;">· ${lateCount} late</span>` : ''}</div>
+              <div class="tap-hint">tap</div>
             </button>
             <button class="stat-btn departed" onclick="openModal('departed','${c.id}','${dateStr}','${encodeURIComponent(c.name)}')">
               <div class="val" style="color:var(--departure);">${departedIds.size}</div><div class="lbl">Departed</div><div class="tap-hint">tap</div>
