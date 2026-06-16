@@ -618,14 +618,53 @@
   <!-- DOWNLOAD PAGE -->
   <div id="page-download" class="page">
 
-    <!-- Download the app -->
-    <div class="card">
-      <h2 style="margin-bottom:0.25rem;">📲 Download App</h2>
-      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1rem;">Save EduScan PH as a standalone HTML file — works offline with no internet needed.</p>
-      <button class="btn full" onclick="downloadApp()" style="background:#0f172a;">
-        ⬇ Download eduscan-ph.html
-      </button>
-      <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.6rem; text-align:center;">Open the file in any browser. Your data stays in the browser's IndexedDB.</p>
+    <!-- PWA Install Card -->
+    <div class="card" style="text-align:center;">
+      <!-- App logo -->
+      <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:1.1rem;">
+        <div style="
+          width:88px; height:88px; border-radius:22px;
+          background:linear-gradient(145deg,#1d4ed8,#3b82f6);
+          display:flex; align-items:center; justify-content:center;
+          box-shadow:0 6px 24px rgba(29,78,216,0.35); margin-bottom:0.75rem;
+          position:relative; overflow:hidden;
+        ">
+          <!-- Clipboard icon in SVG -->
+          <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="13" y="16" width="26" height="30" rx="3" fill="white" opacity="0.95"/>
+            <rect x="20" y="11" width="12" height="8" rx="2" fill="white" opacity="0.95"/>
+            <rect x="20" y="13" width="12" height="4" rx="1" fill="#1d4ed8"/>
+            <rect x="17" y="25" width="18" height="2.5" rx="1.25" fill="#1d4ed8" opacity="0.7"/>
+            <rect x="17" y="31" width="18" height="2.5" rx="1.25" fill="#1d4ed8" opacity="0.7"/>
+            <rect x="17" y="37" width="11" height="2.5" rx="1.25" fill="#1d4ed8" opacity="0.7"/>
+            <!-- Checkmark -->
+            <path d="M30 38 L33 41 L39 35" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div style="font-size:1.15rem; font-weight:800; color:var(--text);">EduScan PH</div>
+        <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">Offline-first attendance tracker</div>
+      </div>
+
+      <!-- Install button (shown when browser supports it) -->
+      <div id="pwa-install-section">
+        <button id="pwa-install-btn" class="btn full" onclick="triggerPWAInstall()"
+          style="background:linear-gradient(135deg,#1d4ed8,#3b82f6); font-size:1rem; padding:0.85rem; border-radius:12px; display:none;">
+          ⬇ Install App
+        </button>
+
+        <!-- Already installed -->
+        <div id="pwa-installed-msg" style="display:none; background:var(--success-bg); border:1px solid var(--success-border); border-radius:10px; padding:0.85rem; color:var(--success); font-weight:600; font-size:0.9rem;">
+          ✅ EduScan PH is installed on this device!
+        </div>
+
+        <!-- Manual instructions fallback -->
+        <div id="pwa-manual-instructions" style="display:none;">
+          <div style="background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:1rem; text-align:left; margin-top:0.5rem;">
+            <p style="font-size:0.82rem; font-weight:700; margin-bottom:0.6rem; color:var(--text);" id="pwa-platform-title">How to install:</p>
+            <div id="pwa-platform-steps" style="font-size:0.82rem; color:var(--text-muted); line-height:1.7;"></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Manual export -->
@@ -987,8 +1026,24 @@ function scanFrameLoop() {
 }
 
 // ── DATE HELPERS ──────────────────────────────────────────────────────────
-function todayStr() { return new Date().toISOString().slice(0, 10); }
-function sameDay(iso, dateStr) { return iso.slice(0, 10) === dateStr; }
+// ── DATE HELPERS (Philippine time — UTC+8) ────────────────────────────────
+function todayStr() {
+  // Use local date in PH timezone, not UTC
+  const now = new Date();
+  const ph  = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+  return ph.getFullYear() + '-' +
+    String(ph.getMonth() + 1).padStart(2, '0') + '-' +
+    String(ph.getDate()).padStart(2, '0');
+}
+function sameDay(isoTimestamp, dateStr) {
+  // Convert the stored UTC timestamp to PH local date before comparing
+  const d  = new Date(isoTimestamp);
+  const ph = new Date(d.toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+  const phStr = ph.getFullYear() + '-' +
+    String(ph.getMonth() + 1).padStart(2, '0') + '-' +
+    String(ph.getDate()).padStart(2, '0');
+  return phStr === dateStr;
+}
 function formatDate(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
   return d.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
