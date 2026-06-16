@@ -1948,11 +1948,12 @@ function populateDropdowns() {
 }
 
 // ── SYNC ──────────────────────────────────────────────────────────────────
-const GAS_SCRIPT = `// EduScan PH — Google Apps Script v3
+const GAS_SCRIPT = `// EduScan PH — Google Apps Script v4
 // Sheet structure:
-//   • One tab per class  (auto-created, named after the class)
-//   • "Summary" tab      (auto-updated: per-student term totals + late counts)
-//   • "Attendance" tab   (kept as-is if it exists — legacy, not written to)
+//   • "Summary" tab        — auto-updated per-student term totals + late counts
+//   • One tab per class    — auto-created, named after the class
+//   • Archived class tabs  — renamed to "ClassName (archived)" + gray header
+//                            when the class is deleted in the app
 //
 // Paste into Extensions → Apps Script → Code.js → Save → Deploy as new deployment.
 
@@ -1966,9 +1967,9 @@ function getSpreadsheet() {
 
 // ── DepEd term boundaries (month is 1-based) ──────────────────────────────
 const TERMS = [
-  { label: 'Term 1', months: [6, 7, 8, 9]    },
-  { label: 'Term 2', months: [10, 11, 12]     },
-  { label: 'Term 3', months: [1, 2, 3]        },
+  { label: 'Term 1', months: [6, 7, 8, 9]  },
+  { label: 'Term 2', months: [10, 11, 12]   },
+  { label: 'Term 3', months: [1, 2, 3]      },
 ];
 
 function getTermLabel(dateObj) {
@@ -1977,19 +1978,76 @@ function getTermLabel(dateObj) {
   return t ? t.label : 'Other';
 }
 
+// ── Tab name constants ─────────────────────────────────────────────────────
+const SKIP_TABS    = ['Summary', 'Attendance', 'Attendance (migrated)'];
+const ARCHIVE_SUFFIX = ' (archived)';
+
+function isArchived(name)  { return name.endsWith(ARCHIVE_SUFFIX); }
+function archiveName(name) { return name + ARCHIVE_SUFFIX; }
+function activeName(name)  { return name.replace(ARCHIVE_SUFFIX, ''); }
+
 // ── Get or create a sheet tab by name ─────────────────────────────────────
 function getOrCreateSheet(ss, name, headers) {
   let sheet = ss.getSheetByName(name);
   if (!sheet) {
     sheet = ss.insertSheet(name);
-    const hRange = sheet.getRange(1, 1, 1, headers.length);
-    hRange.setValues([headers]);
-    hRange.setFontWeight('bold');
-    hRange.setBackground('#1d4ed8');
-    hRange.setFontColor('#ffffff');
-    sheet.setFrozenRows(1);
+    applyActiveHeader(sheet, headers);
   }
   return sheet;
+}
+
+function applyActiveHeader(sheet, headers) {
+  const r = sheet.getRange(1, 1, 1, headers.length);
+  r.setValues([headers]);
+  r.setFontWeight('bold');
+  r.setBackground('#1d4ed8');
+  r.setFontColor('#ffffff');
+  sheet.setFrozenRows(1);
+}
+
+function applyArchivedHeader(sheet) {
+  const lastCol = sheet.getLastColumn() || 1;
+  const r = sheet.getRange(1, 1, 1, lastCol);
+  r.setBackground('#94a3b8'); // slate gray
+  r.setFontColor('#ffffff');
+  r.setFontWeight('bold');
+}
+
+// ── Archive tabs whose classes no longer exist in the app ─────────────────
+function archiveDeletedClasses(ss, activeClasses) {
+  if (!activeClasses || !activeClasses.length) return;
+
+  const activeSet = new Set(activeClasses);
+
+  ss.getSheets().forEach(sheet => {
+    const name = sheet.getName();
+    if (SKIP_TABS.includes(name)) return;
+    if (isArchived(name)) return; // already archived
+
+    if (!activeSet.has(name)) {
+      // Class was deleted in the app — archive this tab
+      sheet.setName(archiveName(name));
+      applyArchivedHeader(sheet);
+      // Add a note in cell A1 so it's obvious
+      sheet.getRange(1, 1).setNote('This class was deleted in EduScan PH. Data preserved for records.');
+    }
+  });
+
+  // Also un-archive if a class was re-added with the same name
+  ss.getSheets().forEach(sheet => {
+    const name = sheet.getName();
+    if (!isArchived(name)) return;
+    const original = activeName(name);
+    if (activeSet.has(original)) {
+      sheet.setName(original);
+      // Restore header color
+      const lastCol = sheet.getLastColumn() || 1;
+      const r = sheet.getRange(1, 1, 1, lastCol);
+      r.setBackground('#1d4ed8');
+      r.setFontColor('#ffffff');
+      sheet.getRange(1, 1).clearNote();
+    }
+  });
 }
 
 // ── Migrate old "Attendance" tab into per-class tabs ──────────────────────
@@ -1998,44 +2056,35 @@ function migrateAttendanceTab(ss) {
   if (!old || old.getLastRow() < 2) return;
 
   const rows = old.getRange(2, 1, old.getLastRow() - 1, 8).getValues();
-  // Group by class name (col 6, index 5 in 0-based)
   const byClass = {};
   rows.forEach(r => {
-    const className = r[5] || 'Unknown Class';
-    if (!byClass[className]) byClass[className] = [];
-    byClass[className].push(r);
+    const cls = r[5] || 'Unknown Class';
+    if (!byClass[cls]) byClass[cls] = [];
+    byClass[cls].push(r);
   });
 
   const CLASS_HEADERS = ['Timestamp','Date','Time','Type','Late','Class','Student Name','LRN','Term'];
 
   Object.entries(byClass).forEach(([className, classRows]) => {
-    const sheet = getOrCreateSheet(ss, className, CLASS_HEADERS);
-    // Build existing timestamp set to avoid dupes
+    const sheet    = getOrCreateSheet(ss, className, CLASS_HEADERS);
     const existing = getExistingTimestamps(sheet);
-    const toAdd = classRows.filter(r => !existing.has(r[0])).map(r => {
-      const d    = new Date(r[0]);
-      const term = getTermLabel(d);
-      return [...r, term]; // append Term column
-    });
-    if (toAdd.length) {
+    const toAdd    = classRows
+      .filter(r => !existing.has(r[0]))
+      .map(r => [...r, getTermLabel(new Date(r[0]))]);
+    if (toAdd.length)
       sheet.getRange(sheet.getLastRow() + 1, 1, toAdd.length, CLASS_HEADERS.length).setValues(toAdd);
-    }
   });
 
-  // Rename old tab so we don't migrate again, but preserve the data
   old.setName('Attendance (migrated)');
 }
 
-// ── Get set of timestamps already in a sheet (col 1) ─────────────────────
+// ── Timestamp helpers ──────────────────────────────────────────────────────
 function getExistingTimestamps(sheet) {
   const last = sheet.getLastRow();
   if (last < 2) return new Set();
-  return new Set(
-    sheet.getRange(2, 1, last - 1, 1).getValues().map(r => r[0]).filter(Boolean)
-  );
+  return new Set(sheet.getRange(2, 1, last - 1, 1).getValues().map(r => r[0]).filter(Boolean));
 }
 
-// ── Get map of timestamp → row number ─────────────────────────────────────
 function getTimestampRowMap(sheet) {
   const last = sheet.getLastRow();
   const map  = {};
@@ -2049,13 +2098,12 @@ function getTimestampRowMap(sheet) {
 function rebuildSummary(ss) {
   let summary = ss.getSheetByName('Summary');
   if (!summary) {
-    summary = ss.insertSheet('Summary', 0); // first tab
+    summary = ss.insertSheet('Summary', 0);
   } else {
     summary.clearContents();
     summary.clearFormats();
   }
 
-  // Headers
   const headers = [
     'Class', 'Student Name', 'LRN',
     'T1 Arrivals', 'T1 Late', 'T1 Absences',
@@ -2070,9 +2118,10 @@ function rebuildSummary(ss) {
   hRange.setFontColor('#ffffff');
   summary.setFrozenRows(1);
 
-  // Gather all class sheets (exclude meta sheets)
-  const SKIP = ['Summary', 'Attendance', 'Attendance (migrated)'];
-  const classSheets = ss.getSheets().filter(s => !SKIP.includes(s.getName()));
+  // Only pull from active class tabs (not archived, not meta tabs)
+  const classSheets = ss.getSheets().filter(s =>
+    !SKIP_TABS.includes(s.getName()) && !isArchived(s.getName())
+  );
 
   const allRows = [];
 
@@ -2081,32 +2130,27 @@ function rebuildSummary(ss) {
     if (last < 2) return;
 
     const data = sheet.getRange(2, 1, last - 1, 9).getValues();
-    // cols: 0=Timestamp,1=Date,2=Time,3=Type,4=Late,5=Class,6=StudentName,7=LRN,8=Term
 
-    // Group by student (by LRN, fallback to name)
+    // School days per term = dates with any Arrival record for this class
+    const schoolDaysByTerm = {};
+    TERMS.forEach(t => {
+      schoolDaysByTerm[t.label] = new Set(
+        data.filter(r => {
+          const m = new Date(r[0]).getMonth() + 1;
+          return r[3] === 'Arrival' && t.months.includes(m);
+        }).map(r => r[1])
+      );
+    });
+
+    // Group by student
     const students = {};
     data.forEach(r => {
-      const key  = r[7] || r[6]; // LRN or name
-      const name = r[6];
-      const lrn  = r[7];
-      const cls  = r[5];
-      if (!students[key]) students[key] = { name, lrn, cls, logs: [] };
+      const key = r[7] || r[6];
+      if (!students[key]) students[key] = { name: r[6], lrn: r[7], cls: r[5], logs: [] };
       students[key].logs.push(r);
     });
 
     Object.values(students).forEach(({ name, lrn, cls, logs }) => {
-      // Count school days per term (dates with ANY arrival for this class)
-      const schoolDaysByTerm = {};
-      TERMS.forEach(t => {
-        const days = new Set(
-          data.filter(r => {
-            const m = new Date(r[0]).getMonth() + 1;
-            return r[3] === 'Arrival' && t.months.includes(m);
-          }).map(r => r[1])
-        );
-        schoolDaysByTerm[t.label] = days;
-      });
-
       const row = [cls, name, lrn];
       let totalArr = 0, totalLate = 0, totalAbs = 0;
 
@@ -2129,19 +2173,14 @@ function rebuildSummary(ss) {
   });
 
   if (allRows.length) {
-    // Sort by class then student name
     allRows.sort((a, b) => a[0].localeCompare(b[0]) || a[1].localeCompare(b[1]));
     summary.getRange(2, 1, allRows.length, headers.length).setValues(allRows);
 
-    // Color-code late and absences columns for readability
-    const lateColIndices  = [5, 8, 11, 14]; // 1-based: T1 Late, T2 Late, T3 Late, Total Late
-    const absentColIndices = [6, 9, 12, 15];
-    lateColIndices.forEach(col => {
-      summary.getRange(2, col, allRows.length, 1).setBackground('#fff7ed');
-    });
-    absentColIndices.forEach(col => {
-      summary.getRange(2, col, allRows.length, 1).setBackground('#fef2f2');
-    });
+    // Orange tint for Late columns, red tint for Absence columns
+    [5, 8, 11, 14].forEach(col =>
+      summary.getRange(2, col, allRows.length, 1).setBackground('#fff7ed'));
+    [6, 9, 12, 15].forEach(col =>
+      summary.getRange(2, col, allRows.length, 1).setBackground('#fef2f2'));
 
     summary.autoResizeColumns(1, headers.length);
   }
@@ -2153,20 +2192,21 @@ function doPost(e) {
     const data = JSON.parse(e.postData.contents);
     const ss   = getSpreadsheet();
 
-    // ── Ping ──
     if (data.action === 'ping') {
       return ContentService
         .createTextOutput(JSON.stringify({ success: true, pong: true }))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
-    // ── One-time migration of old Attendance tab ──
+    // One-time migration of old Attendance tab
     migrateAttendanceTab(ss);
+
+    // Archive tabs for deleted classes, un-archive re-added ones
+    archiveDeletedClasses(ss, data.activeClasses);
 
     const CLASS_HEADERS = ['Timestamp','Date','Time','Type','Late','Class','Student Name','LRN','Term'];
 
-    let added   = 0;
-    let updated = 0;
+    let added = 0, updated = 0;
 
     // Group incoming logs by class
     const byClass = {};
@@ -2177,17 +2217,22 @@ function doPost(e) {
     }
 
     Object.entries(byClass).forEach(([className, classLogs]) => {
-      const sheet      = getOrCreateSheet(ss, className, CLASS_HEADERS);
-      const tsRowMap   = getTimestampRowMap(sheet);
+      const sheet    = getOrCreateSheet(ss, className, CLASS_HEADERS);
+      const tsRowMap = getTimestampRowMap(sheet);
 
       classLogs.forEach(l => {
-        const d        = new Date(l.timestamp);
-        const dateStr  = Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy-MM-dd');
-        const timeStr  = Utilities.formatDate(d, Session.getScriptTimeZone(), 'HH:mm:ss');
-        const typeStr  = l.type === 'departure' ? 'Departure' : 'Arrival';
-        const lateStr  = (l.type === 'arrival' && l.isLate) ? 'Yes' : '';
-        const termStr  = getTermLabel(d);
-        const rowData  = [l.timestamp, dateStr, timeStr, typeStr, lateStr, l.className || '', l.studentName || '', l.studentLrn || '', termStr];
+        const d       = new Date(l.timestamp);
+        const rowData = [
+          l.timestamp,
+          Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy-MM-dd'),
+          Utilities.formatDate(d, Session.getScriptTimeZone(), 'HH:mm:ss'),
+          l.type === 'departure' ? 'Departure' : 'Arrival',
+          (l.type === 'arrival' && l.isLate) ? 'Yes' : '',
+          l.className   || '',
+          l.studentName || '',
+          l.studentLrn  || '',
+          getTermLabel(d)
+        ];
 
         const lookupKey = l._originalTimestamp || l.timestamp;
 
@@ -2203,7 +2248,7 @@ function doPost(e) {
       });
     });
 
-    // Rebuild Summary tab after every push
+    // Rebuild Summary after every push
     rebuildSummary(ss);
 
     return ContentService
@@ -2305,7 +2350,10 @@ async function syncSingleLog(log, originalTimestamp) {
     await fetch(url, {
       method:  'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body:    JSON.stringify({ logs: [payload] })
+      body:    JSON.stringify({
+        logs: [payload],
+        activeClasses: classes.map(c => c.name)
+      })
     });
   } catch(e) {
     // Silent — user will see it on next manual push if offline
@@ -2348,7 +2396,10 @@ async function syncToSheets(silent = false) {
     const resp = await fetch(url, {
       method:  'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body:    JSON.stringify({ logs: toSync })
+      body:    JSON.stringify({
+        logs: toSync,
+        activeClasses: classes.map(c => c.name)
+      })
     });
     const result = await resp.json();
 
