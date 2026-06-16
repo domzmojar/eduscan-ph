@@ -2104,12 +2104,18 @@ function rebuildSummary(ss) {
     summary.clearFormats();
   }
 
+  // Columns per term: Present | Complete | Half-day | Late | Absent
+  // Present  = days with at least 1 arrival
+  // Complete = days with both arrival AND departure
+  // Half-day = days with arrival but no departure
+  // Late     = present days where arrival was flagged late
+  // Absent   = school days (class had activity) where student had no arrival
   const headers = [
     'Class', 'Student Name', 'LRN',
-    'T1 Arrivals', 'T1 Late', 'T1 Absences',
-    'T2 Arrivals', 'T2 Late', 'T2 Absences',
-    'T3 Arrivals', 'T3 Late', 'T3 Absences',
-    'Total Arrivals', 'Total Late', 'Total Absences'
+    'T1 Present', 'T1 Complete', 'T1 Half-day', 'T1 Late', 'T1 Absent',
+    'T2 Present', 'T2 Complete', 'T2 Half-day', 'T2 Late', 'T2 Absent',
+    'T3 Present', 'T3 Complete', 'T3 Half-day', 'T3 Late', 'T3 Absent',
+    'Total Present', 'Total Complete', 'Total Half-day', 'Total Late', 'Total Absent'
   ];
   const hRange = summary.getRange(1, 1, 1, headers.length);
   hRange.setValues([headers]);
@@ -2118,7 +2124,7 @@ function rebuildSummary(ss) {
   hRange.setFontColor('#ffffff');
   summary.setFrozenRows(1);
 
-  // Only pull from active class tabs (not archived, not meta tabs)
+  // Only active class tabs
   const classSheets = ss.getSheets().filter(s =>
     !SKIP_TABS.includes(s.getName()) && !isArchived(s.getName())
   );
@@ -2130,8 +2136,9 @@ function rebuildSummary(ss) {
     if (last < 2) return;
 
     const data = sheet.getRange(2, 1, last - 1, 9).getValues();
+    // cols: 0=Timestamp,1=Date,2=Time,3=Type,4=Late,5=Class,6=Name,7=LRN,8=Term
 
-    // School days per term = dates with any Arrival record for this class
+    // School days per term = dates where ANY student in this class had an arrival
     const schoolDaysByTerm = {};
     TERMS.forEach(t => {
       schoolDaysByTerm[t.label] = new Set(
@@ -2142,7 +2149,7 @@ function rebuildSummary(ss) {
       );
     });
 
-    // Group by student
+    // Group logs by student
     const students = {};
     data.forEach(r => {
       const key = r[7] || r[6];
@@ -2152,22 +2159,32 @@ function rebuildSummary(ss) {
 
     Object.values(students).forEach(({ name, lrn, cls, logs }) => {
       const row = [cls, name, lrn];
-      let totalArr = 0, totalLate = 0, totalAbs = 0;
+      let totPresent = 0, totComplete = 0, totHalf = 0, totLate = 0, totAbsent = 0;
 
       TERMS.forEach(t => {
-        const termLogs    = logs.filter(r => r[8] === t.label);
-        const arrivals    = termLogs.filter(r => r[3] === 'Arrival');
-        const lateCount   = arrivals.filter(r => r[4] === 'Yes').length;
-        const arrivedDays = new Set(arrivals.map(r => r[1]));
-        const absences    = [...schoolDaysByTerm[t.label]].filter(d => !arrivedDays.has(d)).length;
+        const termLogs  = logs.filter(r => r[8] === t.label);
+        const arrivals  = termLogs.filter(r => r[3] === 'Arrival');
+        const departures = termLogs.filter(r => r[3] === 'Departure');
 
-        row.push(arrivals.length, lateCount, absences);
-        totalArr  += arrivals.length;
-        totalLate += lateCount;
-        totalAbs  += absences;
+        // Unique days per type
+        const arrivedDays   = new Set(arrivals.map(r => r[1]));
+        const departedDays  = new Set(departures.map(r => r[1]));
+
+        const presentDays  = arrivedDays.size;
+        const completeDays = [...arrivedDays].filter(d => departedDays.has(d)).length;
+        const halfDays     = presentDays - completeDays;
+        const lateCount    = arrivals.filter(r => r[4] === 'Yes').length;
+        const absentDays   = [...schoolDaysByTerm[t.label]].filter(d => !arrivedDays.has(d)).length;
+
+        row.push(presentDays, completeDays, halfDays, lateCount, absentDays);
+        totPresent  += presentDays;
+        totComplete += completeDays;
+        totHalf     += halfDays;
+        totLate     += lateCount;
+        totAbsent   += absentDays;
       });
 
-      row.push(totalArr, totalLate, totalAbs);
+      row.push(totPresent, totComplete, totHalf, totLate, totAbsent);
       allRows.push(row);
     });
   });
@@ -2176,15 +2193,23 @@ function rebuildSummary(ss) {
     allRows.sort((a, b) => a[0].localeCompare(b[0]) || a[1].localeCompare(b[1]));
     summary.getRange(2, 1, allRows.length, headers.length).setValues(allRows);
 
-    // Orange tint for Late columns, red tint for Absence columns
-    [5, 8, 11, 14].forEach(col =>
-      summary.getRange(2, col, allRows.length, 1).setBackground('#fff7ed'));
-    [6, 9, 12, 15].forEach(col =>
-      summary.getRange(2, col, allRows.length, 1).setBackground('#fef2f2'));
+    // Color coding (1-based column indices):
+    // Present cols  : 4,9,14,19  → light green
+    // Complete cols : 5,10,15,20 → lighter green
+    // Half-day cols : 6,11,16,21 → light yellow
+    // Late cols     : 7,12,17,22 → light orange
+    // Absent cols   : 8,13,18,23 → light red
+    const n = allRows.length;
+    [4,9,14,19].forEach(c  => summary.getRange(2,c,n,1).setBackground('#f0fdf4'));
+    [5,10,15,20].forEach(c => summary.getRange(2,c,n,1).setBackground('#dcfce7'));
+    [6,11,16,21].forEach(c => summary.getRange(2,c,n,1).setBackground('#fefce8'));
+    [7,12,17,22].forEach(c => summary.getRange(2,c,n,1).setBackground('#fff7ed'));
+    [8,13,18,23].forEach(c => summary.getRange(2,c,n,1).setBackground('#fef2f2'));
 
     summary.autoResizeColumns(1, headers.length);
   }
 }
+
 
 // ── MAIN: doPost ──────────────────────────────────────────────────────────
 function doPost(e) {
