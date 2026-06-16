@@ -351,9 +351,46 @@
 </head>
 <body>
 
-<header>
-  <h1>📋 EduScan PH</h1>
-  <p>Offline-first student attendance tracker</p>
+<header style="display:flex; align-items:center; justify-content:space-between; padding: 0.65rem 1rem;">
+  <div style="display:flex; align-items:center; gap:10px;">
+    <!-- App logo -->
+    <div style="
+      width:40px; height:40px; border-radius:10px; flex-shrink:0;
+      background:linear-gradient(145deg,#1d4ed8,#3b82f6);
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:0 2px 8px rgba(29,78,216,0.3);
+    ">
+      <svg width="24" height="24" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="13" y="16" width="26" height="30" rx="3" fill="white" opacity="0.95"/>
+        <rect x="20" y="11" width="12" height="8" rx="2" fill="white" opacity="0.95"/>
+        <rect x="20" y="13" width="12" height="4" rx="1" fill="#1d4ed8"/>
+        <rect x="17" y="25" width="18" height="2.5" rx="1.25" fill="#1d4ed8" opacity="0.7"/>
+        <rect x="17" y="31" width="18" height="2.5" rx="1.25" fill="#1d4ed8" opacity="0.7"/>
+        <rect x="17" y="37" width="11" height="2.5" rx="1.25" fill="#1d4ed8" opacity="0.7"/>
+        <path d="M30 38 L33 41 L39 35" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div style="text-align:left;">
+      <div style="font-size:1.05rem; font-weight:800; color:var(--primary); letter-spacing:-0.02em; line-height:1.1;">EduScan PH</div>
+      <div style="font-size:0.7rem; color:var(--text-muted); line-height:1;">Offline-first attendance tracker</div>
+    </div>
+  </div>
+
+  <!-- Install button (shown by JS when prompt is available) -->
+  <button id="header-install-btn" onclick="triggerPWAInstall()"
+    style="display:none; align-items:center; gap:5px; background:linear-gradient(135deg,#1d4ed8,#3b82f6);
+    color:white; border:none; border-radius:8px; padding:0.45rem 0.85rem;
+    font-size:0.8rem; font-weight:700; cursor:pointer; box-shadow:0 2px 8px rgba(29,78,216,0.3);
+    white-space:nowrap;">
+    ⬇ Install
+  </button>
+  <!-- Already installed chip -->
+  <div id="header-installed-chip"
+    style="display:none; align-items:center; gap:4px; background:var(--success-bg);
+    border:1px solid var(--success-border); border-radius:8px; padding:0.35rem 0.7rem;
+    font-size:0.75rem; font-weight:700; color:var(--success); white-space:nowrap;">
+    ✅ Installed
+  </div>
 </header>
 
 <nav>
@@ -646,25 +683,10 @@
       </div>
 
       <!-- Install button (shown when browser supports it) -->
-      <div id="pwa-install-section">
-        <button id="pwa-install-btn" class="btn full" onclick="triggerPWAInstall()"
-          style="background:linear-gradient(135deg,#1d4ed8,#3b82f6); font-size:1rem; padding:0.85rem; border-radius:12px; display:none;">
-          ⬇ Install App
-        </button>
-
-        <!-- Already installed -->
-        <div id="pwa-installed-msg" style="display:none; background:var(--success-bg); border:1px solid var(--success-border); border-radius:10px; padding:0.85rem; color:var(--success); font-weight:600; font-size:0.9rem;">
-          ✅ EduScan PH is installed on this device!
-        </div>
-
-        <!-- Manual instructions fallback -->
-        <div id="pwa-manual-instructions" style="display:none;">
-          <div style="background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:1rem; text-align:left; margin-top:0.5rem;">
-            <p style="font-size:0.82rem; font-weight:700; margin-bottom:0.6rem; color:var(--text);" id="pwa-platform-title">How to install:</p>
-            <div id="pwa-platform-steps" style="font-size:0.82rem; color:var(--text-muted); line-height:1.7;"></div>
-          </div>
-        </div>
-      </div>
+      <button id="pwa-install-btn" class="btn full" onclick="triggerPWAInstall()"
+        style="background:linear-gradient(135deg,#1d4ed8,#3b82f6); font-size:1rem; padding:0.85rem; border-radius:12px;">
+        ⬇ Install App
+      </button>
     </div>
 
     <!-- Manual export -->
@@ -999,7 +1021,16 @@ function stopCameraManual() {
 }
 
 function handleScanAreaClick() {
-  if (!scanning && currentClassId) startCamera();
+  if (!currentClassId) {
+    showToast('📋 Please select or add a class first.');
+    // Briefly shake the class select to draw attention
+    const sel = document.getElementById('scanner-class-select');
+    sel.style.transition = 'box-shadow 0.15s';
+    sel.style.boxShadow  = '0 0 0 3px rgba(245,158,11,0.5)';
+    setTimeout(() => { sel.style.boxShadow = ''; }, 1500);
+    return;
+  }
+  if (!scanning) startCamera();
 }
 
 function scanFrameLoop() {
@@ -1863,6 +1894,41 @@ function copyScript() {
 
 // ── DOWNLOAD / EXPORT / IMPORT ────────────────────────────────────────────
 
+// ── PWA INSTALL ───────────────────────────────────────────────────────────
+let pwaInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  pwaInstallPrompt = e;
+  // Show header install button once prompt is ready
+  const btn = document.getElementById('header-install-btn');
+  if (btn) btn.style.display = 'inline-flex';
+});
+
+window.addEventListener('appinstalled', () => {
+  pwaInstallPrompt = null;
+  const btn  = document.getElementById('header-install-btn');
+  const chip = document.getElementById('header-installed-chip');
+  if (btn)  btn.style.display  = 'none';
+  if (chip) chip.style.display = 'inline-flex';
+  showToast('✅ EduScan PH installed!');
+});
+
+function isInStandaloneMode() {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+         window.navigator.standalone === true;
+}
+
+async function triggerPWAInstall() {
+  if (pwaInstallPrompt) {
+    pwaInstallPrompt.prompt();
+    const { outcome } = await pwaInstallPrompt.userChoice;
+    if (outcome === 'accepted') pwaInstallPrompt = null;
+  } else {
+    showToast('Use your browser menu → "Add to Home Screen" to install.');
+  }
+}
+
 // ── Render download page (refresh auto-export status) ──
 async function renderDownloadPage() {
   const enabled  = await dbGetSetting('autoexport_enabled');
@@ -1880,6 +1946,14 @@ async function renderDownloadPage() {
       : 'Not exported yet this session';
   } else {
     bar.style.display = 'none';
+  }
+
+  // Show installed chip in header if already running as PWA
+  if (isInStandaloneMode()) {
+    const btn  = document.getElementById('header-install-btn');
+    const chip = document.getElementById('header-installed-chip');
+    if (btn)  btn.style.display  = 'none';
+    if (chip) chip.style.display = 'inline-flex';
   }
 }
 
