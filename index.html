@@ -674,65 +674,54 @@
   <div id="page-download" class="page">
 
     <!-- PWA Install Card -->
-    <div class="card" style="text-align:center;">
-      <!-- App logo -->
-      <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:1.1rem;">
-        <div style="
-          width:88px; height:88px; border-radius:22px;
-          background:linear-gradient(145deg,#1d4ed8,#3b82f6);
-          display:flex; align-items:center; justify-content:center;
-          box-shadow:0 6px 24px rgba(29,78,216,0.35); margin-bottom:0.75rem;
-          position:relative; overflow:hidden;
-        ">
-          <!-- Clipboard icon in SVG -->
-          <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="13" y="16" width="26" height="30" rx="3" fill="white" opacity="0.95"/>
-            <rect x="20" y="11" width="12" height="8" rx="2" fill="white" opacity="0.95"/>
-            <rect x="20" y="13" width="12" height="4" rx="1" fill="#1d4ed8"/>
-            <rect x="17" y="25" width="18" height="2.5" rx="1.25" fill="#1d4ed8" opacity="0.7"/>
-            <rect x="17" y="31" width="18" height="2.5" rx="1.25" fill="#1d4ed8" opacity="0.7"/>
-            <rect x="17" y="37" width="11" height="2.5" rx="1.25" fill="#1d4ed8" opacity="0.7"/>
-            <!-- Checkmark -->
-            <path d="M30 38 L33 41 L39 35" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <div style="font-size:1.15rem; font-weight:800; color:var(--text);">EduScan PH</div>
-        <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">Offline-first attendance tracker</div>
-      </div>
+<div class="card">
+  <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:1.1rem;">
+    <div style="width:88px; height:88px; border-radius:22px; background:linear-gradient(145deg,#1d4ed8,#3b82f6); display:flex; align-items:center; justify-content:center; box-shadow:0 6px 24px rgba(29,78,216,0.35); margin-bottom:0.75rem;">
+      <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="13" y="16" width="26" height="30" rx="3" fill="white" opacity="0.95"/>
+        <rect x="20" y="11" width="12" height="8" rx="2" fill="white" opacity="0.95"/>
+        <rect x="20" y="13" width="12" height="4" rx="1" fill="#1d4ed8"/>
+        <rect x="17" y="25" width="18" height="2.5" rx="1.25" fill="#1d4ed8" opacity="0.7"/>
+        <rect x="17" y="31" width="18" height="2.5" rx="1.25" fill="#1d4ed8" opacity="0.7"/>
+        <rect x="17" y="37" width="11" height="2.5" rx="1.25" fill="#1d4ed8" opacity="0.7"/>
+        <path d="M30 38 L33 41 L39 35" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div style="font-size:1.15rem; font-weight:800; color:var(--text);">EduScan PH</div>
+    <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">Offline-first attendance tracker</div>
+  </div>
 
-      <!-- Install button: hidden until beforeinstallprompt fires -->
-      <button id="pwa-install-btn" class="btn full" onclick="triggerPWAInstall()"
-        style="display:none; background:linear-gradient(135deg,#1d4ed8,#3b82f6); font-size:1rem; padding:0.85rem; border-radius:12px;">
-        ⬇ Install App
-      </button>
-      <!-- Already installed -->
-      <div id="pwa-installed-msg" style="display:none; background:var(--success-bg); border:1px solid var(--success-border); border-radius:10px; padding:0.85rem; color:var(--success); font-weight:600; font-size:0.9rem;">
-        ✅ EduScan PH is already installed!
-      </div>
-      <!-- Fallback hint (iOS Safari, etc.) -->
-      <div id="pwa-manual-hint" style="display:none; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:0.85rem; font-size:0.82rem; color:var(--text-muted); line-height:1.6;">
-        <strong style="color:var(--text);">To install:</strong><br>
-        <span id="pwa-hint-text"></span>
-      </div>
+  <!-- Already installed -->
+  <div id="pwa-installed-msg" style="display:none; background:var(--success-bg); border:1px solid var(--success-border); border-radius:10px; padding:0.85rem; color:var(--success); font-weight:600; font-size:0.9rem; text-align:center; margin-bottom:1rem;">
+    ✅ EduScan PH is already installed!
+  </div>
+
+  <!-- Android / Desktop: native install button -->
+  <button id="pwa-install-btn" class="btn full" onclick="triggerPWAInstall()"
+    style="display:none; background:linear-gradient(135deg,#1d4ed8,#3b82f6); font-size:1rem; padding:0.85rem; border-radius:12px; margin-bottom:1rem;">
+    ⬇ Install App
+  </button>
+
+  <!-- iOS / fallback: step-by-step guide -->
+  <div id="pwa-install-guide" style="display:none;">
+
+    <!-- iOS Other Browser warning -->
+    <div id="ios-wrong-browser-warning" style="display:none; background:var(--warning-bg); border:1px solid var(--warning-border); border-radius:10px; padding:0.85rem; margin-bottom:0.85rem;">
+      <p style="font-size:0.85rem; font-weight:700; color:var(--warning); margin-bottom:0.35rem;">⚠️ Chrome &amp; Firefox can't install apps on iOS</p>
+      <p style="font-size:0.8rem; color:var(--warning); line-height:1.5; margin:0;">Apple only allows <strong>Safari</strong> to do this. Copy this page's URL, open Safari, paste it, then follow the steps below.</p>
     </div>
 
-    <!-- Manual export -->
-    <div class="card">
-      <h2 style="margin-bottom:0.25rem;">📦 Export Data</h2>
-      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1rem;">Export all your data as a JSON backup file — includes classes, students, logs, and settings.</p>
+    <p style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.65rem;" id="install-guide-title">How to install</p>
 
-      <div style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1rem;">
-        <button class="btn full" onclick="exportData('all')" style="background:#0369a1;">
-          📦 Export everything (JSON)
-        </button>
-        <div style="display:flex; gap:0.5rem;">
-          <button class="btn full outline" onclick="exportData('logs')">📋 Logs only</button>
-          <button class="btn full outline" onclick="exportData('students')">👥 Students only</button>
-        </div>
-      </div>
+    <ol id="install-steps" style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:0.55rem;"></ol>
 
-      <div id="export-status-msg"></div>
+    <div style="margin-top:0.85rem; padding:0.75rem; background:var(--bg); border-radius:8px; border:1px solid var(--border);">
+      <p style="font-size:0.78rem; color:var(--text-muted); line-height:1.5; margin:0;">
+        💡 Once installed, EduScan PH works fully <strong>offline</strong> — no internet needed to scan. Data syncs to Google Sheets whenever you're back online.
+      </p>
     </div>
+  </div>
+</div>
 
     <!-- Auto-export -->
     <div class="card">
@@ -2458,37 +2447,77 @@ function copyScript() {
 let pwaInstallPrompt = null;
 
 function updatePWAInstallUI() {
-  const installBtn   = document.getElementById('pwa-install-btn');
-  const installedMsg = document.getElementById('pwa-installed-msg');
-  const manualHint   = document.getElementById('pwa-manual-hint');
-  const hintText     = document.getElementById('pwa-hint-text');
+  const installBtn    = document.getElementById('pwa-install-btn');
+  const installedMsg  = document.getElementById('pwa-installed-msg');
+  const guide         = document.getElementById('pwa-install-guide');
+  const wrongBrowser  = document.getElementById('ios-wrong-browser-warning');
+  const stepsEl       = document.getElementById('install-steps');
+  const guideTitle    = document.getElementById('install-guide-title');
 
   const standalone = window.matchMedia('(display-mode: standalone)').matches ||
                      window.navigator.standalone === true;
 
   if (standalone) {
-    if (installBtn)   installBtn.style.display  = 'none';
-    if (installedMsg) installedMsg.style.display = 'block';
-    if (manualHint)   manualHint.style.display   = 'none';
-  } else if (pwaInstallPrompt) {
-    if (installBtn)   installBtn.style.display  = 'flex';
-    if (installedMsg) installedMsg.style.display = 'none';
-    if (manualHint)   manualHint.style.display   = 'none';
-  } else {
-    if (installBtn)   installBtn.style.display  = 'none';
-    if (installedMsg) installedMsg.style.display = 'none';
-    if (manualHint && hintText) {
-      manualHint.style.display = 'block';
-      const ua = navigator.userAgent;
-      if (/iPhone|iPad/.test(ua) || (ua.includes('Mac') && navigator.maxTouchPoints > 1)) {
-        hintText.innerHTML = 'Tap the <strong>Share</strong> button in Safari, then tap <strong>Add to Home Screen</strong>.';
-      } else if (ua.includes('Android')) {
-        hintText.innerHTML = 'Tap the <strong>⋮ menu</strong> in Chrome, then tap <strong>Add to Home screen</strong>.';
-      } else {
-        hintText.innerHTML = 'Click the <strong>install icon ⊕</strong> in your browser address bar, or use the browser menu → <strong>Install app</strong>.';
-      }
-    }
+    installedMsg.style.display = 'block';
+    installBtn.style.display   = 'none';
+    guide.style.display        = 'none';
+    return;
   }
+
+  const ua    = navigator.userAgent;
+  const isIOS = /iPhone|iPad/.test(ua) || (ua.includes('Mac') && navigator.maxTouchPoints > 1);
+  const isIOSSafari = isIOS && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+  const isIOSOther  = isIOS && !isIOSSafari;
+
+  if (pwaInstallPrompt) {
+    // Android / Desktop Chrome — can show native prompt
+    installBtn.style.display  = 'flex';
+    guide.style.display       = 'none';
+    installedMsg.style.display = 'none';
+    return;
+  }
+
+  // Show step-by-step guide
+  installedMsg.style.display = 'none';
+  installBtn.style.display   = 'none';
+  guide.style.display        = 'block';
+  wrongBrowser.style.display = isIOSOther ? 'block' : 'none';
+
+  let steps = [];
+  if (isIOSSafari) {
+    guideTitle.textContent = 'Install on iPhone / iPad (Safari)';
+    steps = [
+      { icon: '📤', text: 'Tap the <strong>Share button</strong> — the box with an arrow at the bottom of Safari.' },
+      { icon: '📜', text: 'Scroll the share sheet and tap <strong>"Add to Home Screen"</strong>.' },
+      { icon: '✏️', text: 'Rename if you like, then tap <strong>Add</strong> in the top-right.' },
+      { icon: '✅', text: 'EduScan PH is on your home screen and works offline!' },
+    ];
+  } else if (isIOSOther) {
+    guideTitle.textContent = 'Install on iPhone / iPad';
+    steps = [
+      { icon: '📋', text: 'Copy the URL of this page from your browser\'s address bar.' },
+      { icon: '🧭', text: 'Open the <strong>Safari</strong> app — only Safari can install apps on iOS.' },
+      { icon: '📌', text: 'Paste the URL in Safari and open the page.' },
+      { icon: '📤', text: 'Tap the <strong>Share button</strong> at the bottom, then tap <strong>"Add to Home Screen"</strong>.' },
+      { icon: '✅', text: 'Tap <strong>Add</strong> — done!' },
+    ];
+  } else {
+    // Desktop fallback (no install prompt available)
+    guideTitle.textContent = 'Install on desktop';
+    steps = [
+      { icon: '🌐', text: 'Use <strong>Chrome</strong> or <strong>Edge</strong> for the easiest install.' },
+      { icon: '⊕',  text: 'Click the <strong>install icon</strong> in the address bar (right side).' },
+      { icon: '✅', text: 'Click <strong>Install</strong> — EduScan PH opens as a standalone app.' },
+    ];
+  }
+
+  stepsEl.innerHTML = steps.map((s, i) => `
+    <li style="display:flex; align-items:flex-start; gap:10px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:0.65rem 0.85rem;">
+      <div style="flex-shrink:0; width:24px; height:24px; border-radius:50%; background:var(--primary); color:#fff; font-size:0.73rem; font-weight:700; display:flex; align-items:center; justify-content:center;">${i + 1}</div>
+      <div style="font-size:1.1rem; flex-shrink:0; line-height:1; margin-top:2px;">${s.icon}</div>
+      <div style="font-size:0.83rem; line-height:1.5; color:var(--text); flex:1;">${s.text}</div>
+    </li>
+  `).join('');
 }
 
 window.addEventListener('beforeinstallprompt', e => {
