@@ -385,20 +385,7 @@
   </div>
 
   <!-- Install button (shown by JS when prompt is available) -->
-  <button id="header-install-btn" onclick="triggerPWAInstall()"
-    style="display:none; align-items:center; gap:5px; background:linear-gradient(135deg,#1d4ed8,#3b82f6);
-    color:white; border:none; border-radius:8px; padding:0.45rem 0.85rem;
-    font-size:0.8rem; font-weight:700; cursor:pointer; box-shadow:0 2px 8px rgba(29,78,216,0.3);
-    white-space:nowrap;">
-    ⬇ Install
-  </button>
-  <!-- Already installed chip -->
-  <div id="header-installed-chip"
-    style="display:none; align-items:center; gap:4px; background:var(--success-bg);
-    border:1px solid var(--success-border); border-radius:8px; padding:0.35rem 0.7rem;
-    font-size:0.75rem; font-weight:700; color:var(--success); white-space:nowrap;">
-    ✅ Installed
-  </div>
+  
 </header>
 
 <nav>
@@ -2122,34 +2109,25 @@ function copyScript() {
 let pwaInstallPrompt = null;
 
 function updatePWAInstallUI() {
-  const installBtn  = document.getElementById('pwa-install-btn');
+  const installBtn   = document.getElementById('pwa-install-btn');
   const installedMsg = document.getElementById('pwa-installed-msg');
-  const manualHint  = document.getElementById('pwa-manual-hint');
-  const hintText    = document.getElementById('pwa-hint-text');
-  const headerBtn   = document.getElementById('header-install-btn');
-  const headerChip  = document.getElementById('header-installed-chip');
+  const manualHint   = document.getElementById('pwa-manual-hint');
+  const hintText     = document.getElementById('pwa-hint-text');
 
   const standalone = window.matchMedia('(display-mode: standalone)').matches ||
                      window.navigator.standalone === true;
 
   if (standalone) {
-    if (installBtn)   installBtn.style.display   = 'none';
-    if (installedMsg) installedMsg.style.display  = 'block';
-    if (manualHint)   manualHint.style.display    = 'none';
-    if (headerBtn)    headerBtn.style.display      = 'none';
-    if (headerChip)   headerChip.style.display     = 'inline-flex';
+    if (installBtn)   installBtn.style.display  = 'none';
+    if (installedMsg) installedMsg.style.display = 'block';
+    if (manualHint)   manualHint.style.display   = 'none';
   } else if (pwaInstallPrompt) {
-    if (installBtn)   installBtn.style.display   = 'flex';
-    if (installedMsg) installedMsg.style.display  = 'none';
-    if (manualHint)   manualHint.style.display    = 'none';
-    if (headerBtn)    headerBtn.style.display      = 'inline-flex';
-    if (headerChip)   headerChip.style.display     = 'none';
+    if (installBtn)   installBtn.style.display  = 'flex';
+    if (installedMsg) installedMsg.style.display = 'none';
+    if (manualHint)   manualHint.style.display   = 'none';
   } else {
-    // No prompt available — show manual instructions
-    if (installBtn)   installBtn.style.display   = 'none';
-    if (installedMsg) installedMsg.style.display  = 'none';
-    if (headerBtn)    headerBtn.style.display      = 'none';
-    if (headerChip)   headerChip.style.display     = 'none';
+    if (installBtn)   installBtn.style.display  = 'none';
+    if (installedMsg) installedMsg.style.display = 'none';
     if (manualHint && hintText) {
       manualHint.style.display = 'block';
       const ua = navigator.userAgent;
@@ -2175,7 +2153,6 @@ window.addEventListener('appinstalled', () => {
   updatePWAInstallUI();
   showToast('✅ EduScan PH installed!');
 });
-
 async function triggerPWAInstall() {
   if (!pwaInstallPrompt) return;
   await pwaInstallPrompt.prompt();
