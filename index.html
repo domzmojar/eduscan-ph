@@ -557,28 +557,47 @@
   <div id="page-sync" class="page">
     <div class="card">
       <h2>Sync to Google Sheets</h2>
+
+      <!-- AUTO-SYNC STATUS BAR -->
+      <div id="autosync-bar" style="display:none; align-items:center; justify-content:space-between; background:var(--success-bg); border:1px solid var(--success-border); border-radius:8px; padding:0.6rem 0.85rem; margin-bottom:1rem; gap:0.5rem; flex-wrap:wrap;">
+        <span style="font-size:0.82rem; color:var(--success); font-weight:600;">🔄 Auto-sync active</span>
+        <span id="autosync-last" style="font-size:0.75rem; color:var(--text-muted);"></span>
+        <button class="btn danger sm" onclick="disableAutoSync()">Disable</button>
+      </div>
+
       <div class="instruction-block">
         <p style="font-size:0.87rem; font-weight:600; margin-bottom:0.6rem;">One-time setup:</p>
         <ol>
           <li>Open <strong>Google Sheets</strong> → create a new spreadsheet.</li>
-          <li>Click <strong>Extensions → Apps Script</strong>. Delete the existing code.</li>
-          <li>Paste the script below (tap "Show script"), then save.</li>
-          <li><strong>Deploy → New deployment → Web app.</strong> Set "Who has access" to <code>Anyone</code>. Copy the Web App URL.</li>
-          <li>Paste that URL below and tap <strong>Save URL</strong>, then <strong>Push logs</strong>.</li>
+          <li>Copy the <strong>Spreadsheet ID</strong> from the URL — it's the long string between <code>/d/</code> and <code>/edit</code>:<br>
+            <code style="font-size:0.72rem; word-break:break-all; display:block; margin-top:4px;">docs.google.com/spreadsheets/d/<strong style="color:var(--primary);">15KHWKGQ_qH3sxC…</strong>/edit</code>
+          </li>
+          <li>Click <strong>Extensions → Apps Script</strong>. Delete all existing code. Paste the script below and <strong>Save (Ctrl+S)</strong>.</li>
+          <li>Click <strong>Deploy → New deployment</strong>. Type: <em>Web app</em>. Execute as: <em>Me</em>. Who has access: <em>Anyone</em>. Click Deploy → authorize when prompted.</li>
+          <li>Copy the <strong>Web App URL</strong> (ends in <code>/exec</code>).</li>
+          <li>Paste both the Spreadsheet ID and Web App URL below → tap <strong>Save &amp; enable auto-sync</strong>.</li>
         </ol>
+      </div>
+
+      <div class="form-group">
+        <label>Spreadsheet ID</label>
+        <input type="text" id="sync-sheet-id" placeholder="e.g. 15KHWKGQ_qH3sxC_GGPfbduB5HWdXHD6YGtbX1pPgu3Y">
       </div>
       <div class="form-group">
         <label>Web App URL</label>
-        <input type="url" id="sync-url-input" placeholder="https://script.google.com/macros/s/...">
+        <input type="url" id="sync-url-input" placeholder="https://script.google.com/macros/s/.../exec">
       </div>
-      <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem;">
-        <button class="btn full" onclick="saveSyncUrl()">Save URL</button>
-        <button class="btn full success" id="sync-btn" onclick="syncToSheets()">Push logs</button>
+
+      <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem; flex-wrap:wrap;">
+        <button class="btn full" onclick="saveSyncUrl()">💾 Save &amp; enable auto-sync</button>
+        <button class="btn full success" id="sync-btn" onclick="syncToSheets()">⬆ Push unsynced logs</button>
       </div>
+
       <div id="sync-status-msg"></div>
-      <details style="margin-top:1.1rem;">
+
+      <details style="margin-top:1rem;">
         <summary>Show Apps Script to paste</summary>
-        <textarea id="gas-code" rows="24" readonly style="margin-top:0.6rem; font-size:0.77rem;"></textarea>
+        <textarea id="gas-code" rows="22" readonly style="margin-top:0.6rem; font-size:0.77rem;"></textarea>
         <button class="btn sm" style="margin-top:0.5rem;" onclick="copyScript()">Copy script</button>
       </details>
     </div>
@@ -959,6 +978,7 @@ async function handleQRScan(rawData) {
     logs.unshift(logEntry);
 
     if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+    scheduleAutoSync();
 
     const isArrival = scanMode === 'arrival';
     showFeedback(
@@ -1513,83 +1533,206 @@ function populateDropdowns() {
 
 // ── SYNC ──────────────────────────────────────────────────────────────────
 const GAS_SCRIPT = `// EduScan PH — Google Apps Script
-// Paste in Extensions → Apps Script, deploy as Web App (access: Anyone)
+// Based on the same pattern as Sublimation Shop Manager PH.
+// Paste this in Extensions → Apps Script (bound to your spreadsheet), save, then deploy.
+
+const SPREADSHEET_ID = ''; // Paste your Spreadsheet ID here, e.g. '15KHWKGQ_qH3...'
+                            // OR leave blank — the script will use the sheet it is bound to.
+
+function getSpreadsheet() {
+  return SPREADSHEET_ID
+    ? SpreadsheetApp.openById(SPREADSHEET_ID)
+    : SpreadsheetApp.getActiveSpreadsheet();
+}
 
 function doPost(e) {
   try {
     const data  = JSON.parse(e.postData.contents);
-    const ss    = SpreadsheetApp.getActiveSpreadsheet();
+    const ss    = getSpreadsheet();
     let sheet   = ss.getSheetByName('Attendance');
 
     if (!sheet) {
       sheet = ss.insertSheet('Attendance');
-      sheet.appendRow(['Timestamp','Date','Time','Type','Class','Student Name','LRN']);
+      const header = sheet.getRange(1, 1, 1, 7);
+      header.setValues([['Timestamp','Date','Time','Type','Class','Student Name','LRN']]);
+      header.setFontWeight('bold');
       sheet.setFrozenRows(1);
     }
 
-    const rows = data.logs.map(l => {
-      const d = new Date(l.timestamp);
-      return [
-        l.timestamp,
-        Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy-MM-dd'),
-        Utilities.formatDate(d, Session.getScriptTimeZone(), 'HH:mm:ss'),
-        l.type === 'departure' ? 'Departure' : 'Arrival',
-        l.className,
-        l.studentName,
-        l.studentLrn  || ''
-      ];
-    });
+    if (data.action === 'ping') {
+      return ContentService
+        .createTextOutput(JSON.stringify({ success: true, pong: true }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Dedup by timestamp to prevent double-inserts
+    const lastRow = sheet.getLastRow();
+    const existing = new Set();
+    if (lastRow > 1) {
+      sheet.getRange(2, 1, lastRow - 1, 1)
+        .getValues().forEach(r => r[0] && existing.add(r[0]));
+    }
+
+    const rows = (data.logs || [])
+      .filter(l => !existing.has(l.timestamp))
+      .map(l => {
+        const d = new Date(l.timestamp);
+        return [
+          l.timestamp,
+          Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy-MM-dd'),
+          Utilities.formatDate(d, Session.getScriptTimeZone(), 'HH:mm:ss'),
+          l.type === 'departure' ? 'Departure' : 'Arrival',
+          l.className    || '',
+          l.studentName  || '',
+          l.studentLrn   || ''
+        ];
+      });
 
     if (rows.length > 0)
-      sheet.getRange(sheet.getLastRow()+1, 1, rows.length, 7).setValues(rows);
+      sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 7).setValues(rows);
 
     return ContentService
-      .createTextOutput(JSON.stringify({ success: true, added: rows.length }))
+      .createTextOutput(JSON.stringify({ success: true, added: rows.length, skipped: (data.logs || []).length - rows.length }))
       .setMimeType(ContentService.MimeType.JSON);
-  } catch(err) {
+
+  } catch (error) {
     return ContentService
-      .createTextOutput(JSON.stringify({ success: false, error: err.toString() }))
+      .createTextOutput(JSON.stringify({ success: false, error: error.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }`;
 
+// ── AUTO-SYNC STATE ────────────────────────────────────────────────────────
+let autoSyncEnabled = false;
+let autoSyncTimer   = null;
+const AUTO_SYNC_DELAY = 8000;
+
 async function renderSyncPage() {
-  const savedUrl = await dbGetSetting('sync_url') || '';
+  const savedUrl     = await dbGetSetting('sync_url')      || '';
+  const savedSheetId = await dbGetSetting('sync_sheet_id') || '';
+  const autoSync     = await dbGetSetting('auto_sync');
   document.getElementById('sync-url-input').value = savedUrl;
+  document.getElementById('sync-sheet-id').value  = savedSheetId;
   document.getElementById('gas-code').value = GAS_SCRIPT;
+  autoSyncEnabled = !!autoSync;
+  updateAutoSyncBar();
+}
+
+function updateAutoSyncBar() {
+  const bar = document.getElementById('autosync-bar');
+  if (autoSyncEnabled) { bar.style.display = 'flex'; updateAutoSyncLastLabel(); }
+  else                 { bar.style.display = 'none'; }
+}
+
+async function updateAutoSyncLastLabel() {
+  const last = await dbGetSetting('last_sync_time');
+  const el   = document.getElementById('autosync-last');
+  if (el) el.textContent = last
+    ? `Last synced: ${new Date(last).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}`
+    : 'Not synced yet';
 }
 
 async function saveSyncUrl() {
-  const url = document.getElementById('sync-url-input').value.trim();
+  const url     = document.getElementById('sync-url-input').value.trim();
+  const sheetId = document.getElementById('sync-sheet-id').value.trim();
+  const msg     = document.getElementById('sync-status-msg');
+
   if (!url) return showToast('Paste the Web App URL first.');
-  await dbSetSetting('sync_url', url);
-  showToast('URL saved.');
+  if (!url.includes('script.google.com')) {
+    msg.innerHTML = `<div class="sync-status err">That doesn't look like a Web App URL. It should contain script.google.com and end in /exec.</div>`;
+    return;
+  }
+
+  await dbSetSetting('sync_url',      url);
+  await dbSetSetting('sync_sheet_id', sheetId);
+  await dbSetSetting('auto_sync',     true);
+  autoSyncEnabled = true;
+  updateAutoSyncBar();
+
+  // Ping test
+  msg.innerHTML = `<div class="sync-status info">Testing connection…</div>`;
+  try {
+    const resp = await fetch(url, {
+      method:  'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body:    JSON.stringify({ action: 'ping' })
+    });
+    const result = await resp.json();
+    if (result.pong || result.success) {
+      msg.innerHTML = `<div class="sync-status ok">✅ Connected! Auto-sync enabled — logs will push automatically after each scan.</div>`;
+      showToast('Connected to Google Sheets ✓');
+    } else {
+      msg.innerHTML = `<div class="sync-status err">Script error: ${result.error || 'Unknown error'}</div>`;
+    }
+  } catch(e) {
+    msg.innerHTML = `<div class="sync-status err">Could not reach the script. Double-check the Web App URL ends in <code>/exec</code> and access is set to <em>Anyone</em>.</div>`;
+  }
 }
 
-async function syncToSheets() {
-  const savedUrl = await dbGetSetting('sync_url');
-  const url = savedUrl || document.getElementById('sync-url-input').value.trim();
+async function disableAutoSync() {
+  await dbSetSetting('auto_sync', false);
+  autoSyncEnabled = false;
+  clearTimeout(autoSyncTimer);
+  updateAutoSyncBar();
+  showToast('Auto-sync disabled.');
+}
+
+function scheduleAutoSync() {
+  if (!autoSyncEnabled) return;
+  clearTimeout(autoSyncTimer);
+  autoSyncTimer = setTimeout(() => syncToSheets(true), AUTO_SYNC_DELAY);
+}
+
+async function syncToSheets(silent = false) {
+  const url = await dbGetSetting('sync_url');
   const msg = document.getElementById('sync-status-msg');
-  if (!url) { msg.innerHTML = `<div class="sync-status err">No URL saved. Paste the Web App URL first.</div>`; return; }
-  if (!logs.length) { msg.innerHTML = `<div class="sync-status info">No logs to sync yet.</div>`; return; }
+
+  if (!url) {
+    if (!silent) msg.innerHTML = `<div class="sync-status err">No URL saved. Complete the setup above first.</div>`;
+    return;
+  }
+  if (!logs.length) {
+    if (!silent) msg.innerHTML = `<div class="sync-status info">No logs to sync yet.</div>`;
+    return;
+  }
+
+  // Only push logs newer than last sync
+  const lastSync = await dbGetSetting('last_sync_time');
+  const toSync   = lastSync ? logs.filter(l => l.timestamp > lastSync) : [...logs];
+
+  if (!toSync.length) {
+    if (!silent) msg.innerHTML = `<div class="sync-status ok">✅ All logs already synced.</div>`;
+    return;
+  }
 
   const btn = document.getElementById('sync-btn');
-  btn.disabled = true; btn.textContent = 'Pushing…';
-  msg.innerHTML = `<div class="sync-status info">Connecting to Google Sheets…</div>`;
+  if (btn && !silent) { btn.disabled = true; btn.textContent = `Pushing ${toSync.length} records…`; }
+  if (!silent) msg.innerHTML = `<div class="sync-status info">Pushing ${toSync.length} records to Google Sheets…</div>`;
 
   try {
-    const resp   = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ logs }) });
+    const resp = await fetch(url, {
+      method:  'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body:    JSON.stringify({ logs: toSync })
+    });
     const result = await resp.json();
+
     if (result.success) {
-      msg.innerHTML = `<div class="sync-status ok">✓ ${result.added} records pushed to Google Sheets.</div>`;
-      showToast(`${result.added} records synced.`);
+      await dbSetSetting('last_sync_time', new Date().toISOString());
+      updateAutoSyncLastLabel();
+      const note = result.skipped > 0 ? ` (${result.skipped} already in sheet)` : '';
+      if (!silent) msg.innerHTML = `<div class="sync-status ok">✅ ${result.added} record${result.added !== 1 ? 's' : ''} added to Google Sheets${note}.</div>`;
+      if (silent && result.added > 0) showToast(`☁ ${result.added} record${result.added !== 1 ? 's' : ''} synced`);
     } else {
-      msg.innerHTML = `<div class="sync-status err">Script error: ${result.error}</div>`;
+      if (!silent) msg.innerHTML = `<div class="sync-status err">Script error: ${result.error}</div>`;
+      if (silent) showToast('⚠ Sync failed — check the Sync tab.');
     }
-  } catch(err) {
-    msg.innerHTML = `<div class="sync-status err">Network error — check the URL and make sure access is set to "Anyone".</div>`;
+  } catch(e) {
+    if (!silent) msg.innerHTML = `<div class="sync-status err">Network error. Make sure you're online and the URL is correct.</div>`;
+    if (silent) showToast('⚠ Sync — network error.');
   }
-  btn.disabled = false; btn.textContent = 'Push logs';
+
+  if (btn && !silent) { btn.disabled = false; btn.textContent = '⬆ Push unsynced logs'; }
 }
 
 function copyScript() {
@@ -1818,6 +1961,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Sort logs newest first, students alphabetically
   logs.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
   students.sort((a, b) => a.name.localeCompare(b.name));
+
+  // Restore auto-sync state
+  autoSyncEnabled = !!(await dbGetSetting('auto_sync'));
 
   populateDropdowns();
   initSummaryPeriod();
