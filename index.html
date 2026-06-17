@@ -83,6 +83,36 @@
     .btn.outline:hover { background: var(--primary-bg); }
     label.btn.outline { display: flex; }
 
+    /* ── INSTALL BANNER (scanner page, first-visit) ── */
+    #install-banner {
+      display: none;
+      position: relative;
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+      margin-bottom: 1rem;
+      border: 1.5px solid;
+    }
+    #install-banner.ios   { background: #eff6ff; border-color: #93c5fd; }
+    #install-banner.other { background: var(--primary-bg); border-color: var(--primary-light); }
+    #install-banner .ib-title { font-size: 0.88rem; font-weight: 700; margin-bottom: 0.25rem; }
+    #install-banner.ios   .ib-title { color: #1e40af; }
+    #install-banner.other .ib-title { color: var(--primary); }
+    #install-banner .ib-body  { font-size: 0.8rem; line-height: 1.5; }
+    #install-banner.ios   .ib-body  { color: #1e3a8a; }
+    #install-banner.other .ib-body  { color: var(--primary); }
+    #install-banner .ib-close {
+      position: absolute; top: 0.6rem; right: 0.7rem;
+      background: transparent; border: none; font-size: 1rem;
+      cursor: pointer; color: #94a3b8; line-height: 1; padding: 2px;
+    }
+    #install-banner .ib-action {
+      display: inline-flex; margin-top: 0.55rem;
+      background: var(--primary); color: #fff;
+      border: none; border-radius: 8px; padding: 0.45rem 0.9rem;
+      font-size: 0.8rem; font-weight: 700; cursor: pointer; gap: 5px;
+      align-items: center;
+    }
+
     /* ── SCAN MODE TOGGLE ── */
     .mode-toggle { display: flex; border-radius: 14px; overflow: hidden; border: 2px solid var(--border); margin-bottom: 1rem; background: var(--bg); gap: 0; }
     .mode-btn {
@@ -95,42 +125,27 @@
     .mode-btn .mode-label { font-size: 0.8rem; letter-spacing: 0.07em; text-transform: uppercase; font-weight: 700; }
     .mode-btn .mode-desc { font-size: 0.7rem; font-weight: 500; opacity: 0.75; margin-top: 1px; }
 
-    /* ARRIVAL active — strong sky-blue pill */
     .mode-btn.arrival-active {
-      background: #0369a1;
-      color: #fff;
+      background: #0369a1; color: #fff;
       box-shadow: inset 0 -3px 0 rgba(0,0,0,0.25);
     }
     .mode-btn.arrival-active .mode-icon { filter: drop-shadow(0 0 4px rgba(255,255,255,0.6)); }
 
-    /* DEPARTURE active — strong violet pill */
     .mode-btn.departure-active {
-      background: #7c3aed;
-      color: #fff;
+      background: #7c3aed; color: #fff;
       box-shadow: inset 0 -3px 0 rgba(0,0,0,0.25);
     }
     .mode-btn.departure-active .mode-icon { filter: drop-shadow(0 0 4px rgba(255,255,255,0.6)); }
 
-    /* Inactive state */
     .mode-btn:not(.arrival-active):not(.departure-active) { color: #94a3b8; }
 
-    /* Divider between the two buttons */
     .mode-toggle-divider { width: 1px; background: var(--border); flex-shrink: 0; }
 
-    /* Stop scan button */
     #stop-scan-btn {
-      display: none;
-      width: 100%;
-      margin-top: 0.5rem;
-      background: #475569;
-      color: white;
-      padding: 0.6rem 1rem;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 0.88rem;
-      cursor: pointer;
-      transition: background 0.15s;
+      display: none; width: 100%; margin-top: 0.5rem;
+      background: #475569; color: white; padding: 0.6rem 1rem;
+      border: none; border-radius: 8px; font-weight: 600; font-size: 0.88rem;
+      cursor: pointer; transition: background 0.15s;
     }
     #stop-scan-btn:hover { background: #334155; }
     #stop-scan-btn.visible { display: flex; align-items: center; justify-content: center; gap: 6px; }
@@ -141,7 +156,6 @@
     .scan-area.mode-departure { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.18); }
     #cam-idle { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; text-align: center; padding: 2rem; cursor: pointer; gap: 0.5rem; }
 
-    /* Mode label overlay on camera */
     .scan-mode-overlay {
       position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
       padding: 3px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 800;
@@ -222,7 +236,6 @@
     .stat .val { font-size: 1.4rem; font-weight: 700; }
     .stat .lbl { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
 
-    /* Clickable stat buttons for summary */
     .stat-btn {
       flex: 1; min-width: 70px; background: var(--bg); border-radius: 8px;
       padding: 0.65rem 0.75rem; text-align: center; border: 2px solid transparent;
@@ -262,12 +275,10 @@
 
     details summary { cursor: pointer; font-size: 0.87rem; font-weight: 600; color: var(--primary); }
 
-    /* ── CLICKABLE CLASS ROW ── */
     .class-row-clickable { cursor: pointer; transition: background 0.15s; }
     .class-row-clickable:hover td { background: var(--primary-bg); }
     .class-row-clickable td:first-child { color: var(--primary); }
 
-    /* ── SUMMARY PERIOD TABS ── */
     .summary-period-tabs { display: flex; border-radius: 10px; overflow: hidden; border: 1.5px solid var(--border); margin-bottom: 1rem; background: var(--bg); }
     .period-tab {
       flex: 1; padding: 0.6rem 0.25rem; border: none; background: transparent;
@@ -279,7 +290,6 @@
     .period-tab:not(.active):hover { background: var(--primary-bg); color: var(--primary); }
     .period-ctrl label { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; display: block; }
 
-    /* ── SUMMARY HISTORY ── */
     .history-date-block { margin-bottom: 1.25rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border); }
     .history-date-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
     .history-date-label { font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.7rem; }
@@ -287,7 +297,6 @@
     .history-class-name { font-weight: 700; color: var(--primary); font-size: 0.92rem; margin-bottom: 0.5rem; }
     .stat-row-btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
 
-    /* ── MODAL ── */
     .modal-backdrop {
       display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45);
       z-index: 500; align-items: flex-end; justify-content: center;
@@ -315,7 +324,6 @@
     .modal-student-lrn { font-size: 0.75rem; color: var(--text-muted); font-family: monospace; }
     .modal-student-time { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; }
 
-    /* ── TERMS PAGE ── */
     .terms-student-row {
       display: flex; align-items: center; gap: 10px;
       padding: 0.65rem 0.5rem; border-bottom: 1px solid var(--border);
@@ -330,7 +338,6 @@
     .terms-student-lrn { font-size: 0.72rem; color: var(--text-muted); }
     .terms-chevron { color: var(--text-muted); font-size: 0.85rem; }
 
-    /* Term tab switcher inside modal */
     .term-tab {
       flex: 1; padding: 0.65rem 0.25rem; border: none; background: transparent;
       font-weight: 700; font-size: 0.82rem; cursor: pointer; color: var(--text-muted);
@@ -339,7 +346,6 @@
     .term-tab.active { color: var(--primary); border-bottom-color: var(--primary); background: var(--surface); }
     .term-tab:not(.active):hover { background: var(--primary-bg); color: var(--primary); }
 
-    /* Term stats inside modal */
     .term-stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin: 1rem 0; }
     .term-stat-card {
       border-radius: 10px; padding: 0.85rem 0.5rem; text-align: center; border: 1px solid;
@@ -355,19 +361,28 @@
     .term-day-date { color: var(--text-muted); min-width: 80px; }
     .term-day-badges { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
     .term-section-title { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 1rem 0 0.5rem; }
+
+    /* ── INSTALL GUIDE (download page) ── */
+    .install-step {
+      display: flex; align-items: flex-start; gap: 10px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 0.65rem 0.85rem; margin-bottom: 0.5rem;
+    }
+    .install-step-num {
+      flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%;
+      background: var(--primary); color: #fff; font-size: 0.73rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .install-step-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1; margin-top: 2px; }
+    .install-step-text { font-size: 0.83rem; line-height: 1.5; color: var(--text); flex: 1; }
+    .install-step-text strong { color: var(--text); font-weight: 700; }
   </style>
 </head>
 <body>
 
 <header style="display:flex; align-items:center; justify-content:space-between; padding: 0.65rem 1rem;">
   <div style="display:flex; align-items:center; gap:10px;">
-    <!-- App logo -->
-    <div style="
-      width:40px; height:40px; border-radius:10px; flex-shrink:0;
-      background:linear-gradient(145deg,#1d4ed8,#3b82f6);
-      display:flex; align-items:center; justify-content:center;
-      box-shadow:0 2px 8px rgba(29,78,216,0.3);
-    ">
+    <div style="width:40px; height:40px; border-radius:10px; flex-shrink:0; background:linear-gradient(145deg,#1d4ed8,#3b82f6); display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(29,78,216,0.3);">
       <svg width="24" height="24" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="13" y="16" width="26" height="30" rx="3" fill="white" opacity="0.95"/>
         <rect x="20" y="11" width="12" height="8" rx="2" fill="white" opacity="0.95"/>
@@ -383,9 +398,6 @@
       <div style="font-size:0.7rem; color:var(--text-muted); line-height:1;">Offline-first attendance tracker</div>
     </div>
   </div>
-
-  <!-- Install button (shown by JS when prompt is available) -->
-  
 </header>
 
 <nav>
@@ -403,6 +415,15 @@
 
   <!-- SCANNER PAGE -->
   <div id="page-scanner" class="page active">
+
+    <!-- ── INSTALL BANNER (shown once to non-installed users) ── -->
+    <div id="install-banner">
+      <button class="ib-close" onclick="dismissInstallBanner()" aria-label="Dismiss">✕</button>
+      <div class="ib-title" id="ib-title"></div>
+      <div class="ib-body"  id="ib-body"></div>
+      <button class="ib-action" id="ib-action-btn"></button>
+    </div>
+
     <div class="card">
       <div class="form-group" style="margin-bottom:0.75rem;">
         <label for="scanner-class-select">Active class session</label>
@@ -411,7 +432,6 @@
         </select>
       </div>
 
-      <!-- MODE TOGGLE -->
       <label style="margin-bottom:0.4rem; display:block;">Scan mode</label>
       <div class="mode-toggle" id="mode-toggle">
         <button class="mode-btn arrival-active" id="mode-btn-arrival" onclick="setMode('arrival')">
@@ -443,10 +463,7 @@
         </div>
       </div>
 
-      <!-- STOP SCAN BUTTON -->
-      <button id="stop-scan-btn" onclick="stopCameraManual()">
-        ⏹ Stop Camera
-      </button>
+      <button id="stop-scan-btn" onclick="stopCameraManual()">⏹ Stop Camera</button>
 
       <div id="scan-result-box"></div>
 
@@ -490,7 +507,6 @@
       </div>
       <button class="btn full" onclick="addClass()">Save class</button>
     </div>
-
     <div class="card">
       <h2>Registered classes</h2>
       <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:0.75rem;">Tap a class to view its roster.</p>
@@ -556,16 +572,12 @@
   <div id="page-summary" class="page">
     <div class="card">
       <h2 style="margin-bottom:0.75rem;">Attendance summary</h2>
-
-      <!-- Period tabs -->
       <div class="summary-period-tabs" id="summary-period-tabs">
         <button class="period-tab active" id="ptab-daily"   onclick="setPeriod('daily')">Daily</button>
         <button class="period-tab"        id="ptab-weekly"  onclick="setPeriod('weekly')">Weekly</button>
         <button class="period-tab"        id="ptab-monthly" onclick="setPeriod('monthly')">Monthly</button>
         <button class="period-tab"        id="ptab-custom"  onclick="setPeriod('custom')">Custom</button>
       </div>
-
-      <!-- Controls per period -->
       <div id="period-ctrl-daily" class="period-ctrl" style="margin-bottom:0.85rem;">
         <label for="summary-day-input" style="margin-bottom:0.3rem;">Date</label>
         <input type="date" id="summary-day-input" onchange="renderSummary()">
@@ -598,7 +610,6 @@
           </div>
         </div>
       </div>
-
       <div id="summary-analytics-content"></div>
     </div>
   </div>
@@ -607,14 +618,11 @@
   <div id="page-sync" class="page">
     <div class="card">
       <h2>Sync to Google Sheets</h2>
-
-      <!-- AUTO-SYNC STATUS BAR -->
       <div id="autosync-bar" style="display:none; align-items:center; justify-content:space-between; background:var(--success-bg); border:1px solid var(--success-border); border-radius:8px; padding:0.6rem 0.85rem; margin-bottom:1rem; gap:0.5rem; flex-wrap:wrap;">
         <span style="font-size:0.82rem; color:var(--success); font-weight:600;">🔄 Auto-sync active</span>
         <span id="autosync-last" style="font-size:0.75rem; color:var(--text-muted);"></span>
         <button class="btn danger sm" onclick="disableAutoSync()">Disable</button>
       </div>
-
       <div class="instruction-block">
         <p style="font-size:0.87rem; font-weight:600; margin-bottom:0.6rem;">One-time setup:</p>
         <ol>
@@ -628,7 +636,6 @@
           <li>Paste both the Spreadsheet ID and Web App URL below → tap <strong>Save &amp; enable auto-sync</strong>.</li>
         </ol>
       </div>
-
       <div class="form-group">
         <label>Spreadsheet ID</label>
         <input type="text" id="sync-sheet-id" placeholder="e.g. 15KHWKGQ_qH3sxC_GGPfbduB5HWdXHD6YGtbX1pPgu3Y">
@@ -637,14 +644,11 @@
         <label>Web App URL</label>
         <input type="url" id="sync-url-input" placeholder="https://script.google.com/macros/s/.../exec">
       </div>
-
       <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem; flex-wrap:wrap;">
         <button class="btn full" onclick="saveSyncUrl()">💾 Save &amp; enable auto-sync</button>
         <button class="btn full success" id="sync-btn" onclick="syncToSheets()">⬆ Push unsynced logs</button>
       </div>
-
       <div id="sync-status-msg"></div>
-
       <details style="margin-top:1rem;">
         <summary>Show Apps Script to paste</summary>
         <textarea id="gas-code" rows="22" readonly style="margin-top:0.6rem; font-size:0.77rem;"></textarea>
@@ -674,67 +678,80 @@
   <div id="page-download" class="page">
 
     <!-- PWA Install Card -->
-<div class="card">
-  <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:1.1rem;">
-    <div style="width:88px; height:88px; border-radius:22px; background:linear-gradient(145deg,#1d4ed8,#3b82f6); display:flex; align-items:center; justify-content:center; box-shadow:0 6px 24px rgba(29,78,216,0.35); margin-bottom:0.75rem;">
-      <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="13" y="16" width="26" height="30" rx="3" fill="white" opacity="0.95"/>
-        <rect x="20" y="11" width="12" height="8" rx="2" fill="white" opacity="0.95"/>
-        <rect x="20" y="13" width="12" height="4" rx="1" fill="#1d4ed8"/>
-        <rect x="17" y="25" width="18" height="2.5" rx="1.25" fill="#1d4ed8" opacity="0.7"/>
-        <rect x="17" y="31" width="18" height="2.5" rx="1.25" fill="#1d4ed8" opacity="0.7"/>
-        <rect x="17" y="37" width="11" height="2.5" rx="1.25" fill="#1d4ed8" opacity="0.7"/>
-        <path d="M30 38 L33 41 L39 35" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
+    <div class="card">
+      <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:1.1rem;">
+        <div style="width:88px; height:88px; border-radius:22px; background:linear-gradient(145deg,#1d4ed8,#3b82f6); display:flex; align-items:center; justify-content:center; box-shadow:0 6px 24px rgba(29,78,216,0.35); margin-bottom:0.75rem;">
+          <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="13" y="16" width="26" height="30" rx="3" fill="white" opacity="0.95"/>
+            <rect x="20" y="11" width="12" height="8" rx="2" fill="white" opacity="0.95"/>
+            <rect x="20" y="13" width="12" height="4" rx="1" fill="#1d4ed8"/>
+            <rect x="17" y="25" width="18" height="2.5" rx="1.25" fill="#1d4ed8" opacity="0.7"/>
+            <rect x="17" y="31" width="18" height="2.5" rx="1.25" fill="#1d4ed8" opacity="0.7"/>
+            <rect x="17" y="37" width="11" height="2.5" rx="1.25" fill="#1d4ed8" opacity="0.7"/>
+            <path d="M30 38 L33 41 L39 35" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div style="font-size:1.15rem; font-weight:800; color:var(--text);">EduScan PH</div>
+        <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">Offline-first attendance tracker</div>
+      </div>
+
+      <!-- Already installed -->
+      <div id="pwa-installed-msg" style="display:none; background:var(--success-bg); border:1px solid var(--success-border); border-radius:10px; padding:0.85rem; color:var(--success); font-weight:600; font-size:0.9rem; text-align:center; margin-bottom:1rem;">
+        ✅ EduScan PH is already installed!
+      </div>
+
+      <!-- Android / Desktop Chrome: native install button -->
+      <button id="pwa-install-btn" class="btn full" onclick="triggerPWAInstall()"
+        style="display:none; background:linear-gradient(135deg,#1d4ed8,#3b82f6); font-size:1rem; padding:0.85rem; border-radius:12px; margin-bottom:1rem;">
+        ⬇ Install App
+      </button>
+
+      <!-- Step-by-step install guide (iOS / fallback desktop) -->
+      <div id="pwa-install-guide" style="display:none;">
+
+        <!-- iOS wrong browser warning -->
+        <div id="ios-wrong-browser-warning" style="display:none; background:var(--warning-bg); border:1px solid var(--warning-border); border-radius:10px; padding:0.85rem; margin-bottom:0.85rem;">
+          <p style="font-size:0.85rem; font-weight:700; color:var(--warning); margin-bottom:0.35rem;">⚠️ Chrome &amp; Firefox can't install apps on iOS</p>
+          <p style="font-size:0.8rem; color:var(--warning); line-height:1.5; margin:0;">Apple only allows <strong>Safari</strong> to install web apps to the home screen. Copy this page's URL, open Safari, paste it, then follow the steps below.</p>
+        </div>
+
+        <p style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.65rem;" id="install-guide-title">How to install</p>
+
+        <div id="install-steps"></div>
+
+        <div style="margin-top:0.85rem; padding:0.75rem; background:var(--bg); border-radius:8px; border:1px solid var(--border);">
+          <p style="font-size:0.78rem; color:var(--text-muted); line-height:1.5; margin:0;">
+            💡 Once installed, EduScan PH works fully <strong>offline</strong> — no internet needed to scan. Data syncs to Google Sheets whenever you're back online.
+          </p>
+        </div>
+      </div>
     </div>
-    <div style="font-size:1.15rem; font-weight:800; color:var(--text);">EduScan PH</div>
-    <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">Offline-first attendance tracker</div>
-  </div>
 
-  <!-- Already installed -->
-  <div id="pwa-installed-msg" style="display:none; background:var(--success-bg); border:1px solid var(--success-border); border-radius:10px; padding:0.85rem; color:var(--success); font-weight:600; font-size:0.9rem; text-align:center; margin-bottom:1rem;">
-    ✅ EduScan PH is already installed!
-  </div>
-
-  <!-- Android / Desktop: native install button -->
-  <button id="pwa-install-btn" class="btn full" onclick="triggerPWAInstall()"
-    style="display:none; background:linear-gradient(135deg,#1d4ed8,#3b82f6); font-size:1rem; padding:0.85rem; border-radius:12px; margin-bottom:1rem;">
-    ⬇ Install App
-  </button>
-
-  <!-- iOS / fallback: step-by-step guide -->
-  <div id="pwa-install-guide" style="display:none;">
-
-    <!-- iOS Other Browser warning -->
-    <div id="ios-wrong-browser-warning" style="display:none; background:var(--warning-bg); border:1px solid var(--warning-border); border-radius:10px; padding:0.85rem; margin-bottom:0.85rem;">
-      <p style="font-size:0.85rem; font-weight:700; color:var(--warning); margin-bottom:0.35rem;">⚠️ Chrome &amp; Firefox can't install apps on iOS</p>
-      <p style="font-size:0.8rem; color:var(--warning); line-height:1.5; margin:0;">Apple only allows <strong>Safari</strong> to do this. Copy this page's URL, open Safari, paste it, then follow the steps below.</p>
+    <!-- Manual export -->
+    <div class="card">
+      <h2 style="margin-bottom:0.25rem;">📦 Export Data</h2>
+      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1rem;">Export all your data as a JSON backup file — includes classes, students, logs, and settings.</p>
+      <div style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1rem;">
+        <button class="btn full" onclick="exportData('all')" style="background:#0369a1;">
+          📦 Export everything (JSON)
+        </button>
+        <div style="display:flex; gap:0.5rem;">
+          <button class="btn full outline" onclick="exportData('logs')">📋 Logs only</button>
+          <button class="btn full outline" onclick="exportData('students')">👥 Students only</button>
+        </div>
+      </div>
+      <div id="export-status-msg"></div>
     </div>
-
-    <p style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.65rem;" id="install-guide-title">How to install</p>
-
-    <ol id="install-steps" style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:0.55rem;"></ol>
-
-    <div style="margin-top:0.85rem; padding:0.75rem; background:var(--bg); border-radius:8px; border:1px solid var(--border);">
-      <p style="font-size:0.78rem; color:var(--text-muted); line-height:1.5; margin:0;">
-        💡 Once installed, EduScan PH works fully <strong>offline</strong> — no internet needed to scan. Data syncs to Google Sheets whenever you're back online.
-      </p>
-    </div>
-  </div>
-</div>
 
     <!-- Auto-export -->
     <div class="card">
       <h2 style="margin-bottom:0.25rem;">⏱ Auto-Export</h2>
       <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1rem;">Automatically download a JSON backup on a schedule.</p>
-
-      <!-- Auto-export status bar -->
       <div id="autoexport-bar" style="display:none; align-items:center; justify-content:space-between; background:var(--success-bg); border:1px solid var(--success-border); border-radius:8px; padding:0.6rem 0.85rem; margin-bottom:1rem; gap:0.5rem; flex-wrap:wrap;">
         <span style="font-size:0.82rem; color:var(--success); font-weight:600;">⏱ Auto-export active</span>
         <span id="autoexport-last" style="font-size:0.75rem; color:var(--text-muted);"></span>
         <button class="btn danger sm" onclick="disableAutoExport()">Disable</button>
       </div>
-
       <div class="form-group" style="margin-bottom:0.75rem;">
         <label for="autoexport-interval">Export every</label>
         <select id="autoexport-interval">
@@ -743,7 +760,6 @@
           <option value="each_scan">After every scan</option>
         </select>
       </div>
-
       <button class="btn full success" onclick="enableAutoExport()">⏱ Enable auto-export</button>
     </div>
 
@@ -854,6 +870,8 @@
     </div>
   </div>
 </div>
+
+<!-- TERMS MODAL -->
 <div class="modal-backdrop" id="terms-modal-backdrop" onclick="closeTermsModal(event)">
   <div class="modal-sheet" style="max-height:88vh;">
     <div class="modal-header">
@@ -863,7 +881,6 @@
       </div>
       <button class="modal-close" onclick="closeTermsModalDirect()">✕</button>
     </div>
-    <!-- Term switcher tabs -->
     <div style="display:flex; border-bottom:1px solid var(--border); background:var(--bg);">
       <button class="term-tab active" id="ttab-1" onclick="switchTermTab(1)">Term 1<br><span style="font-size:0.65rem;font-weight:400;">Jun–Sep</span></button>
       <button class="term-tab"        id="ttab-2" onclick="switchTermTab(2)">Term 2<br><span style="font-size:0.65rem;font-weight:400;">Oct–Dec</span></button>
@@ -962,7 +979,7 @@ function dbSetSetting(key, value) {
   });
 }
 
-// ── IN-MEMORY STATE (loaded from IDB on boot) ─────────────────────────────
+// ── IN-MEMORY STATE ────────────────────────────────────────────────────────
 let classes  = [];
 let students = [];
 let logs     = [];
@@ -974,18 +991,10 @@ let lastScanned     = null;
 let lastScannedTime = 0;
 let scanMode        = 'arrival';
 
-// Save all stores back to IDB
-async function saveState() {
-  await dbPutAll('classes',  classes);
-  await dbPutAll('students', students);
-  // logs are written individually via dbAdd / cleared via dbClear+dbPutAll
-}
-
-// Save just classes
 async function saveClasses()  { await dbPutAll('classes',  classes); }
 async function saveStudents() { await dbPutAll('students', students); }
 
-// ── TOAST ─────────────────────────────────────────────────────────────────
+// ── TOAST ──────────────────────────────────────────────────────────────────
 let toastTimer;
 function showToast(msg) {
   const t = document.getElementById('toast');
@@ -1002,22 +1011,15 @@ function showPage(page) {
   document.getElementById('page-' + page).classList.add('active');
   document.getElementById('nav-' + page).classList.add('active');
 
-  if (page === 'scanner' && currentClassId && !scanning) {
-    // Don't auto-restart if user stopped manually; they can tap
-  } else if (page !== 'scanner') {
-    stopCamera();
-  }
+  if (page !== 'scanner') stopCamera();
 
   if (page === 'students') renderStudents();
   if (page === 'classes')  renderClasses();
   if (page === 'terms')    renderTermsPage();
   if (page === 'download') renderDownloadPage();
   if (page === 'log')      renderLog();
-  if (page === 'summary') {
-    initSummaryPeriod();
-    renderSummary();
-  }
-  if (page === 'sync') renderSyncPage();
+  if (page === 'summary') { initSummaryPeriod(); renderSummary(); }
+  if (page === 'sync')     renderSyncPage();
 }
 
 function onClassChange() {
@@ -1025,7 +1027,6 @@ function onClassChange() {
   resetScanResult();
   if (currentClassId) {
     document.getElementById('idle-notice-text').textContent = 'Tap to activate camera';
-    // Don't auto-start — user taps to start
   } else {
     document.getElementById('idle-notice-text').textContent = 'Select a class to start scanning';
     stopCamera();
@@ -1049,7 +1050,6 @@ function setMode(mode) {
   const btnDep  = document.getElementById('mode-btn-departure');
 
   area.className = 'scan-area mode-' + mode;
-
   overlay.textContent = mode === 'arrival' ? '☀️ Arrival' : '🌙 Departure';
 
   if (scanning) {
@@ -1117,7 +1117,6 @@ function stopCameraManual() {
 function handleScanAreaClick() {
   if (!currentClassId) {
     showToast('📋 Please select or add a class first.');
-    // Briefly shake the class select to draw attention
     const sel = document.getElementById('scanner-class-select');
     sel.style.transition = 'box-shadow 0.15s';
     sel.style.boxShadow  = '0 0 0 3px rgba(245,158,11,0.5)';
@@ -1150,10 +1149,8 @@ function scanFrameLoop() {
   requestAnimationFrame(scanFrameLoop);
 }
 
-// ── DATE HELPERS ──────────────────────────────────────────────────────────
 // ── DATE HELPERS (Philippine time — UTC+8) ────────────────────────────────
 function todayStr() {
-  // Use local date in PH timezone, not UTC
   const now = new Date();
   const ph  = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
   return ph.getFullYear() + '-' +
@@ -1161,7 +1158,6 @@ function todayStr() {
     String(ph.getDate()).padStart(2, '0');
 }
 function sameDay(isoTimestamp, dateStr) {
-  // Convert the stored UTC timestamp to PH local date before comparing
   const d  = new Date(isoTimestamp);
   const ph = new Date(d.toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
   const phStr = ph.getFullYear() + '-' +
@@ -1217,7 +1213,6 @@ async function handleQRScan(rawData) {
       isLate:      false
     };
 
-    // Auto-detect late arrival
     if (scanMode === 'arrival') {
       const cls = classes.find(c => c.id === currentClassId);
       if (cls && cls.startTime) {
@@ -1230,7 +1225,6 @@ async function handleQRScan(rawData) {
       }
     }
 
-    // Add to IDB first, then push to in-memory array with the auto-incremented id
     const newId = await dbAdd('logs', logEntry);
     logEntry.id = newId;
     logs.unshift(logEntry);
@@ -1369,8 +1363,6 @@ function openClassRosterModal(classId) {
   document.body.style.overflow = 'hidden';
 }
 
-
-
 // ── STUDENTS ──────────────────────────────────────────────────────────────
 async function addStudent() {
   const classId  = document.getElementById('student-class-select').value;
@@ -1432,7 +1424,7 @@ function renderStudents() {
 function renderLog() {
   const tbody = document.getElementById('logs-table-body');
   if (!logs.length) {
-    tbody.innerHTML = `<tr><td colspan="5" class="empty">No logs yet.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="empty">No logs yet.</td></tr>`;
     return;
   }
   tbody.innerHTML = logs.map(l => {
@@ -1460,13 +1452,12 @@ async function clearLogs() {
   showToast('All logs cleared.');
 }
 
-// ── SUMMARY PERIOD STATE ─────────────────────────────────────────────────
-let summaryPeriod   = 'daily';
-let weekOffset      = 0;   // weeks from current week
-let monthOffset     = 0;   // months from current month
+// ── SUMMARY PERIOD STATE ──────────────────────────────────────────────────
+let summaryPeriod = 'daily';
+let weekOffset    = 0;
+let monthOffset   = 0;
 
 function initSummaryPeriod() {
-  // Set daily date to today if empty
   const dayInput = document.getElementById('summary-day-input');
   if (!dayInput.value) dayInput.value = todayStr();
   updateWeekLabel();
@@ -1482,29 +1473,26 @@ function setPeriod(period) {
   renderSummary();
 }
 
-// Week helpers
 function getWeekBounds(offset) {
-  const now  = new Date();
-  const day  = now.getDay(); // 0=Sun
-  const mon  = new Date(now);
+  const now = new Date();
+  const day = now.getDay();
+  const mon = new Date(now);
   mon.setDate(now.getDate() - ((day + 6) % 7) + offset * 7);
   mon.setHours(0,0,0,0);
-  const sun  = new Date(mon);
+  const sun = new Date(mon);
   sun.setDate(mon.getDate() + 6);
   return { from: dateToStr(mon), to: dateToStr(sun) };
 }
-function shiftWeek(dir) { weekOffset += dir; updateWeekLabel(); renderSummary(); }
+function shiftWeek(dir)  { weekOffset  += dir; updateWeekLabel();  renderSummary(); }
 function updateWeekLabel() {
   const { from, to } = getWeekBounds(weekOffset);
-  document.getElementById('week-label').textContent =
-    `${fmtShort(from)} – ${fmtShort(to)}`;
+  document.getElementById('week-label').textContent = `${fmtShort(from)} – ${fmtShort(to)}`;
 }
 
-// Month helpers
 function getMonthBounds(offset) {
-  const now = new Date();
-  const y   = now.getFullYear();
-  const m   = now.getMonth() + offset;
+  const now  = new Date();
+  const y    = now.getFullYear();
+  const m    = now.getMonth() + offset;
   const from = new Date(y, m, 1);
   const to   = new Date(y, m + 1, 0);
   return { from: dateToStr(from), to: dateToStr(to) };
@@ -1522,7 +1510,6 @@ function fmtShort(dateStr) {
   return new Date(dateStr + 'T00:00:00').toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
-// Get the date range for the active period
 function getActiveDateRange() {
   if (summaryPeriod === 'daily') {
     const v = document.getElementById('summary-day-input').value;
@@ -1540,19 +1527,10 @@ function getActiveDateRange() {
 
 function renderSummary() {
   const box = document.getElementById('summary-analytics-content');
-
-  if (!classes.length) {
-    box.innerHTML = `<p class="empty">No classes configured yet.</p>`;
-    return;
-  }
-
+  if (!classes.length) { box.innerHTML = `<p class="empty">No classes configured yet.</p>`; return; }
   const range = getActiveDateRange();
-  if (!range) {
-    box.innerHTML = `<p class="empty">Select a date range to view data.</p>`;
-    return;
-  }
+  if (!range)  { box.innerHTML = `<p class="empty">Select a date range to view data.</p>`; return; }
 
-  // Collect all dates in range that have logs
   const logsInRange = logs.filter(l => {
     const d = l.timestamp.slice(0, 10);
     return d >= range.from && d <= range.to;
@@ -1561,13 +1539,10 @@ function renderSummary() {
   const allDates = [...new Set(logsInRange.map(l => l.timestamp.slice(0, 10)))]
     .sort((a, b) => b.localeCompare(a));
 
-  // For weekly/monthly/custom: show aggregated view + date breakdown
   const isAggregated = summaryPeriod !== 'daily';
-
   let html = '';
 
   if (isAggregated) {
-    // ── Aggregated totals across range ──
     html += `<div style="margin-bottom:1.25rem; padding-bottom:1.25rem; border-bottom:2px solid var(--border);">
       <p style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.75rem;">
         ${summaryPeriod === 'weekly' ? 'Week total' : summaryPeriod === 'monthly' ? 'Month total' : 'Range total'}
@@ -1579,11 +1554,10 @@ function renderSummary() {
       const classLogs     = logsInRange.filter(l => l.classId === c.id);
       if (!classLogs.length && !classStudents.length) return;
 
-      // unique students per type across range
-      const arrivedIds  = new Set(classLogs.filter(l => l.type === 'arrival').map(l => l.studentId));
-      const departedIds = new Set(classLogs.filter(l => l.type === 'departure').map(l => l.studentId));
+      const arrivedIds   = new Set(classLogs.filter(l => l.type === 'arrival').map(l => l.studentId));
+      const departedIds  = new Set(classLogs.filter(l => l.type === 'departure').map(l => l.studentId));
       const neverArrived = classStudents.filter(s => !arrivedIds.has(s.id));
-      const lateCount   = classLogs.filter(l => l.type === 'arrival' && l.isLate).length;
+      const lateCount    = classLogs.filter(l => l.type === 'arrival' && l.isLate).length;
 
       html += `
         <div class="history-class-row">
@@ -1606,24 +1580,17 @@ function renderSummary() {
           </div>
         </div>`;
     });
-
     html += `</div>`;
 
     if (!allDates.length) {
       html += `<p class="empty">No attendance data for this period.</p>`;
-      box.innerHTML = html;
-      return;
+      box.innerHTML = html; return;
     }
-
     html += `<p style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.75rem;">Daily breakdown</p>`;
   }
 
-  if (!allDates.length) {
-    box.innerHTML = `<p class="empty">No attendance data for this period.</p>`;
-    return;
-  }
+  if (!allDates.length) { box.innerHTML = `<p class="empty">No attendance data for this period.</p>`; return; }
 
-  // Date-by-date breakdown
   allDates.forEach(dateStr => {
     const dateLogs = logsInRange.filter(l => l.timestamp.slice(0, 10) === dateStr);
     if (!dateLogs.length) return;
@@ -1662,14 +1629,12 @@ function renderSummary() {
           </div>
         </div>`;
     });
-
     html += `</div>`;
   });
 
   box.innerHTML = html || `<p class="empty">No data found.</p>`;
 }
 
-// Modal for range (weekly/monthly/custom) — shows unique students across range
 function openModalRange(type, classId, fromDate, toDate, encodedClassName) {
   const className     = decodeURIComponent(encodedClassName);
   const classStudents = students.filter(s => s.classId === classId);
@@ -1682,22 +1647,11 @@ function openModalRange(type, classId, fromDate, toDate, encodedClassName) {
   const arrivedIds  = new Set(rangeLogs.filter(l => l.type === 'arrival').map(l => l.studentId));
   const departedIds = new Set(rangeLogs.filter(l => l.type === 'departure').map(l => l.studentId));
 
-  let title = '';
-  let studentList = [];
-
-  if (type === 'enrolled') {
-    title = `Enrolled — ${className}`;
-    studentList = classStudents;
-  } else if (type === 'arrived') {
-    title = `☀️ Arrived (at least once) — ${className}`;
-    studentList = classStudents.filter(s => arrivedIds.has(s.id));
-  } else if (type === 'departed') {
-    title = `🌙 Departed (at least once) — ${className}`;
-    studentList = classStudents.filter(s => departedIds.has(s.id));
-  } else if (type === 'absent') {
-    title = `Never arrived — ${className}`;
-    studentList = classStudents.filter(s => !arrivedIds.has(s.id));
-  }
+  let title = '', studentList = [];
+  if (type === 'enrolled')  { title = `Enrolled — ${className}`;                   studentList = classStudents; }
+  else if (type === 'arrived')  { title = `☀️ Arrived (at least once) — ${className}`; studentList = classStudents.filter(s => arrivedIds.has(s.id)); }
+  else if (type === 'departed') { title = `🌙 Departed (at least once) — ${className}`; studentList = classStudents.filter(s => departedIds.has(s.id)); }
+  else if (type === 'absent')   { title = `Never arrived — ${className}`;              studentList = classStudents.filter(s => !arrivedIds.has(s.id)); }
 
   const rangeLabel = `${fmtShort(fromDate)} – ${fmtShort(toDate)}`;
   document.getElementById('modal-title').textContent = `${title} · ${rangeLabel}`;
@@ -1705,9 +1659,8 @@ function openModalRange(type, classId, fromDate, toDate, encodedClassName) {
   if (!studentList.length) {
     document.getElementById('modal-body').innerHTML = `<p class="empty">No students in this category.</p>`;
   } else {
-    document.getElementById('modal-body').innerHTML = studentList.map((s, i) => {
-      const initials = s.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
-      // Count late arrivals for this student in range
+    document.getElementById('modal-body').innerHTML = studentList.map((s) => {
+      const initials  = s.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
       const lateCount = rangeLogs.filter(l => l.studentId === s.id && l.type === 'arrival' && l.isLate).length;
       const lateTag   = (type === 'arrived' && lateCount > 0)
         ? `<span class="badge badge-late" style="font-size:0.68rem; margin-left:4px;">⏰ ${lateCount}× late</span>` : '';
@@ -1726,53 +1679,31 @@ function openModalRange(type, classId, fromDate, toDate, encodedClassName) {
   document.body.style.overflow = 'hidden';
 }
 
-// ── MODAL ─────────────────────────────────────────────────────────────────
 function openModal(type, classId, dateStr, encodedClassName) {
-  const className = decodeURIComponent(encodedClassName);
-  const cls = classes.find(c => c.id === classId);
+  const className     = decodeURIComponent(encodedClassName);
   const classStudents = students.filter(s => s.classId === classId);
-  const dateLogs = logs.filter(l => l.classId === classId && l.timestamp.slice(0, 10) === dateStr);
+  const dateLogs      = logs.filter(l => l.classId === classId && l.timestamp.slice(0, 10) === dateStr);
 
   const arrivedIds  = new Set(dateLogs.filter(l => l.type === 'arrival').map(l => l.studentId));
   const departedIds = new Set(dateLogs.filter(l => l.type === 'departure').map(l => l.studentId));
 
-  let title = '';
-  let studentList = [];
-  let showTime = false;
-
-  if (type === 'enrolled') {
-    title = `Enrolled — ${className}`;
-    studentList = classStudents;
-  } else if (type === 'arrived') {
-    title = `☀️ Arrived — ${className}`;
-    studentList = classStudents.filter(s => arrivedIds.has(s.id));
-    showTime = true;
-  } else if (type === 'departed') {
-    title = `🌙 Departed — ${className}`;
-    studentList = classStudents.filter(s => departedIds.has(s.id));
-    showTime = true;
-  } else if (type === 'absent') {
-    title = `Absent — ${className}`;
-    studentList = classStudents.filter(s => !arrivedIds.has(s.id));
-  }
+  let title = '', studentList = [], showTime = false;
+  if (type === 'enrolled')  { title = `Enrolled — ${className}`;    studentList = classStudents; }
+  else if (type === 'arrived')  { title = `☀️ Arrived — ${className}`;  studentList = classStudents.filter(s => arrivedIds.has(s.id));  showTime = true; }
+  else if (type === 'departed') { title = `🌙 Departed — ${className}`; studentList = classStudents.filter(s => departedIds.has(s.id)); showTime = true; }
+  else if (type === 'absent')   { title = `Absent — ${className}`;      studentList = classStudents.filter(s => !arrivedIds.has(s.id)); }
 
   document.getElementById('modal-title').textContent = title + ` (${formatDate(dateStr)})`;
 
   if (!studentList.length) {
     document.getElementById('modal-body').innerHTML = `<p class="empty">No students in this category.</p>`;
   } else {
-    document.getElementById('modal-body').innerHTML = studentList.map((s, i) => {
-      let timeStr = '';
-      let isLate  = false;
-      let logId   = null;
+    document.getElementById('modal-body').innerHTML = studentList.map((s) => {
+      let timeStr = '', isLate = false, logId = null;
       if (showTime) {
         const logType  = type === 'arrived' ? 'arrival' : 'departure';
         const logEntry = dateLogs.find(l => l.studentId === s.id && l.type === logType);
-        if (logEntry) {
-          timeStr = new Date(logEntry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          isLate  = !!(logEntry.isLate);
-          logId   = logEntry.id;
-        }
+        if (logEntry) { timeStr = new Date(logEntry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); isLate = !!logEntry.isLate; logId = logEntry.id; }
       }
       const initials = s.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
       const lateTag  = (type === 'arrived' && isLate)
@@ -1796,13 +1727,8 @@ function openModal(type, classId, dateStr, encodedClassName) {
   document.body.style.overflow = 'hidden';
 }
 
-function closeModal(e) {
-  if (e.target === document.getElementById('modal-backdrop')) closeModalDirect();
-}
-function closeModalDirect() {
-  document.getElementById('modal-backdrop').classList.remove('open');
-  document.body.style.overflow = '';
-}
+function closeModal(e)       { if (e.target === document.getElementById('modal-backdrop')) closeModalDirect(); }
+function closeModalDirect()  { document.getElementById('modal-backdrop').classList.remove('open'); document.body.style.overflow = ''; }
 
 // ── EDIT CLASS MODAL ──────────────────────────────────────────────────────
 function openEditClassModal(classId) {
@@ -1824,66 +1750,53 @@ async function saveEditClass() {
   if (!name) return showToast('Class name cannot be empty.');
   const cls = classes.find(c => c.id === id);
   if (!cls) return;
-  cls.name      = name;
-  cls.startTime = startTime;
-  cls.graceMins = graceMins;
+  cls.name = name; cls.startTime = startTime; cls.graceMins = graceMins;
   await saveClasses();
   closeEditClassModalDirect();
-  renderClasses();
-  populateDropdowns();
+  renderClasses(); populateDropdowns();
   showToast('Class updated.');
 }
 
-function closeEditClassModal(e) {
-  if (e.target === document.getElementById('edit-class-modal')) closeEditClassModalDirect();
-}
-function closeEditClassModalDirect() {
-  document.getElementById('edit-class-modal').classList.remove('open');
-  document.body.style.overflow = '';
-}
+function closeEditClassModal(e)      { if (e.target === document.getElementById('edit-class-modal')) closeEditClassModalDirect(); }
+function closeEditClassModalDirect() { document.getElementById('edit-class-modal').classList.remove('open'); document.body.style.overflow = ''; }
 
 // ── EDIT LOG MODAL ────────────────────────────────────────────────────────
 function openEditLogModal(logId) {
   const log = logs.find(l => l.id === logId);
   if (!log) return showToast('Record not found.');
   const ts = new Date(log.timestamp);
-  document.getElementById('edit-log-id').value                  = logId;
-  document.getElementById('edit-log-original-timestamp').value   = log.timestamp;
+  document.getElementById('edit-log-id').value                = logId;
+  document.getElementById('edit-log-original-timestamp').value = log.timestamp;
   document.getElementById('edit-log-student-name').textContent = log.studentName + (log.studentLrn ? ` · LRN ${log.studentLrn}` : '');
-  document.getElementById('edit-log-type').value         = log.type || 'arrival';
-  document.getElementById('edit-log-time').value         = ts.toTimeString().slice(0,5);
-  document.getElementById('edit-log-date').value         = ts.toISOString().slice(0,10);
-  document.getElementById('edit-log-is-late').checked    = !!log.isLate;
+  document.getElementById('edit-log-type').value    = log.type || 'arrival';
+  document.getElementById('edit-log-time').value    = ts.toTimeString().slice(0,5);
+  document.getElementById('edit-log-date').value    = ts.toISOString().slice(0,10);
+  document.getElementById('edit-log-is-late').checked = !!log.isLate;
   document.getElementById('edit-log-modal').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
 
 async function saveEditLog() {
-  const logId            = parseInt(document.getElementById('edit-log-id').value);
-  const originalTs       = document.getElementById('edit-log-original-timestamp').value;
-  const type    = document.getElementById('edit-log-type').value;
-  const timeVal = document.getElementById('edit-log-time').value;
-  const dateVal = document.getElementById('edit-log-date').value;
-  const isLate  = document.getElementById('edit-log-is-late').checked;
+  const logId      = parseInt(document.getElementById('edit-log-id').value);
+  const originalTs = document.getElementById('edit-log-original-timestamp').value;
+  const type       = document.getElementById('edit-log-type').value;
+  const timeVal    = document.getElementById('edit-log-time').value;
+  const dateVal    = document.getElementById('edit-log-date').value;
+  const isLate     = document.getElementById('edit-log-is-late').checked;
 
   if (!timeVal || !dateVal) return showToast('Date and time are required.');
-
   const log = logs.find(l => l.id === logId);
   if (!log) return;
 
-  // Build new timestamp
   log.timestamp = new Date(`${dateVal}T${timeVal}:00`).toISOString();
-  log.type      = type;
-  log.isLate    = isLate;
+  log.type  = type;
+  log.isLate = isLate;
 
   await dbPutAll('logs', [log]);
-
   closeEditLogModalDirect();
-  renderLog();
-  renderTodayList();
+  renderLog(); renderTodayList();
   if (document.getElementById('page-summary').classList.contains('active')) renderSummary();
   if (document.getElementById('terms-modal-backdrop').classList.contains('open')) renderTermsModalBody();
-  // Pass original timestamp so the sheet can find and overwrite the correct row
   syncSingleLog(log, originalTs);
   showToast('Record updated.');
 }
@@ -1894,30 +1807,23 @@ async function deleteLogEntry() {
   logs = logs.filter(l => l.id !== logId);
   await dbDelete('logs', logId);
   closeEditLogModalDirect();
-  renderLog();
-  renderTodayList();
+  renderLog(); renderTodayList();
   if (document.getElementById('page-summary').classList.contains('active')) renderSummary();
   if (document.getElementById('terms-modal-backdrop').classList.contains('open')) renderTermsModalBody();
   showToast('Record deleted.');
 }
 
-function closeEditLogModal(e) {
-  if (e.target === document.getElementById('edit-log-modal')) closeEditLogModalDirect();
-}
-function closeEditLogModalDirect() {
-  document.getElementById('edit-log-modal').classList.remove('open');
-  document.body.style.overflow = '';
-}
+function closeEditLogModal(e)      { if (e.target === document.getElementById('edit-log-modal')) closeEditLogModalDirect(); }
+function closeEditLogModalDirect() { document.getElementById('edit-log-modal').classList.remove('open'); document.body.style.overflow = ''; }
 
 // ── DROPDOWNS ─────────────────────────────────────────────────────────────
 function populateDropdowns() {
   const classOpts = `<option value="">— Choose a class —</option>` +
     classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 
-  document.getElementById('scanner-class-select').innerHTML = classOpts;
-  document.getElementById('student-class-select').innerHTML = classOpts;
+  document.getElementById('scanner-class-select').innerHTML  = classOpts;
+  document.getElementById('student-class-select').innerHTML  = classOpts;
 
-  // Terms dropdown (only if terms page element exists)
   const termsEl = document.getElementById('terms-class-select');
   if (termsEl) {
     const prev = termsEl.value;
@@ -1930,20 +1836,12 @@ function populateDropdowns() {
     classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
   document.getElementById('filter-class-select').innerHTML = filterOpts;
 
-  if (currentClassId && !classes.find(c => c.id === currentClassId)) {
-    currentClassId = null; stopCamera();
-  }
+  if (currentClassId && !classes.find(c => c.id === currentClassId)) { currentClassId = null; stopCamera(); }
   if (currentClassId) document.getElementById('scanner-class-select').value = currentClassId;
 }
 
 // ── SYNC ──────────────────────────────────────────────────────────────────
 const GAS_SCRIPT = `// EduScan PH — Google Apps Script v4
-// Sheet structure:
-//   • "Summary" tab        — auto-updated per-student term totals + late counts
-//   • One tab per class    — auto-created, named after the class
-//   • Archived class tabs  — renamed to "ClassName (archived)" + gray header
-//                            when the class is deleted in the app
-//
 // Paste into Extensions → Apps Script → Code.js → Save → Deploy as new deployment.
 
 const SPREADSHEET_ID = ''; // Leave blank to use the bound spreadsheet
@@ -1954,7 +1852,6 @@ function getSpreadsheet() {
     : SpreadsheetApp.getActiveSpreadsheet();
 }
 
-// ── DepEd term boundaries (month is 1-based) ──────────────────────────────
 const TERMS = [
   { label: 'Term 1', months: [6, 7, 8, 9]  },
   { label: 'Term 2', months: [10, 11, 12]   },
@@ -1967,15 +1864,13 @@ function getTermLabel(dateObj) {
   return t ? t.label : 'Other';
 }
 
-// ── Tab name constants ─────────────────────────────────────────────────────
-const SKIP_TABS    = ['Summary', 'Attendance', 'Attendance (migrated)'];
+const SKIP_TABS      = ['Summary', 'Attendance', 'Attendance (migrated)'];
 const ARCHIVE_SUFFIX = ' (archived)';
 
 function isArchived(name)  { return name.endsWith(ARCHIVE_SUFFIX); }
 function archiveName(name) { return name + ARCHIVE_SUFFIX; }
 function activeName(name)  { return name.replace(ARCHIVE_SUFFIX, ''); }
 
-// ── Get or create a sheet tab by name ─────────────────────────────────────
 function getOrCreateSheet(ss, name, headers) {
   let sheet = ss.getSheetByName(name);
   if (!sheet) {
@@ -1997,39 +1892,30 @@ function applyActiveHeader(sheet, headers) {
 function applyArchivedHeader(sheet) {
   const lastCol = sheet.getLastColumn() || 1;
   const r = sheet.getRange(1, 1, 1, lastCol);
-  r.setBackground('#94a3b8'); // slate gray
+  r.setBackground('#94a3b8');
   r.setFontColor('#ffffff');
   r.setFontWeight('bold');
 }
 
-// ── Archive tabs whose classes no longer exist in the app ─────────────────
 function archiveDeletedClasses(ss, activeClasses) {
   if (!activeClasses || !activeClasses.length) return;
-
   const activeSet = new Set(activeClasses);
-
   ss.getSheets().forEach(sheet => {
     const name = sheet.getName();
     if (SKIP_TABS.includes(name)) return;
-    if (isArchived(name)) return; // already archived
-
+    if (isArchived(name)) return;
     if (!activeSet.has(name)) {
-      // Class was deleted in the app — archive this tab
       sheet.setName(archiveName(name));
       applyArchivedHeader(sheet);
-      // Add a note in cell A1 so it's obvious
       sheet.getRange(1, 1).setNote('This class was deleted in EduScan PH. Data preserved for records.');
     }
   });
-
-  // Also un-archive if a class was re-added with the same name
   ss.getSheets().forEach(sheet => {
     const name = sheet.getName();
     if (!isArchived(name)) return;
     const original = activeName(name);
     if (activeSet.has(original)) {
       sheet.setName(original);
-      // Restore header color
       const lastCol = sheet.getLastColumn() || 1;
       const r = sheet.getRange(1, 1, 1, lastCol);
       r.setBackground('#1d4ed8');
@@ -2039,35 +1925,27 @@ function archiveDeletedClasses(ss, activeClasses) {
   });
 }
 
-// ── Migrate old "Attendance" tab into per-class tabs ──────────────────────
 function migrateAttendanceTab(ss) {
   const old = ss.getSheetByName('Attendance');
   if (!old || old.getLastRow() < 2) return;
-
-  const rows = old.getRange(2, 1, old.getLastRow() - 1, 8).getValues();
+  const rows    = old.getRange(2, 1, old.getLastRow() - 1, 8).getValues();
   const byClass = {};
   rows.forEach(r => {
     const cls = r[5] || 'Unknown Class';
     if (!byClass[cls]) byClass[cls] = [];
     byClass[cls].push(r);
   });
-
   const CLASS_HEADERS = ['Timestamp','Date','Time','Type','Late','Class','Student Name','LRN','Term'];
-
   Object.entries(byClass).forEach(([className, classRows]) => {
     const sheet    = getOrCreateSheet(ss, className, CLASS_HEADERS);
     const existing = getExistingTimestamps(sheet);
-    const toAdd    = classRows
-      .filter(r => !existing.has(r[0]))
-      .map(r => [...r, getTermLabel(new Date(r[0]))]);
+    const toAdd    = classRows.filter(r => !existing.has(r[0])).map(r => [...r, getTermLabel(new Date(r[0]))]);
     if (toAdd.length)
       sheet.getRange(sheet.getLastRow() + 1, 1, toAdd.length, CLASS_HEADERS.length).setValues(toAdd);
   });
-
   old.setName('Attendance (migrated)');
 }
 
-// ── Timestamp helpers ──────────────────────────────────────────────────────
 function getExistingTimestamps(sheet) {
   const last = sheet.getLastRow();
   if (last < 2) return new Set();
@@ -2078,178 +1956,91 @@ function getTimestampRowMap(sheet) {
   const last = sheet.getLastRow();
   const map  = {};
   if (last < 2) return map;
-  sheet.getRange(2, 1, last - 1, 1).getValues()
-    .forEach((r, i) => { if (r[0]) map[r[0]] = i + 2; });
+  sheet.getRange(2, 1, last - 1, 1).getValues().forEach((r, i) => { if (r[0]) map[r[0]] = i + 2; });
   return map;
 }
 
-// ── Rebuild the Summary tab ───────────────────────────────────────────────
 function rebuildSummary(ss) {
   let summary = ss.getSheetByName('Summary');
-  if (!summary) {
-    summary = ss.insertSheet('Summary', 0);
-  } else {
-    summary.clearContents();
-    summary.clearFormats();
-  }
-
-  // Columns per term: Present | Complete | Half-day | Late | Absent
-  // Present  = days with at least 1 arrival
-  // Complete = days with both arrival AND departure
-  // Half-day = days with arrival but no departure
-  // Late     = present days where arrival was flagged late
-  // Absent   = school days (class had activity) where student had no arrival
-  const headers = [
-    'Class', 'Student Name', 'LRN',
-    'T1 Present', 'T1 Complete', 'T1 Half-day', 'T1 Late', 'T1 Absent',
-    'T2 Present', 'T2 Complete', 'T2 Half-day', 'T2 Late', 'T2 Absent',
-    'T3 Present', 'T3 Complete', 'T3 Half-day', 'T3 Late', 'T3 Absent',
-    'Total Present', 'Total Complete', 'Total Half-day', 'Total Late', 'Total Absent'
-  ];
-  const hRange = summary.getRange(1, 1, 1, headers.length);
-  hRange.setValues([headers]);
-  hRange.setFontWeight('bold');
-  hRange.setBackground('#1d4ed8');
-  hRange.setFontColor('#ffffff');
+  if (!summary) { summary = ss.insertSheet('Summary', 0); } else { summary.clearContents(); summary.clearFormats(); }
+  const headers = ['Class','Student Name','LRN','T1 Present','T1 Complete','T1 Half-day','T1 Late','T1 Absent','T2 Present','T2 Complete','T2 Half-day','T2 Late','T2 Absent','T3 Present','T3 Complete','T3 Half-day','T3 Late','T3 Absent','Total Present','Total Complete','Total Half-day','Total Late','Total Absent'];
+  const hRange  = summary.getRange(1, 1, 1, headers.length);
+  hRange.setValues([headers]); hRange.setFontWeight('bold'); hRange.setBackground('#1d4ed8'); hRange.setFontColor('#ffffff');
   summary.setFrozenRows(1);
-
-  // Only active class tabs
-  const classSheets = ss.getSheets().filter(s =>
-    !SKIP_TABS.includes(s.getName()) && !isArchived(s.getName())
-  );
-
+  const classSheets = ss.getSheets().filter(s => !SKIP_TABS.includes(s.getName()) && !isArchived(s.getName()));
   const allRows = [];
-
   classSheets.forEach(sheet => {
     const last = sheet.getLastRow();
     if (last < 2) return;
-
     const data = sheet.getRange(2, 1, last - 1, 9).getValues();
-    // cols: 0=Timestamp,1=Date,2=Time,3=Type,4=Late,5=Class,6=Name,7=LRN,8=Term
-
-    // School days per term = dates where ANY student in this class had an arrival
     const schoolDaysByTerm = {};
     TERMS.forEach(t => {
-      schoolDaysByTerm[t.label] = new Set(
-        data.filter(r => {
-          const m = new Date(r[0]).getMonth() + 1;
-          return r[3] === 'Arrival' && t.months.includes(m);
-        }).map(r => r[1])
-      );
+      schoolDaysByTerm[t.label] = new Set(data.filter(r => { const m = new Date(r[0]).getMonth() + 1; return r[3] === 'Arrival' && t.months.includes(m); }).map(r => r[1]));
     });
-
-    // Group logs by student
-    const students = {};
+    const studentsMap = {};
     data.forEach(r => {
       const key = r[7] || r[6];
-      if (!students[key]) students[key] = { name: r[6], lrn: r[7], cls: r[5], logs: [] };
-      students[key].logs.push(r);
+      if (!studentsMap[key]) studentsMap[key] = { name: r[6], lrn: r[7], cls: r[5], logs: [] };
+      studentsMap[key].logs.push(r);
     });
-
-    Object.values(students).forEach(({ name, lrn, cls, logs }) => {
+    Object.values(studentsMap).forEach(({ name, lrn, cls, logs }) => {
       const row = [cls, name, lrn];
       let totPresent = 0, totComplete = 0, totHalf = 0, totLate = 0, totAbsent = 0;
-
       TERMS.forEach(t => {
-        const termLogs  = logs.filter(r => r[8] === t.label);
-        const arrivals  = termLogs.filter(r => r[3] === 'Arrival');
+        const termLogs   = logs.filter(r => r[8] === t.label);
+        const arrivals   = termLogs.filter(r => r[3] === 'Arrival');
         const departures = termLogs.filter(r => r[3] === 'Departure');
-
-        // Unique days per type
-        const arrivedDays   = new Set(arrivals.map(r => r[1]));
-        const departedDays  = new Set(departures.map(r => r[1]));
-
+        const arrivedDays  = new Set(arrivals.map(r => r[1]));
+        const departedDays = new Set(departures.map(r => r[1]));
         const presentDays  = arrivedDays.size;
         const completeDays = [...arrivedDays].filter(d => departedDays.has(d)).length;
         const halfDays     = presentDays - completeDays;
         const lateCount    = arrivals.filter(r => r[4] === 'Yes').length;
         const absentDays   = [...schoolDaysByTerm[t.label]].filter(d => !arrivedDays.has(d)).length;
-
         row.push(presentDays, completeDays, halfDays, lateCount, absentDays);
-        totPresent  += presentDays;
-        totComplete += completeDays;
-        totHalf     += halfDays;
-        totLate     += lateCount;
-        totAbsent   += absentDays;
+        totPresent += presentDays; totComplete += completeDays; totHalf += halfDays; totLate += lateCount; totAbsent += absentDays;
       });
-
       row.push(totPresent, totComplete, totHalf, totLate, totAbsent);
       allRows.push(row);
     });
   });
-
   if (allRows.length) {
     allRows.sort((a, b) => a[0].localeCompare(b[0]) || a[1].localeCompare(b[1]));
     summary.getRange(2, 1, allRows.length, headers.length).setValues(allRows);
-
-    // Color coding (1-based column indices):
-    // Present cols  : 4,9,14,19  → light green
-    // Complete cols : 5,10,15,20 → lighter green
-    // Half-day cols : 6,11,16,21 → light yellow
-    // Late cols     : 7,12,17,22 → light orange
-    // Absent cols   : 8,13,18,23 → light red
     const n = allRows.length;
     [4,9,14,19].forEach(c  => summary.getRange(2,c,n,1).setBackground('#f0fdf4'));
     [5,10,15,20].forEach(c => summary.getRange(2,c,n,1).setBackground('#dcfce7'));
     [6,11,16,21].forEach(c => summary.getRange(2,c,n,1).setBackground('#fefce8'));
     [7,12,17,22].forEach(c => summary.getRange(2,c,n,1).setBackground('#fff7ed'));
     [8,13,18,23].forEach(c => summary.getRange(2,c,n,1).setBackground('#fef2f2'));
-
     summary.autoResizeColumns(1, headers.length);
   }
 }
 
-
-// ── MAIN: doPost ──────────────────────────────────────────────────────────
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
     const ss   = getSpreadsheet();
-
     if (data.action === 'ping') {
-      return ContentService
-        .createTextOutput(JSON.stringify({ success: true, pong: true }))
-        .setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({ success: true, pong: true })).setMimeType(ContentService.MimeType.JSON);
     }
-
-    // One-time migration of old Attendance tab
     migrateAttendanceTab(ss);
-
-    // Archive tabs for deleted classes, un-archive re-added ones
     archiveDeletedClasses(ss, data.activeClasses);
-
     const CLASS_HEADERS = ['Timestamp','Date','Time','Type','Late','Class','Student Name','LRN','Term'];
-
     let added = 0, updated = 0;
-
-    // Group incoming logs by class
     const byClass = {};
     for (const l of (data.logs || [])) {
       const cls = l.className || 'Unknown Class';
       if (!byClass[cls]) byClass[cls] = [];
       byClass[cls].push(l);
     }
-
     Object.entries(byClass).forEach(([className, classLogs]) => {
       const sheet    = getOrCreateSheet(ss, className, CLASS_HEADERS);
       const tsRowMap = getTimestampRowMap(sheet);
-
       classLogs.forEach(l => {
         const d       = new Date(l.timestamp);
-        const rowData = [
-          l.timestamp,
-          Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy-MM-dd'),
-          Utilities.formatDate(d, Session.getScriptTimeZone(), 'HH:mm:ss'),
-          l.type === 'departure' ? 'Departure' : 'Arrival',
-          (l.type === 'arrival' && l.isLate) ? 'Yes' : '',
-          l.className   || '',
-          l.studentName || '',
-          l.studentLrn  || '',
-          getTermLabel(d)
-        ];
-
+        const rowData = [l.timestamp, Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy-MM-dd'), Utilities.formatDate(d, Session.getScriptTimeZone(), 'HH:mm:ss'), l.type === 'departure' ? 'Departure' : 'Arrival', (l.type === 'arrival' && l.isLate) ? 'Yes' : '', l.className || '', l.studentName || '', l.studentLrn || '', getTermLabel(d)];
         const lookupKey = l._originalTimestamp || l.timestamp;
-
         if (tsRowMap[lookupKey]) {
           sheet.getRange(tsRowMap[lookupKey], 1, 1, CLASS_HEADERS.length).setValues([rowData]);
           tsRowMap[l.timestamp] = tsRowMap[lookupKey];
@@ -2261,23 +2052,13 @@ function doPost(e) {
         }
       });
     });
-
-    // Rebuild Summary after every push
     rebuildSummary(ss);
-
-    return ContentService
-      .createTextOutput(JSON.stringify({ success: true, added, updated }))
-      .setMimeType(ContentService.MimeType.JSON);
-
+    return ContentService.createTextOutput(JSON.stringify({ success: true, added, updated })).setMimeType(ContentService.MimeType.JSON);
   } catch (error) {
-    return ContentService
-      .createTextOutput(JSON.stringify({ success: false, error: error.message }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: error.message })).setMimeType(ContentService.MimeType.JSON);
   }
-}
-`;
+}`;
 
-// ── AUTO-SYNC STATE ────────────────────────────────────────────────────────
 let autoSyncEnabled = false;
 let autoSyncTimer   = null;
 const AUTO_SYNC_DELAY = 8000;
@@ -2311,36 +2092,28 @@ async function saveSyncUrl() {
   const url     = document.getElementById('sync-url-input').value.trim();
   const sheetId = document.getElementById('sync-sheet-id').value.trim();
   const msg     = document.getElementById('sync-status-msg');
-
   if (!url) return showToast('Paste the Web App URL first.');
   if (!url.includes('script.google.com')) {
     msg.innerHTML = `<div class="sync-status err">That doesn't look like a Web App URL. It should contain script.google.com and end in /exec.</div>`;
     return;
   }
-
   await dbSetSetting('sync_url',      url);
   await dbSetSetting('sync_sheet_id', sheetId);
   await dbSetSetting('auto_sync',     true);
   autoSyncEnabled = true;
   updateAutoSyncBar();
-
-  // Ping test
   msg.innerHTML = `<div class="sync-status info">Testing connection…</div>`;
   try {
-    const resp = await fetch(url, {
-      method:  'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body:    JSON.stringify({ action: 'ping' })
-    });
+    const resp   = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'ping' }) });
     const result = await resp.json();
     if (result.pong || result.success) {
-      msg.innerHTML = `<div class="sync-status ok">✅ Connected! Auto-sync enabled — logs will push automatically after each scan.</div>`;
+      msg.innerHTML = `<div class="sync-status ok">✅ Connected! Auto-sync enabled.</div>`;
       showToast('Connected to Google Sheets ✓');
     } else {
       msg.innerHTML = `<div class="sync-status err">Script error: ${result.error || 'Unknown error'}</div>`;
     }
   } catch(e) {
-    msg.innerHTML = `<div class="sync-status err">Could not reach the script. Double-check the Web App URL ends in <code>/exec</code> and access is set to <em>Anyone</em>.</div>`;
+    msg.innerHTML = `<div class="sync-status err">Could not reach the script. Check the URL ends in /exec and access is set to Anyone.</div>`;
   }
 }
 
@@ -2352,26 +2125,14 @@ async function disableAutoSync() {
   showToast('Auto-sync disabled.');
 }
 
-// Push one specific log entry to Google Sheets (used after edits)
-// originalTimestamp = the timestamp the sheet already has on file for this row
 async function syncSingleLog(log, originalTimestamp) {
   if (!autoSyncEnabled) return;
   const url = await dbGetSetting('sync_url');
   if (!url) return;
   try {
-    // Send the log with an extra field so the sheet can find the original row
     const payload = { ...log, _originalTimestamp: originalTimestamp || log.timestamp };
-    await fetch(url, {
-      method:  'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body:    JSON.stringify({
-        logs: [payload],
-        activeClasses: classes.map(c => c.name)
-      })
-    });
-  } catch(e) {
-    // Silent — user will see it on next manual push if offline
-  }
+    await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ logs: [payload], activeClasses: classes.map(c => c.name) }) });
+  } catch(e) {}
 }
 
 function scheduleAutoSync() {
@@ -2383,55 +2144,33 @@ function scheduleAutoSync() {
 async function syncToSheets(silent = false) {
   const url = await dbGetSetting('sync_url');
   const msg = document.getElementById('sync-status-msg');
+  if (!url)       { if (!silent) msg.innerHTML = `<div class="sync-status err">No URL saved. Complete setup above first.</div>`; return; }
+  if (!logs.length) { if (!silent) msg.innerHTML = `<div class="sync-status info">No logs to sync yet.</div>`; return; }
 
-  if (!url) {
-    if (!silent) msg.innerHTML = `<div class="sync-status err">No URL saved. Complete the setup above first.</div>`;
-    return;
-  }
-  if (!logs.length) {
-    if (!silent) msg.innerHTML = `<div class="sync-status info">No logs to sync yet.</div>`;
-    return;
-  }
-
-  // Only push logs newer than last sync
   const lastSync = await dbGetSetting('last_sync_time');
   const toSync   = lastSync ? logs.filter(l => l.timestamp > lastSync) : [...logs];
-
-  if (!toSync.length) {
-    if (!silent) msg.innerHTML = `<div class="sync-status ok">✅ All logs already synced.</div>`;
-    return;
-  }
+  if (!toSync.length) { if (!silent) msg.innerHTML = `<div class="sync-status ok">✅ All logs already synced.</div>`; return; }
 
   const btn = document.getElementById('sync-btn');
   if (btn && !silent) { btn.disabled = true; btn.textContent = `Pushing ${toSync.length} records…`; }
-  if (!silent) msg.innerHTML = `<div class="sync-status info">Pushing ${toSync.length} records to Google Sheets…</div>`;
+  if (!silent) msg.innerHTML = `<div class="sync-status info">Pushing ${toSync.length} records…</div>`;
 
   try {
-    const resp = await fetch(url, {
-      method:  'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body:    JSON.stringify({
-        logs: toSync,
-        activeClasses: classes.map(c => c.name)
-      })
-    });
+    const resp   = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ logs: toSync, activeClasses: classes.map(c => c.name) }) });
     const result = await resp.json();
-
     if (result.success) {
       await dbSetSetting('last_sync_time', new Date().toISOString());
       updateAutoSyncLastLabel();
-      const note = result.skipped > 0 ? ` (${result.skipped} already in sheet)` : '';
-      if (!silent) msg.innerHTML = `<div class="sync-status ok">✅ ${result.added} record${result.added !== 1 ? 's' : ''} added to Google Sheets${note}.</div>`;
+      if (!silent) msg.innerHTML = `<div class="sync-status ok">✅ ${result.added} record${result.added !== 1 ? 's' : ''} added to Google Sheets.</div>`;
       if (silent && result.added > 0) showToast(`☁ ${result.added} record${result.added !== 1 ? 's' : ''} synced`);
     } else {
       if (!silent) msg.innerHTML = `<div class="sync-status err">Script error: ${result.error}</div>`;
       if (silent) showToast('⚠ Sync failed — check the Sync tab.');
     }
   } catch(e) {
-    if (!silent) msg.innerHTML = `<div class="sync-status err">Network error. Make sure you're online and the URL is correct.</div>`;
+    if (!silent) msg.innerHTML = `<div class="sync-status err">Network error. Check your connection and URL.</div>`;
     if (silent) showToast('⚠ Sync — network error.');
   }
-
   if (btn && !silent) { btn.disabled = false; btn.textContent = '⬆ Push unsynced logs'; }
 }
 
@@ -2441,38 +2180,90 @@ function copyScript() {
   showToast('Script copied.');
 }
 
-// ── DOWNLOAD / EXPORT / IMPORT ────────────────────────────────────────────
-
 // ── PWA INSTALL ───────────────────────────────────────────────────────────
 let pwaInstallPrompt = null;
 
+// Detect iOS environment for install guidance
+function detectIOSEnv() {
+  const ua = navigator.userAgent;
+  const isIOS = /iPhone|iPad/.test(ua) || (ua.includes('Mac') && navigator.maxTouchPoints > 1);
+  if (!isIOS) return null;
+  const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+  return isSafari ? 'ios-safari' : 'ios-other';
+}
+
+function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+         window.navigator.standalone === true;
+}
+
+// ── INSTALL BANNER (scanner page) ────────────────────────────────────────
+async function initInstallBanner() {
+  const dismissed = await dbGetSetting('install_banner_dismissed');
+  if (dismissed) return;
+  if (isStandalone()) return;
+
+  const banner  = document.getElementById('install-banner');
+  const title   = document.getElementById('ib-title');
+  const body    = document.getElementById('ib-body');
+  const btn     = document.getElementById('ib-action-btn');
+  const iosEnv  = detectIOSEnv();
+
+  if (pwaInstallPrompt) {
+    // Android / desktop Chrome — can trigger native install
+    banner.className = 'other';
+    title.textContent = '📲 Install EduScan PH as an app';
+    body.textContent  = 'Install it to your home screen for faster access and full offline use.';
+    btn.textContent   = '⬇ Install now';
+    btn.onclick = () => { triggerPWAInstall(); dismissInstallBanner(); };
+    banner.style.display = 'block';
+  } else if (iosEnv === 'ios-safari') {
+    // iOS Safari — show share sheet instructions
+    banner.className = 'ios';
+    title.textContent = '📲 Add EduScan PH to your Home Screen';
+    body.innerHTML    = 'Tap <strong>Share ⬆</strong> at the bottom of Safari, then tap <strong>"Add to Home Screen"</strong> to install.';
+    btn.textContent   = 'See full guide →';
+    btn.onclick = () => { showPage('download'); dismissInstallBanner(); };
+    banner.style.display = 'block';
+  } else if (iosEnv === 'ios-other') {
+    // iOS Chrome/Firefox — needs to switch to Safari
+    banner.className = 'ios';
+    title.textContent = '⚠️ Open in Safari to install';
+    body.innerHTML    = 'Chrome and Firefox on iOS can\'t install apps. Open this page in <strong>Safari</strong> to add it to your Home Screen.';
+    btn.textContent   = 'See instructions →';
+    btn.onclick = () => { showPage('download'); dismissInstallBanner(); };
+    banner.style.display = 'block';
+  }
+  // Desktop without install prompt: show nothing — not disruptive enough to warrant a banner
+}
+
+async function dismissInstallBanner() {
+  document.getElementById('install-banner').style.display = 'none';
+  await dbSetSetting('install_banner_dismissed', true);
+}
+
+// ── DOWNLOAD PAGE: updatePWAInstallUI ─────────────────────────────────────
 function updatePWAInstallUI() {
-  const installBtn    = document.getElementById('pwa-install-btn');
-  const installedMsg  = document.getElementById('pwa-installed-msg');
-  const guide         = document.getElementById('pwa-install-guide');
-  const wrongBrowser  = document.getElementById('ios-wrong-browser-warning');
-  const stepsEl       = document.getElementById('install-steps');
-  const guideTitle    = document.getElementById('install-guide-title');
+  const installBtn   = document.getElementById('pwa-install-btn');
+  const installedMsg = document.getElementById('pwa-installed-msg');
+  const guide        = document.getElementById('pwa-install-guide');
+  const wrongBrowser = document.getElementById('ios-wrong-browser-warning');
+  const stepsEl      = document.getElementById('install-steps');
+  const guideTitle   = document.getElementById('install-guide-title');
 
-  const standalone = window.matchMedia('(display-mode: standalone)').matches ||
-                     window.navigator.standalone === true;
-
-  if (standalone) {
+  if (isStandalone()) {
     installedMsg.style.display = 'block';
     installBtn.style.display   = 'none';
     guide.style.display        = 'none';
     return;
   }
 
-  const ua    = navigator.userAgent;
-  const isIOS = /iPhone|iPad/.test(ua) || (ua.includes('Mac') && navigator.maxTouchPoints > 1);
-  const isIOSSafari = isIOS && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
-  const isIOSOther  = isIOS && !isIOSSafari;
+  const iosEnv = detectIOSEnv();
 
   if (pwaInstallPrompt) {
-    // Android / Desktop Chrome — can show native prompt
-    installBtn.style.display  = 'flex';
-    guide.style.display       = 'none';
+    // Android / Desktop Chrome
+    installBtn.style.display   = 'flex';
+    guide.style.display        = 'none';
     installedMsg.style.display = 'none';
     return;
   }
@@ -2481,56 +2272,60 @@ function updatePWAInstallUI() {
   installedMsg.style.display = 'none';
   installBtn.style.display   = 'none';
   guide.style.display        = 'block';
-  wrongBrowser.style.display = isIOSOther ? 'block' : 'none';
+  wrongBrowser.style.display = (iosEnv === 'ios-other') ? 'block' : 'none';
 
   let steps = [];
-  if (isIOSSafari) {
-    guideTitle.textContent = 'Install on iPhone / iPad (Safari)';
+
+  if (iosEnv === 'ios-safari') {
+    guideTitle.textContent = '📲 Install on iPhone / iPad (Safari)';
     steps = [
-      { icon: '📤', text: 'Tap the <strong>Share button</strong> — the box with an arrow at the bottom of Safari.' },
+      { icon: '📤', text: 'Tap the <strong>Share button</strong> — the box with an arrow pointing up at the bottom of Safari.' },
       { icon: '📜', text: 'Scroll the share sheet and tap <strong>"Add to Home Screen"</strong>.' },
-      { icon: '✏️', text: 'Rename if you like, then tap <strong>Add</strong> in the top-right.' },
-      { icon: '✅', text: 'EduScan PH is on your home screen and works offline!' },
+      { icon: '✏️', text: 'You can rename the app if you like, then tap <strong>Add</strong> in the top-right corner.' },
+      { icon: '✅', text: 'EduScan PH is now on your Home Screen and works fully offline!' },
     ];
-  } else if (isIOSOther) {
-    guideTitle.textContent = 'Install on iPhone / iPad';
+  } else if (iosEnv === 'ios-other') {
+    guideTitle.textContent = '📲 Install on iPhone / iPad';
     steps = [
       { icon: '📋', text: 'Copy the URL of this page from your browser\'s address bar.' },
-      { icon: '🧭', text: 'Open the <strong>Safari</strong> app — only Safari can install apps on iOS.' },
-      { icon: '📌', text: 'Paste the URL in Safari and open the page.' },
+      { icon: '🧭', text: 'Open the <strong>Safari</strong> app — only Safari on iOS can install web apps to the Home Screen.' },
+      { icon: '📌', text: 'Paste the URL in Safari\'s address bar and open the page.' },
       { icon: '📤', text: 'Tap the <strong>Share button</strong> at the bottom, then tap <strong>"Add to Home Screen"</strong>.' },
-      { icon: '✅', text: 'Tap <strong>Add</strong> — done!' },
+      { icon: '✅', text: 'Tap <strong>Add</strong> in the top-right — done!' },
     ];
   } else {
-    // Desktop fallback (no install prompt available)
-    guideTitle.textContent = 'Install on desktop';
+    // Desktop fallback — no install prompt available
+    guideTitle.textContent = '💻 Install on desktop';
     steps = [
-      { icon: '🌐', text: 'Use <strong>Chrome</strong> or <strong>Edge</strong> for the easiest install.' },
-      { icon: '⊕',  text: 'Click the <strong>install icon</strong> in the address bar (right side).' },
-      { icon: '✅', text: 'Click <strong>Install</strong> — EduScan PH opens as a standalone app.' },
+      { icon: '🌐', text: 'Use <strong>Chrome</strong> or <strong>Edge</strong> for the easiest install experience.' },
+      { icon: '⊕',  text: 'Look for the <strong>install icon</strong> in the right side of the address bar.' },
+      { icon: '✅', text: 'Click it and select <strong>Install</strong> — EduScan PH opens as a standalone app.' },
     ];
   }
 
   stepsEl.innerHTML = steps.map((s, i) => `
-    <li style="display:flex; align-items:flex-start; gap:10px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:0.65rem 0.85rem;">
-      <div style="flex-shrink:0; width:24px; height:24px; border-radius:50%; background:var(--primary); color:#fff; font-size:0.73rem; font-weight:700; display:flex; align-items:center; justify-content:center;">${i + 1}</div>
-      <div style="font-size:1.1rem; flex-shrink:0; line-height:1; margin-top:2px;">${s.icon}</div>
-      <div style="font-size:0.83rem; line-height:1.5; color:var(--text); flex:1;">${s.text}</div>
-    </li>
-  `).join('');
+    <div class="install-step">
+      <div class="install-step-num">${i + 1}</div>
+      <div class="install-step-icon">${s.icon}</div>
+      <div class="install-step-text">${s.text}</div>
+    </div>`).join('');
 }
 
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   pwaInstallPrompt = e;
   updatePWAInstallUI();
+  // Re-run banner logic now that we have the prompt
+  initInstallBanner();
 });
 
 window.addEventListener('appinstalled', () => {
   pwaInstallPrompt = null;
   updatePWAInstallUI();
+  document.getElementById('install-banner').style.display = 'none';
   showToast('✅ EduScan PH installed!');
 });
+
 async function triggerPWAInstall() {
   if (!pwaInstallPrompt) return;
   await pwaInstallPrompt.prompt();
@@ -2539,7 +2334,7 @@ async function triggerPWAInstall() {
   updatePWAInstallUI();
 }
 
-// ── Render download page (refresh auto-export status) ──
+// ── DOWNLOAD PAGE render ──────────────────────────────────────────────────
 async function renderDownloadPage() {
   const enabled  = await dbGetSetting('autoexport_enabled');
   const interval = await dbGetSetting('autoexport_interval') || 'daily';
@@ -2561,44 +2356,17 @@ async function renderDownloadPage() {
   updatePWAInstallUI();
 }
 
-// ── Download the app HTML itself ──
-function downloadApp() {
-  // Fetch the current page's HTML source and offer it as a download
-  fetch(window.location.href)
-    .then(r => r.text())
-    .then(html => {
-      triggerDownload(new Blob([html], { type: 'text/html' }), 'eduscan-ph.html');
-      showToast('App downloaded ✓');
-    })
-    .catch(() => {
-      // Fallback: just link to the current URL
-      const a = document.createElement('a');
-      a.href     = window.location.href;
-      a.download = 'eduscan-ph.html';
-      a.click();
-    });
-}
-
-// ── Manual export ──
+// ── EXPORT / IMPORT ───────────────────────────────────────────────────────
 async function exportData(type = 'all') {
-  const msg  = document.getElementById('export-status-msg');
-  const now  = new Date();
+  const msg   = document.getElementById('export-status-msg');
+  const now   = new Date();
   const stamp = now.toISOString().slice(0,10);
-
-  let payload = {};
-  let filename = '';
+  let payload = {}, filename = '';
 
   if (type === 'all') {
     const syncUrl     = await dbGetSetting('sync_url')      || '';
     const syncSheetId = await dbGetSetting('sync_sheet_id') || '';
-    payload = {
-      exportedAt: now.toISOString(),
-      version:    'eduscan-ph-v1',
-      classes,
-      students,
-      logs,
-      settings: { syncUrl, syncSheetId }
-    };
+    payload  = { exportedAt: now.toISOString(), version: 'eduscan-ph-v1', classes, students, logs, settings: { syncUrl, syncSheetId } };
     filename = `eduscan-backup-${stamp}.json`;
   } else if (type === 'logs') {
     payload  = { exportedAt: now.toISOString(), logs };
@@ -2608,20 +2376,14 @@ async function exportData(type = 'all') {
     filename = `eduscan-students-${stamp}.json`;
   }
 
-  triggerDownload(
-    new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }),
-    filename
-  );
-
+  triggerDownload(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }), filename);
   await dbSetSetting('autoexport_last', now.toISOString());
   if (type === 'all') renderDownloadPage();
-
   msg.innerHTML = `<div class="sync-status ok">✅ Exported <strong>${filename}</strong></div>`;
   setTimeout(() => msg.innerHTML = '', 4000);
   showToast(`Downloaded ${filename}`);
 }
 
-// ── Auto-export ──
 async function enableAutoExport() {
   const interval = document.getElementById('autoexport-interval').value;
   await dbSetSetting('autoexport_enabled',  true);
@@ -2636,49 +2398,35 @@ async function disableAutoExport() {
   showToast('Auto-export disabled.');
 }
 
-// Called on boot and after each scan (if each_scan mode)
 async function checkAutoExport(trigger = 'boot') {
   const enabled  = await dbGetSetting('autoexport_enabled');
   if (!enabled) return;
   const interval = await dbGetSetting('autoexport_interval') || 'daily';
   const last     = await dbGetSetting('autoexport_last');
 
-  if (interval === 'each_scan' && trigger === 'scan') {
-    await exportData('all'); return;
-  }
-
+  if (interval === 'each_scan' && trigger === 'scan') { await exportData('all'); return; }
   if (!last) { await exportData('all'); return; }
 
   const lastDate = new Date(last);
   const now      = new Date();
-
   if (interval === 'daily') {
     if (lastDate.toDateString() !== now.toDateString()) await exportData('all');
   } else if (interval === 'weekly') {
-    const diffDays = (now - lastDate) / (1000 * 60 * 60 * 24);
-    if (diffDays >= 7) await exportData('all');
+    if ((now - lastDate) / (1000 * 60 * 60 * 24) >= 7) await exportData('all');
   }
 }
 
-// ── Import / restore ──
 async function importData(event) {
   const file = event.target.files[0];
   const msg  = document.getElementById('import-status-msg');
   if (!file) return;
-
   try {
     const text    = await file.text();
     const payload = JSON.parse(text);
-
-    // Validate it looks like an EduScan export
     if (!payload.version && !payload.classes && !payload.logs) {
-      msg.innerHTML = `<div class="sync-status err">This doesn't look like an EduScan backup file.</div>`;
-      return;
+      msg.innerHTML = `<div class="sync-status err">This doesn't look like an EduScan backup file.</div>`; return;
     }
-
     let importedClasses = 0, importedStudents = 0, importedLogs = 0;
-
-    // Merge classes (skip duplicates by id)
     if (payload.classes?.length) {
       const existingIds = new Set(classes.map(c => c.id));
       const newClasses  = payload.classes.filter(c => !existingIds.has(c.id));
@@ -2686,18 +2434,14 @@ async function importData(event) {
       await dbPutAll('classes', classes);
       importedClasses = newClasses.length;
     }
-
-    // Merge students (skip duplicates by id)
     if (payload.students?.length) {
-      const existingIds  = new Set(students.map(s => s.id));
-      const newStudents  = payload.students.filter(s => !existingIds.has(s.id));
+      const existingIds = new Set(students.map(s => s.id));
+      const newStudents = payload.students.filter(s => !existingIds.has(s.id));
       students.push(...newStudents);
       students.sort((a, b) => a.name.localeCompare(b.name));
       await dbPutAll('students', students);
       importedStudents = newStudents.length;
     }
-
-    // Merge logs (skip duplicates by timestamp+studentId)
     if (payload.logs?.length) {
       const existingKeys = new Set(logs.map(l => `${l.timestamp}|${l.studentId}`));
       const newLogs      = payload.logs.filter(l => !existingKeys.has(`${l.timestamp}|${l.studentId}`));
@@ -2710,53 +2454,37 @@ async function importData(event) {
       logs.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
       importedLogs = newLogs.length;
     }
-
-    // Restore settings if present
     if (payload.settings?.syncUrl)     await dbSetSetting('sync_url',      payload.settings.syncUrl);
     if (payload.settings?.syncSheetId) await dbSetSetting('sync_sheet_id', payload.settings.syncSheetId);
-
     populateDropdowns();
-    msg.innerHTML = `<div class="sync-status ok">
-      ✅ Import complete:<br>
-      ${importedClasses} classes · ${importedStudents} students · ${importedLogs} logs added
-    </div>`;
+    msg.innerHTML = `<div class="sync-status ok">✅ Import complete: ${importedClasses} classes · ${importedStudents} students · ${importedLogs} logs added</div>`;
     showToast('Import complete ✓');
-
   } catch(e) {
     msg.innerHTML = `<div class="sync-status err">Failed to read file: ${e.message}</div>`;
   }
-
-  // Reset file input so the same file can be re-imported if needed
   event.target.value = '';
 }
 
-// ── Shared download helper ──
 function triggerDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a   = document.createElement('a');
-  a.href     = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 // ── TERMS ─────────────────────────────────────────────────────────────────
 const TERMS = [
-  { num: 1, label: 'Term 1', months: [6,7,8,9],   range: 'Jun – Sep' },
-  { num: 2, label: 'Term 2', months: [10,11,12],   range: 'Oct – Dec' },
-  { num: 3, label: 'Term 3', months: [1,2,3],      range: 'Jan – Mar' },
+  { num: 1, label: 'Term 1', months: [6,7,8,9],  range: 'Jun – Sep' },
+  { num: 2, label: 'Term 2', months: [10,11,12],  range: 'Oct – Dec' },
+  { num: 3, label: 'Term 3', months: [1,2,3],     range: 'Jan – Mar' },
 ];
 
 let termsActiveStudentId = null;
 let termsActiveClassId   = null;
 let termsActiveTerm      = 1;
 
-function renderTermsPage() {
-  populateTermsDropdown();
-  renderTermsStudentList();
-}
+function renderTermsPage() { populateTermsDropdown(); renderTermsStudentList(); }
 
 function populateTermsDropdown() {
   const sel  = document.getElementById('terms-class-select');
@@ -2769,19 +2497,9 @@ function populateTermsDropdown() {
 function renderTermsStudentList() {
   const classId = document.getElementById('terms-class-select').value;
   const box     = document.getElementById('terms-student-list');
-
-  if (!classId) {
-    box.innerHTML = `<p class="empty" style="padding:1rem 0;">Select a class to view students.</p>`;
-    return;
-  }
-
+  if (!classId) { box.innerHTML = `<p class="empty" style="padding:1rem 0;">Select a class to view students.</p>`; return; }
   const list = students.filter(s => s.classId === classId);
-  if (!list.length) {
-    box.innerHTML = `<p class="empty" style="padding:1rem 0;">No students in this class yet.</p>`;
-    return;
-  }
-
-  // Show a mini attendance pill for each student across all terms
+  if (!list.length) { box.innerHTML = `<p class="empty" style="padding:1rem 0;">No students in this class yet.</p>`; return; }
   box.innerHTML = list.map(s => {
     const initials = s.name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
     return `
@@ -2791,7 +2509,7 @@ function renderTermsStudentList() {
           <div class="terms-student-name">${s.name}</div>
           ${s.lrn ? `<div class="terms-student-lrn">LRN: ${s.lrn}</div>` : ''}
         </div>
-      <div class="terms-chevron">›</div>
+        <div class="terms-chevron">›</div>
       </div>`;
   }).join('');
 }
@@ -2800,36 +2518,29 @@ function getTermLogs(studentId, classId, termNum) {
   const term = TERMS.find(t => t.num === termNum);
   return logs.filter(l => {
     if (l.studentId !== studentId || l.classId !== classId) return false;
-    const m = new Date(l.timestamp).getMonth() + 1; // 1-based
+    const m = new Date(l.timestamp).getMonth() + 1;
     return term.months.includes(m);
   });
 }
 
-// Count school days (Mon–Fri) that have ANY log for this class in the term
 function getSchoolDaysInTerm(classId, termNum) {
   const term = TERMS.find(t => t.num === termNum);
-  const days = new Set(
-    logs
-      .filter(l => {
-        if (l.classId !== classId) return false;
-        const m = new Date(l.timestamp).getMonth() + 1;
-        return term.months.includes(m);
-      })
-      .map(l => l.timestamp.slice(0, 10))
+  return new Set(
+    logs.filter(l => {
+      if (l.classId !== classId) return false;
+      const m = new Date(l.timestamp).getMonth() + 1;
+      return term.months.includes(m);
+    }).map(l => l.timestamp.slice(0, 10))
   );
-  return days;
 }
 
 function openTermsModal(studentId, classId) {
   termsActiveStudentId = studentId;
   termsActiveClassId   = classId;
   termsActiveTerm      = 1;
-
   const student = students.find(s => s.id === studentId);
   document.getElementById('terms-modal-name').textContent = student ? student.name : 'Student';
-  document.getElementById('terms-modal-meta').textContent =
-    student && student.lrn ? `LRN: ${student.lrn}` : '';
-
+  document.getElementById('terms-modal-meta').textContent = student && student.lrn ? `LRN: ${student.lrn}` : '';
   renderTermsModalBody();
   document.getElementById('terms-modal-backdrop').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -2837,29 +2548,22 @@ function openTermsModal(studentId, classId) {
 
 function switchTermTab(num) {
   termsActiveTerm = num;
-  [1,2,3].forEach(n => {
-    document.getElementById('ttab-' + n).classList.toggle('active', n === num);
-  });
+  [1,2,3].forEach(n => document.getElementById('ttab-' + n).classList.toggle('active', n === num));
   renderTermsModalBody();
 }
 
 function renderTermsModalBody() {
-  const body    = document.getElementById('terms-modal-body');
-  const term    = TERMS.find(t => t.num === termsActiveTerm);
-  const termLogs = getTermLogs(termsActiveStudentId, termsActiveClassId, termsActiveTerm);
-
-  // School days in this term (dates that had any class activity)
+  const body      = document.getElementById('terms-modal-body');
+  const term      = TERMS.find(t => t.num === termsActiveTerm);
+  const termLogs  = getTermLogs(termsActiveStudentId, termsActiveClassId, termsActiveTerm);
   const schoolDays = getSchoolDaysInTerm(termsActiveClassId, termsActiveTerm);
 
   const arrivals   = termLogs.filter(l => l.type === 'arrival');
   const departures = termLogs.filter(l => l.type === 'departure');
   const lateCount  = arrivals.filter(l => l.isLate).length;
-
-  // Absences = school days where this student has no arrival
   const arrivedDays = new Set(arrivals.map(l => l.timestamp.slice(0,10)));
   const absences    = [...schoolDays].filter(d => !arrivedDays.has(d)).length;
 
-  // Group logs by date for daily breakdown
   const allLogDates = [...new Set(termLogs.map(l => l.timestamp.slice(0,10)))].sort((a,b) => b.localeCompare(a));
 
   let html = `
@@ -2867,32 +2571,19 @@ function renderTermsModalBody() {
       <span style="font-size:0.78rem; font-weight:700; color:var(--text-muted);">${term.label} · ${term.range}</span>
       ${schoolDays.size ? `<span style="font-size:0.72rem; color:var(--text-muted); margin-left:8px;">${schoolDays.size} school day${schoolDays.size !== 1 ? 's' : ''} on record</span>` : ''}
     </div>
-
     <div class="term-stat-grid" style="grid-template-columns: repeat(4, 1fr);">
-      <div class="term-stat-card arrival-card">
-        <div class="ts-val">${arrivals.length}</div>
-        <div class="ts-lbl">Arrivals</div>
-      </div>
-      <div class="term-stat-card departure-card">
-        <div class="ts-val">${departures.length}</div>
-        <div class="ts-lbl">Departures</div>
-      </div>
-      <div class="term-stat-card" style="background:#fff7ed; border-color:#fdba74; color:#c2410c;">
-        <div class="ts-val">${lateCount}</div>
-        <div class="ts-lbl">Late</div>
-      </div>
-      <div class="term-stat-card absent-card">
-        <div class="ts-val">${absences}</div>
-        <div class="ts-lbl">Absences</div>
-      </div>
+      <div class="term-stat-card arrival-card"><div class="ts-val">${arrivals.length}</div><div class="ts-lbl">Arrivals</div></div>
+      <div class="term-stat-card departure-card"><div class="ts-val">${departures.length}</div><div class="ts-lbl">Departures</div></div>
+      <div class="term-stat-card" style="background:#fff7ed; border-color:#fdba74; color:#c2410c;"><div class="ts-val">${lateCount}</div><div class="ts-lbl">Late</div></div>
+      <div class="term-stat-card absent-card"><div class="ts-val">${absences}</div><div class="ts-lbl">Absences</div></div>
     </div>`;
 
   if (allLogDates.length) {
     html += `<div class="term-section-title">Daily attendance</div>`;
     allLogDates.forEach(dateStr => {
-      const dayLogs = termLogs.filter(l => l.timestamp.slice(0,10) === dateStr);
-      const arr     = dayLogs.filter(l => l.type === 'arrival');
-      const dep     = dayLogs.filter(l => l.type === 'departure');
+      const dayLogs   = termLogs.filter(l => l.timestamp.slice(0,10) === dateStr);
+      const arr       = dayLogs.filter(l => l.type === 'arrival');
+      const dep       = dayLogs.filter(l => l.type === 'departure');
       const dateLabel = new Date(dateStr + 'T00:00:00').toLocaleDateString([], { month:'short', day:'numeric', weekday:'short' });
       html += `
         <div class="term-day-row">
@@ -2913,71 +2604,59 @@ function renderTermsModalBody() {
   body.innerHTML = html;
 }
 
-function closeTermsModal(e) {
-  if (e.target === document.getElementById('terms-modal-backdrop')) closeTermsModalDirect();
-}
-function closeTermsModalDirect() {
-  document.getElementById('terms-modal-backdrop').classList.remove('open');
-  document.body.style.overflow = '';
-}
+function closeTermsModal(e)      { if (e.target === document.getElementById('terms-modal-backdrop')) closeTermsModalDirect(); }
+function closeTermsModalDirect() { document.getElementById('terms-modal-backdrop').classList.remove('open'); document.body.style.overflow = ''; }
 
 // ── BOOT ──────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
   await openDB();
 
-  // ── Migrate from localStorage if IDB is empty ──
+  // Migrate from localStorage if IDB is empty
   const existingClasses = await dbGetAll('classes');
   if (existingClasses.length === 0) {
     const lsClasses  = JSON.parse(localStorage.getItem('edu_classes'))  || [];
     const lsStudents = JSON.parse(localStorage.getItem('edu_students')) || [];
     const lsLogs     = JSON.parse(localStorage.getItem('edu_logs'))     || [];
     if (lsClasses.length || lsStudents.length || lsLogs.length) {
-      // Migrate data
       if (lsClasses.length)  await dbPutAll('classes',  lsClasses);
       if (lsStudents.length) await dbPutAll('students', lsStudents);
-      // Logs need id field for autoIncrement store — add one if missing
       for (const l of lsLogs) {
         const entry = { type: 'arrival', studentLrn: '', ...l };
-        delete entry.id; // let IDB assign a new numeric id
+        delete entry.id;
         await dbAdd('logs', entry);
       }
-      // Save sync URL
       const syncUrl = localStorage.getItem('edu_sync_url');
       if (syncUrl) await dbSetSetting('sync_url', syncUrl);
-      // Clear localStorage after migration
       ['edu_classes','edu_students','edu_logs','edu_sync_url'].forEach(k => localStorage.removeItem(k));
       showToast('Data migrated from old storage ✓');
     }
   }
 
-  // ── Load all data into memory ──
   classes  = await dbGetAll('classes');
   students = await dbGetAll('students');
   logs     = await dbGetAll('logs');
 
   // Migrate old logs missing type field
   let needsLogFix = false;
-  logs = logs.map(l => {
-    if (!l.type) { needsLogFix = true; return { type: 'arrival', studentLrn: '', ...l }; }
-    return l;
-  });
+  logs = logs.map(l => { if (!l.type) { needsLogFix = true; return { type: 'arrival', studentLrn: '', ...l }; } return l; });
   if (needsLogFix) {
     await dbClear('logs');
     for (const l of logs) { const e = {...l}; delete e.id; await dbAdd('logs', e); }
     logs = await dbGetAll('logs');
   }
 
-  // Sort logs newest first, students alphabetically
   logs.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
   students.sort((a, b) => a.name.localeCompare(b.name));
 
-  // Restore auto-sync state
   autoSyncEnabled = !!(await dbGetSetting('auto_sync'));
 
   populateDropdowns();
   initSummaryPeriod();
   checkAutoExport('boot');
   updatePWAInstallUI();
+
+  // Show install banner after a short delay so it doesn't flash on load
+  setTimeout(initInstallBanner, 1200);
 });
 </script>
 
