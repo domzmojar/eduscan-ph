@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1359,6 +1360,7 @@
 <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem; flex-wrap:wrap;">
 <button class="btn full" onclick="saveSyncUrl()">💾 Save &amp; enable auto-sync</button>
 <button class="btn full success" id="sync-btn" onclick="syncToSheets()">⬆ Push unsynced logs</button>
+<button class="btn full outline" id="pull-btn" onclick="pullFromSheets()">⬇ Pull from Google Sheets</button>
 </div>
 <div id="sync-status-msg"></div>
 
@@ -1747,8 +1749,56 @@ let lastScanned     = null;
 let lastScannedTime = 0;
 let scanMode        = 'arrival';
 
-async function saveClasses()  { await dbPutAll('classes',  classes); }
-async function saveStudents() { await dbPutAll('students', students); }
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function escapeHTML(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[ch]));
+}
+
+function escapeAttr(value) {
+  return escapeHTML(value);
+}
+
+function makeId(prefix) {
+  const rand = (crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + '_' + Math.random().toString(36).slice(2);
+  return prefix + '_' + rand;
+}
+
+async function getDeviceId() {
+  let id = await dbGetSetting('device_id');
+  if (!id) {
+    id = makeId('device');
+    await dbSetSetting('device_id', id);
+  }
+  return id;
+}
+
+async function getSyncSecret() {
+  const url = await dbGetSetting('sync_url') || '';
+  return deriveSyncSecret(url);
+}
+
+function deriveSyncSecret(url) {
+  const chars = String(url || '').replace(/[^a-zA-Z0-9]/g, '');
+  return chars.length >= 20 ? 'eduscan_' + chars.slice(-20) : '';
+}
+
+async function markRosterDirty() {
+  const stamp = nowIso();
+  await dbSetSetting('roster_updated_at', stamp);
+  await dbSetSetting('roster_dirty', true);
+}
+
+async function saveClasses()  { await dbPutAll('classes',  classes); await markRosterDirty(); }
+async function saveStudents() { await dbPutAll('students', students); await markRosterDirty(); }
 
 // ── TOAST ──────────────────────────────────────────────────────────────────
 let toastTimer;
@@ -2017,7 +2067,7 @@ async function handleQRScan(rawData) {
       const time = new Date(alreadyLogged.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       showFeedback('warn',
         `⏱ ${typeLabel} already recorded`,
-        `${student.name} was logged at ${time}. Switch mode if you meant to log a ${scanMode === 'arrival' ? 'departure' : 'arrival'}.`
+        `${escapeHTML(student.name)} was logged at ${time}. Switch mode if you meant to log a ${scanMode === 'arrival' ? 'departure' : 'arrival'}.`
       );
       if (navigator.vibrate) navigator.vibrate([30]);
       return;
@@ -2032,7 +2082,8 @@ async function handleQRScan(rawData) {
       studentName: student.name,
       studentLrn:  student.lrn || '',
       type:        scanMode,
-      isLate:      false
+      isLate:      false,
+      updatedAt:   nowIso()
     };
 
     if (scanMode === 'arrival') {
@@ -2062,7 +2113,7 @@ async function handleQRScan(rawData) {
     showFeedback(
       isArrival ? 'ok' : 'ok-dep',
       isArrival ? '☀️ Arrival recorded' : '🌙 Departure recorded',
-      `<strong>${student.name}</strong>${student.lrn ? ' · LRN ' + student.lrn : ''}${lateTag}<br>` +
+      `<strong>${escapeHTML(student.name)}</strong>${student.lrn ? ' · LRN ' + escapeHTML(student.lrn) : ''}${lateTag}<br>` +
       `<span style="font-size:0.82rem;">${new Date(logEntry.timestamp).toLocaleTimeString()}</span>` +
       `<br><button class="btn outline sm" style="margin-top:6px;" onclick="openEditLogModal(${logEntry.id})">✏️ Edit this record</button>`
     );
@@ -2125,8 +2176,9 @@ async function addClass() {
   const startTime = document.getElementById('class-start-time').value || '07:30';
   const graceMins = parseInt(document.getElementById('class-grace-mins').value) || 5;
   if (!name) return showToast('Enter a class name.', 'warn');
-  classes.push({ id: 'class_' + Date.now(), name, startTime, graceMins });
+  classes.push({ id: makeId('class'), name, startTime, graceMins, updatedAt: nowIso() });
   await saveClasses();
+  scheduleRosterSync();
   input.value = '';
   renderClasses(); populateDropdowns();
   showToast('Class saved.', 'ok');
@@ -2153,6 +2205,8 @@ async function removeClass(id) {
   students = students.filter(s => s.classId !== id);
   await dbClear('classes');  await dbPutAll('classes',  classes);
   await dbClear('students'); await dbPutAll('students', students);
+  await markRosterDirty();
+  scheduleRosterSync();
   renderClasses(); populateDropdowns();
   showToast(logCount ? `Class deleted. ${logCount} past attendance record${logCount !== 1 ? 's' : ''} kept in Logs.` : 'Class deleted.', 'ok');
 }
@@ -2168,16 +2222,16 @@ function renderClasses() {
     const startTime = c.startTime || '—';
     const grace     = c.graceMins != null ? `${c.graceMins}m grace` : '';
     return `
-    <tr class="class-row-clickable" onclick="openClassRosterModal('${c.id}')">
+    <tr class="class-row-clickable" onclick="openClassRosterModal('${escapeAttr(c.id)}')">
       <td>
-        <strong style="color:var(--primary);">${c.name}</strong><br>
+        <strong style="color:var(--primary);">${escapeHTML(c.name)}</strong><br>
         <span style="font-size:0.75rem;color:var(--text-muted);">
           ${count} student${count !== 1 ? 's' : ''} · starts ${startTime}${grace ? ' · ' + grace : ''} · tap to view roster
         </span>
       </td>
       <td style="text-align:right; white-space:nowrap;" onclick="event.stopPropagation()">
-        <button class="btn outline sm" style="margin-right:4px;" onclick="openEditClassModal('${c.id}')">Edit</button>
-        <button class="btn danger sm" onclick="removeClass('${c.id}')">Delete</button>
+        <button class="btn outline sm" style="margin-right:4px;" onclick="openEditClassModal('${escapeAttr(c.id)}')">Edit</button>
+        <button class="btn danger sm" onclick="removeClass('${escapeAttr(c.id)}')">Delete</button>
       </td>
     </tr>`;
   }).join('');
@@ -2195,14 +2249,14 @@ function openClassRosterModal(classId) {
     document.getElementById('modal-body').innerHTML = `
       <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.75rem;">${enrolled.length} student${enrolled.length !== 1 ? 's' : ''} enrolled</p>
       ${enrolled.map((s, i) => {
-        const initials = s.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+        const initials = escapeHTML(s.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase());
         return `
         <div class="modal-student-item">
           <div class="modal-student-avatar">${initials}</div>
           <div style="flex:1;">
-            <div class="modal-student-name">${s.name}</div>
-            ${s.lrn ? `<div class="modal-student-lrn">LRN: ${s.lrn}</div>` : ''}
-            ${s.guardian ? `<div class="modal-student-lrn">👤 ${s.guardian}</div>` : ''}
+            <div class="modal-student-name">${escapeHTML(s.name)}</div>
+            ${s.lrn ? `<div class="modal-student-lrn">LRN: ${escapeHTML(s.lrn)}</div>` : ''}
+            ${s.guardian ? `<div class="modal-student-lrn">👤 ${escapeHTML(s.guardian)}</div>` : ''}
           </div>
           <span style="font-size:0.75rem;color:var(--text-muted);">#${i + 1}</span>
         </div>`;
@@ -2234,7 +2288,7 @@ async function addStudent() {
     }
   }
 
-  const id = 'student_' + Date.now();
+  const id = makeId('student');
   let qrDataUrl = '';
   
   if (typeof QRCode !== 'undefined') {
@@ -2246,9 +2300,10 @@ async function addStudent() {
     }
   }
 
-  students.push({ id, classId, name, lrn, guardian, enrolledDate, qrDataUrl });
+  students.push({ id, classId, name, lrn, guardian, enrolledDate, qrDataUrl, updatedAt: nowIso() });
   students.sort((a, b) => a.name.localeCompare(b.name));
   await saveStudents();
+  scheduleRosterSync();
 
   ['student-name-input','student-lrn-input','student-guardian-input'].forEach(inp => {
     document.getElementById(inp).value = '';
@@ -2280,6 +2335,8 @@ async function deleteStudent(id) {
   // who transferred out) stays intact in the Logs feed and exports.
   students = students.filter(s => s.id !== id);
   await dbClear('students'); await dbPutAll('students', students);
+  await markRosterDirty();
+  scheduleRosterSync();
   renderStudents(); renderClasses();
   showToast(logCount ? `Student removed. ${logCount} past attendance record${logCount !== 1 ? 's' : ''} kept in Logs.` : 'Student removed.', 'ok');
 }
@@ -2408,11 +2465,11 @@ async function renderStudents() {
     
     return `
       <div class="qr-card">
-        <span class="qr-class">${cls}</span>
-        <span class="qr-name">${s.name}</span>
-        ${s.lrn ? `<span class="qr-lrn">LRN: ${s.lrn}</span>` : ''}
-        <img src="${qrUrl}" alt="QR for ${s.name}" style="width:100%;max-width:120px;height:auto;border:1px solid #eee;padding:3px;background:#fff;border-radius:4px;">
-        ${s.guardian ? `<span class="qr-meta" style="margin-top:0.3rem;">👤 ${s.guardian}</span>` : ''}
+        <span class="qr-class">${escapeHTML(cls)}</span>
+        <span class="qr-name">${escapeHTML(s.name)}</span>
+        ${s.lrn ? `<span class="qr-lrn">LRN: ${escapeHTML(s.lrn)}</span>` : ''}
+        <img src="${escapeAttr(qrUrl)}" alt="QR for ${escapeAttr(s.name)}" style="width:100%;max-width:120px;height:auto;border:1px solid #eee;padding:3px;background:#fff;border-radius:4px;">
+        ${s.guardian ? `<span class="qr-meta" style="margin-top:0.3rem;">👤 ${escapeHTML(s.guardian)}</span>` : ''}
         <div style="display:flex; gap:0.4rem; width:100%; margin-top:0.5rem;">
           <button class="btn outline sm" style="flex:1;" onclick="openEditStudentModal('${s.id}')">Edit</button>
           <button class="btn danger sm" style="flex:1;" onclick="deleteStudent('${s.id}')">Remove</button>
@@ -2458,8 +2515,8 @@ function buildLogRowHTML(l) {
         <span class="date">${dateStr}</span>
       </div>
       <div class="log-feed-info">
-        <div class="log-feed-name">${l.studentName} ${lateTag}</div>
-        <div class="log-feed-meta">${l.className || 'Unknown Class'} · LRN ${l.studentLrn || 'N/A'}</div>
+        <div class="log-feed-name">${escapeHTML(l.studentName)} ${lateTag}</div>
+        <div class="log-feed-meta">${escapeHTML(l.className || 'Unknown Class')} · LRN ${escapeHTML(l.studentLrn || 'N/A')}</div>
       </div>
       <div class="log-feed-actions">
         ${statusBadge}
@@ -2522,9 +2579,22 @@ function attachLogScrollHandler() {
 
 async function clearLogs() {
   if (!confirm('Clear ALL attendance logs? This cannot be undone.')) return;
+  const pendingDeletes = await getPendingDeletes();
+  logs.forEach(log => {
+    pendingDeletes.push({
+      timestamp: log.timestamp || '',
+      localDate: log.localDate || getLogDate(log),
+      className: log.className || (classes.find(c => c.id === log.classId) || {}).name || '',
+      studentName: log.studentName || '',
+      studentLrn: log.studentLrn || '',
+      type: log.type || 'arrival'
+    });
+  });
+  await dbSetSetting('pending_deletes', pendingDeletes);
   logs = [];
   await dbClear('logs');
   renderLog();
+  scheduleAutoSync();
   showToast('All logs cleared.', 'ok');
 }
 
@@ -2683,7 +2753,7 @@ function printSummaryReport() {
     const cs = studentsEnrolledInRange(c.id, range).length;
     const ca = logsInRange.filter(l => l.classId === c.id && l.type === 'arrival').length;
     const cl = logsInRange.filter(l => l.classId === c.id && l.type === 'arrival' && l.isLate).length;
-    classRows += `<tr><td style="padding:8px; border-bottom:1px solid #e2e8f0;">${c.name}</td><td style="padding:8px; border-bottom:1px solid #e2e8f0; text-align:center;">${cs}</td><td style="padding:8px; border-bottom:1px solid #e2e8f0; text-align:center;">${ca}</td><td style="padding:8px; border-bottom:1px solid #e2e8f0; text-align:center;">${cl}</td></tr>`;
+    classRows += `<tr><td style="padding:8px; border-bottom:1px solid #e2e8f0;">${escapeHTML(c.name)}</td><td style="padding:8px; border-bottom:1px solid #e2e8f0; text-align:center;">${cs}</td><td style="padding:8px; border-bottom:1px solid #e2e8f0; text-align:center;">${ca}</td><td style="padding:8px; border-bottom:1px solid #e2e8f0; text-align:center;">${cl}</td></tr>`;
   });
 
   const printHTML = `<!DOCTYPE html><html><head><title>EduScan PH Report</title><style>body{font-family:Arial,sans-serif;padding:2rem;color:#0f172a;max-width:800px;margin:0 auto;}h1{color:#1d4ed8;font-size:1.5rem;}h2{font-size:1.1rem;margin-top:1.5rem;color:#334155;}table{width:100%;border-collapse:collapse;margin-top:0.5rem;}th{background:#1d4ed8;color:#fff;padding:8px;text-align:left;font-size:0.85rem;}td{font-size:0.85rem;}.meta{color:#64748b;font-size:0.85rem;margin-bottom:1.5rem;}.rate{font-size:2rem;font-weight:800;color:#1d4ed8;}.stats{display:flex;gap:1rem;margin:1rem 0;flex-wrap:wrap;}.stat{flex:1;min-width:120px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:1rem;text-align:center;}.stat .v{font-size:1.5rem;font-weight:700;}.stat .l{font-size:0.75rem;color:#64748b;}@media print{body{padding:0;}}</style></head><body><h1>📊 EduScan PH — Attendance Report</h1><div class="meta">Period: ${periodLabel} (${range.from} to ${range.to}) · Generated: ${new Date().toLocaleString()}</div><div class="stats"><div class="stat"><div class="v" style="color:#0369a1;">${rate}%</div><div class="l">Attendance Rate</div></div><div class="stat"><div class="v" style="color:#b91c1c;">${totalAbsences}</div><div class="l">Total Absences</div></div><div class="stat"><div class="v" style="color:#c2410c;">${lateCount}</div><div class="l">Late Arrivals</div></div><div class="stat"><div class="v" style="color:#1d4ed8;">${schoolDays}</div><div class="l">School Days</div></div></div><h2>Class Breakdown</h2><table><tr><th>Class</th><th style="text-align:center;">Enrolled</th><th style="text-align:center;">Arrivals</th><th style="text-align:center;">Lates</th></tr>${classRows}</table><p style="margin-top:2rem;font-size:0.75rem;color:#94a3b8;">Generated by EduScan PH — Offline-First Attendance System</p></body></html>`;
@@ -2724,8 +2794,8 @@ function renderActionableList(range, logsInRange) {
         html += `
           <div style="display:flex; justify-content:space-between; align-items:center; padding:0.6rem 0.5rem; border-bottom:1px solid var(--border); font-size:0.85rem;">
             <div>
-              <div style="font-weight:600;">${s.name}</div>
-              <div style="font-size:0.75rem; color:var(--text-muted);">${cls}</div>
+              <div style="font-weight:600;">${escapeHTML(s.name)}</div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">${escapeHTML(cls)}</div>
             </div>
             <button class="action-btn btn-call" onclick="showParentContact('${s.id}', '${range.from}', ${viewingToday})">📞 Call Parent</button>
           </div>`;
@@ -2780,8 +2850,8 @@ function renderActionableList(range, logsInRange) {
         html += `
           <div style="display:flex; justify-content:space-between; align-items:center; padding:0.6rem 0.5rem; border-bottom:1px solid var(--border); font-size:0.85rem;">
             <div>
-              <div style="font-weight:600;">${item.student.name} <span style="display:inline-flex; gap:4px; margin-left:4px;">${tags.join('')}</span></div>
-              <div style="font-size:0.75rem; color:var(--text-muted);">${cls}</div>
+              <div style="font-weight:600;">${escapeHTML(item.student.name)} <span style="display:inline-flex; gap:4px; margin-left:4px;">${tags.join('')}</span></div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">${escapeHTML(cls)}</div>
             </div>
             <button class="action-btn btn-view" onclick="showStudentRecord('${item.student.id}')">📋 View Record</button>
           </div>`;
@@ -2946,7 +3016,7 @@ function openModalRange(type, classId, fromDate, toDate, encodedClassName) {
     document.getElementById('modal-body').innerHTML = `<p class="empty">No students in this category.</p>`;
   } else {
     document.getElementById('modal-body').innerHTML = studentList.map((s) => {
-      const initials  = s.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+      const initials  = escapeHTML(s.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase());
       const lateCount = rangeLogs.filter(l => l.studentId === s.id && l.type === 'arrival' && l.isLate).length;
       const lateTag   = (type === 'arrived' && lateCount > 0)
         ? `<span class="badge badge-late" style="font-size:0.68rem; margin-left:4px;">⏰ ${lateCount}× late</span>` : '';
@@ -2954,8 +3024,8 @@ function openModalRange(type, classId, fromDate, toDate, encodedClassName) {
         <div class="modal-student-item">
           <div class="modal-student-avatar">${initials}</div>
           <div style="flex:1;">
-            <div class="modal-student-name">${s.name}${lateTag}</div>
-            ${s.lrn ? `<div class="modal-student-lrn">LRN: ${s.lrn}</div>` : ''}
+            <div class="modal-student-name">${escapeHTML(s.name)}${lateTag}</div>
+            ${s.lrn ? `<div class="modal-student-lrn">LRN: ${escapeHTML(s.lrn)}</div>` : ''}
           </div>
         </div>`;
     }).join('');
@@ -2991,7 +3061,7 @@ function openModal(type, classId, dateStr, encodedClassName) {
         const logEntry = dateLogs.find(l => l.studentId === s.id && l.type === logType);
         if (logEntry) { timeStr = new Date(logEntry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); isLate = !!logEntry.isLate; logId = logEntry.id; }
       }
-      const initials = s.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+      const initials = escapeHTML(s.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase());
       const lateTag  = (type === 'arrived' && isLate)
         ? `<span class="badge badge-late" style="font-size:0.68rem; margin-left:4px;">⏰ Late</span>` : '';
       const editBtn  = logId != null
@@ -3000,8 +3070,8 @@ function openModal(type, classId, dateStr, encodedClassName) {
         <div class="modal-student-item">
           <div class="modal-student-avatar">${initials}</div>
           <div style="flex:1;">
-            <div class="modal-student-name">${s.name}${lateTag}</div>
-            ${s.lrn ? `<div class="modal-student-lrn">LRN: ${s.lrn}</div>` : ''}
+            <div class="modal-student-name">${escapeHTML(s.name)}${lateTag}</div>
+            ${s.lrn ? `<div class="modal-student-lrn">LRN: ${escapeHTML(s.lrn)}</div>` : ''}
           </div>
           ${timeStr ? `<div class="modal-student-time" style="margin-right:6px;">${timeStr}</div>` : ''}
           ${editBtn}
@@ -3036,8 +3106,9 @@ async function saveEditClass() {
   if (!name) return showToast('Class name cannot be empty.', 'warn');
   const cls = classes.find(c => c.id === id);
   if (!cls) return;
-  cls.name = name; cls.startTime = startTime; cls.graceMins = graceMins;
+  cls.name = name; cls.startTime = startTime; cls.graceMins = graceMins; cls.updatedAt = nowIso();
   await saveClasses();
+  scheduleRosterSync();
   closeEditClassModalDirect();
   renderClasses(); populateDropdowns();
   showToast('Class updated.', 'ok');
@@ -3118,6 +3189,7 @@ async function saveEditLog() {
     log.localDate = dateVal;
     log.type  = type;
     log.isLate = isLate;
+    log.updatedAt = nowIso();
     
     // Flag for the v7 GAS script to update the row instead of duplicating
     log.needsSync = true;
@@ -3136,12 +3208,15 @@ async function saveEditLog() {
 async function deleteLogEntry() {
   const logId = parseInt(document.getElementById('edit-log-id').value);
   if (!confirm('Delete this attendance record?')) return;
+  const deletedLog = logs.find(l => l.id === logId);
+  await queueDeletedLog(deletedLog);
   logs = logs.filter(l => l.id !== logId);
   await dbDelete('logs', logId);
   closeEditLogModalDirect();
   renderLog(false); renderTodayList();
   if (document.getElementById('page-summary').classList.contains('active')) renderSummary();
   if (document.getElementById('terms-modal-backdrop').classList.contains('open')) renderTermsModalBody();
+  scheduleAutoSync();
   showToast('Record deleted.', 'ok');
 }
 
@@ -3151,7 +3226,7 @@ function closeEditLogModalDirect() { document.getElementById('edit-log-modal').c
 // ── DROPDOWNS ─────────────────────────────────────────────────────────────
 function populateDropdowns() {
   const classOpts = `<option value="">— Choose a class —</option>` +
-    classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    classes.map(c => `<option value="${escapeAttr(c.id)}">${escapeHTML(c.name)}</option>`).join('');
 
   document.getElementById('scanner-class-select').innerHTML  = classOpts;
   document.getElementById('student-class-select').innerHTML  = classOpts;
@@ -3160,12 +3235,12 @@ function populateDropdowns() {
   if (termsEl) {
     const prev = termsEl.value;
     termsEl.innerHTML = `<option value="">— Choose a class —</option>` +
-      classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+      classes.map(c => `<option value="${escapeAttr(c.id)}">${escapeHTML(c.name)}</option>`).join('');
     if (prev && classes.find(c => c.id === prev)) termsEl.value = prev;
   }
 
   const filterOpts = `<option value="">All classes</option>` +
-    classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    classes.map(c => `<option value="${escapeAttr(c.id)}">${escapeHTML(c.name)}</option>`).join('');
   document.getElementById('filter-class-select').innerHTML = filterOpts;
 
   if (currentClassId && !classes.find(c => c.id === currentClassId)) { currentClassId = null; stopCamera(); }
@@ -3202,9 +3277,11 @@ async function updateAutoSyncLastLabel() {
 
 async function saveSyncUrl() {
     const url = document.getElementById('sync-url-input').value.trim();
+    const secret = deriveSyncSecret(url);
     const msg = document.getElementById('sync-status-msg');
     
     if (!url) return showToast('Paste your Sync URL first.', 'warn');
+    if (!secret) return showToast('This Sync URL is too short or invalid.', 'warn');
     
     if (!url.includes('script.google.com')) {
         msg.innerHTML = `<div class="sync-status err">Invalid URL. It must be your unique EduScan PH sync link.</div>`;
@@ -3216,11 +3293,12 @@ async function saveSyncUrl() {
     
     autoSyncEnabled = true;
     updateAutoSyncBar();
+    syncPendingWhenOnline('setup');
     
     msg.innerHTML = `<div class="sync-status info">Testing connection…</div>`;
     
     try {
-        const resp   = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'ping' }) });
+        const resp   = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'ping', syncSecret: secret, webAppUrl: url }) });
         const result = await resp.json();
         
         if (result.pong || result.success) {
@@ -3240,6 +3318,106 @@ async function disableAutoSync() {
   clearTimeout(autoSyncTimer);
   updateAutoSyncBar();
   showToast('Auto-sync disabled.', 'info');
+}
+
+function scheduleRosterSync() {
+  if (autoSyncEnabled) scheduleAutoSync();
+}
+
+async function getPendingDeletes() {
+  return await dbGetSetting('pending_deletes') || [];
+}
+
+async function queueDeletedLog(log) {
+  if (!log) return;
+  const pendingDeletes = await getPendingDeletes();
+  pendingDeletes.push({
+    timestamp: log.timestamp || '',
+    localDate: log.localDate || getLogDate(log),
+    className: log.className || (classes.find(c => c.id === log.classId) || {}).name || '',
+    studentName: log.studentName || '',
+    studentLrn: log.studentLrn || '',
+    type: log.type || 'arrival'
+  });
+  await dbSetSetting('pending_deletes', pendingDeletes);
+}
+
+async function clearPendingDeletes() {
+  await dbSetSetting('pending_deletes', []);
+}
+
+function getRosterPayload() {
+  return {
+    classes: classes.map(c => ({
+      id: c.id,
+      name: c.name,
+      startTime: c.startTime || '',
+      graceMins: c.graceMins != null ? c.graceMins : '',
+      updatedAt: c.updatedAt || ''
+    })),
+    students: students.map(s => ({
+      id: s.id,
+      classId: s.classId,
+      name: s.name,
+      lrn: s.lrn || '',
+      guardian: s.guardian || '',
+      enrolledDate: s.enrolledDate || '',
+      updatedAt: s.updatedAt || ''
+    }))
+  };
+}
+
+function isSystemName(name) {
+  return typeof name === 'string' && name.trim().startsWith('_');
+}
+
+function isValidTimestampValue(value) {
+  return !!value && !isNaN(new Date(value).getTime());
+}
+
+async function removePulledSystemRecords() {
+  const beforeClasses = classes.length;
+  const beforeStudents = students.length;
+  const beforeLogs = logs.length;
+  const validClassIds = new Set();
+
+  classes = classes.filter(c => {
+    const keep = c && c.id && !isSystemName(c.name);
+    if (keep) validClassIds.add(c.id);
+    return keep;
+  });
+
+  students = students.filter(s => s && s.id && !isSystemName(s.name) && (!s.classId || validClassIds.has(s.classId)));
+  logs = logs.filter(l =>
+    l &&
+    isValidTimestampValue(l.timestamp) &&
+    !isSystemName(l.className) &&
+    !isSystemName(l.studentName)
+  );
+
+  if (classes.length !== beforeClasses) {
+    await dbClear('classes');
+    await dbPutAll('classes', classes);
+  }
+  if (students.length !== beforeStudents) {
+    await dbClear('students');
+    await dbPutAll('students', students);
+  }
+  if (logs.length !== beforeLogs) {
+    await dbClear('logs');
+    const restoredLogs = [];
+    for (const l of logs) {
+      const entry = { ...l };
+      delete entry.id;
+      const id = await dbAdd('logs', entry);
+      entry.id = id;
+      restoredLogs.push(entry);
+    }
+    logs = restoredLogs;
+  }
+  if (classes.length !== beforeClasses || students.length !== beforeStudents) {
+    await dbSetSetting('roster_dirty', false);
+  }
 }
 
 // syncSingleLog now rewinds the watermark instead of pushing out-of-band.
@@ -3288,6 +3466,19 @@ function scheduleAutoSync() {
   if (!autoSyncEnabled) return;
   clearTimeout(autoSyncTimer);
   autoSyncTimer = setTimeout(() => syncToSheets(true), AUTO_SYNC_DELAY);
+}
+
+async function syncPendingWhenOnline(trigger = 'auto') {
+  if (!autoSyncEnabled || !navigator.onLine) return;
+  const url = await dbGetSetting('sync_url');
+  if (!url) return;
+  const pendingLogs = await getPendingLogs();
+  const pendingDeletes = await getPendingDeletes();
+  const rosterDirty = !!(await dbGetSetting('roster_dirty'));
+  if (pendingLogs.length || pendingDeletes.length || rosterDirty) {
+    if (trigger === 'online') showToast('Connection restored. Syncing pending changes...', 'info');
+    scheduleAutoSync();
+  }
 }
 
 // ── SYNC HELPERS ──────────────────────────────────────────────────────────
@@ -3353,6 +3544,7 @@ async function clearSyncFlags(syncedLogs) {
 // ── OPTIMIZED SYNC FUNCTION (Chunking + Retry) ────────────────────────────
 async function syncToSheets(silent = false) {
     const url = await dbGetSetting('sync_url');
+    const syncSecret = await getSyncSecret();
     const msg = document.getElementById('sync-status-msg');
     const btn = document.getElementById('sync-btn');
 
@@ -3360,9 +3552,16 @@ async function syncToSheets(silent = false) {
         if (!silent && msg) msg.innerHTML = `<div class="sync-status err">No URL saved. Complete setup above first.</div>`; 
         return; 
     }
+    if (!syncSecret) {
+        if (!silent && msg) msg.innerHTML = `<div class="sync-status err">Saved Sync URL is invalid. Paste your Web App URL again.</div>`;
+        return;
+    }
 
     const pendingLogs = await getPendingLogs();
-    if (!pendingLogs.length) { 
+    const pendingDeletes = await getPendingDeletes();
+    const rosterDirty = !!(await dbGetSetting('roster_dirty'));
+
+    if (!pendingLogs.length && !pendingDeletes.length && !rosterDirty) { 
         if (!silent && msg) msg.innerHTML = `<div class="sync-status ok">✅ All logs already synced.</div>`; 
         return; 
     }
@@ -3372,14 +3571,16 @@ async function syncToSheets(silent = false) {
     for (let i = 0; i < pendingLogs.length; i += CHUNK_SIZE) {
         chunks.push(pendingLogs.slice(i, i + CHUNK_SIZE));
     }
+    if (!chunks.length) chunks.push([]);
 
     if (!silent) {
-        if (msg) msg.innerHTML = `<div class="sync-status info">Pushing ${pendingLogs.length} records in ${chunks.length} batch(es)…</div>`;
+        if (msg) msg.innerHTML = `<div class="sync-status info">Pushing ${pendingLogs.length} record(s), ${pendingDeletes.length} delete(s), and roster updates in ${chunks.length} batch(es)…</div>`;
         if (btn) { btn.disabled = true; btn.textContent = `Pushing 0/${chunks.length} batches…`; }
     }
 
     let totalAdded = 0;
     let totalUpdated = 0;
+    let totalDeleted = 0;
     let lastSuccessfulTimestamp = await dbGetSetting('last_sync_time');
 
     // Process chunks sequentially
@@ -3396,7 +3597,13 @@ async function syncToSheets(silent = false) {
             try {
                 const payload = {
                     action: 'sync', // Matches GAS v8 requirement
+                    syncSecret,
+                    webAppUrl: url,
+                    deviceId: await getDeviceId(),
                     logs: chunk,
+                    deletedLogs: i === 0 ? pendingDeletes : [],
+                    roster: getRosterPayload(),
+                    rosterUpdatedAt: await dbGetSetting('roster_updated_at') || '',
                     activeClasses: getActiveClasses(),
                     // Lets the spreadsheet compute the SAME year-aware term
                     // boundaries as the app (see computeTermsFromStartDate /
@@ -3422,6 +3629,7 @@ async function syncToSheets(silent = false) {
                 if (result.success) {
                     totalAdded += result.added || 0;
                     totalUpdated += result.updated || 0;
+                    totalDeleted += result.deleted || 0;
                     // Advance watermark to the LATEST timestamp seen so far,
                     // never just "the chunk's last entry". Since
                     // getPendingLogs() can include an older log that was
@@ -3431,9 +3639,11 @@ async function syncToSheets(silent = false) {
                     // watermark — naively taking chunk[chunk.length-1] in
                     // that case would move the watermark BACKWARD and cause
                     // already-synced logs to be needlessly re-sent next time.
-                    const chunkMaxTimestamp = chunk.reduce((max, l) => l.timestamp > max ? l.timestamp : max, chunk[0].timestamp);
-                    if (!lastSuccessfulTimestamp || chunkMaxTimestamp > lastSuccessfulTimestamp) {
-                      lastSuccessfulTimestamp = chunkMaxTimestamp;
+                    if (chunk.length) {
+                      const chunkMaxTimestamp = chunk.reduce((max, l) => l.timestamp > max ? l.timestamp : max, chunk[0].timestamp);
+                      if (!lastSuccessfulTimestamp || chunkMaxTimestamp > lastSuccessfulTimestamp) {
+                        lastSuccessfulTimestamp = chunkMaxTimestamp;
+                      }
                     }
                     success = true;
                     await clearSyncFlags(chunk);
@@ -3464,16 +3674,179 @@ async function syncToSheets(silent = false) {
     if (lastSuccessfulTimestamp) {
         await advanceSyncWatermark(lastSuccessfulTimestamp);
     }
+    if (pendingDeletes.length) {
+        await clearPendingDeletes();
+    }
+    if (rosterDirty) {
+        await dbSetSetting('roster_dirty', false);
+    }
 
     if (!silent) {
-        if (msg) msg.innerHTML = `<div class="sync-status ok">✅ Synced! ${totalAdded} added, ${totalUpdated} updated.</div>`;
+        if (msg) msg.innerHTML = `<div class="sync-status ok">✅ Synced! ${totalAdded} added, ${totalUpdated} updated, ${totalDeleted} deleted.</div>`;
         if (btn) { btn.disabled = false; btn.textContent = '⬆ Push unsynced logs'; }
-    } else if (totalAdded > 0 || totalUpdated > 0) {
-        showToast(`☁ Synced ${totalAdded + totalUpdated} records`, 'ok');
+    } else if (totalAdded > 0 || totalUpdated > 0 || totalDeleted > 0 || rosterDirty) {
+        showToast(`☁ Synced ${totalAdded + totalUpdated + totalDeleted} change(s)`, 'ok');
     }
 }
 
 // ── PWA INSTALL ───────────────────────────────────────────────────────────
+function logMergeKey(l) {
+  return [
+    l.timestamp || '',
+    l.studentLrn || l.studentName || l.studentId || '',
+    l.type || 'arrival'
+  ].join('|');
+}
+
+async function ensureStudentQr(student) {
+  if (student.qrDataUrl || typeof QRCode === 'undefined') return student;
+  try {
+    student.qrDataUrl = await QRCode.toDataURL(JSON.stringify({ eduscan: true, id: student.id }), { width: 160, margin: 1 });
+  } catch (e) {
+    student.qrDataUrl = '';
+  }
+  return student;
+}
+
+async function pullFromSheets() {
+  const input = document.getElementById('sync-url-input');
+  const msg = document.getElementById('sync-status-msg');
+  const btn = document.getElementById('pull-btn');
+  const savedUrl = await dbGetSetting('sync_url');
+  const typedUrl = input ? input.value.trim() : '';
+  const url = savedUrl || typedUrl;
+  const syncSecret = deriveSyncSecret(url);
+
+  if (!url) {
+    if (msg) msg.innerHTML = `<div class="sync-status err">No URL saved. Paste your Sync URL first.</div>`;
+    return;
+  }
+  if (!syncSecret) {
+    if (msg) msg.innerHTML = `<div class="sync-status err">This Sync URL is too short or invalid.</div>`;
+    return;
+  }
+
+  if (!savedUrl && typedUrl) {
+    await dbSetSetting('sync_url', typedUrl);
+    await dbSetSetting('auto_sync', true);
+    autoSyncEnabled = true;
+    updateAutoSyncBar();
+  }
+
+  if (!navigator.onLine) {
+    if (msg) msg.innerHTML = `<div class="sync-status err">Pull needs internet. Your offline data is still safe on this device.</div>`;
+    return;
+  }
+
+  const pendingLogs = await getPendingLogs();
+  const pendingDeletes = await getPendingDeletes();
+  const rosterDirty = !!(await dbGetSetting('roster_dirty'));
+  if (pendingLogs.length || pendingDeletes.length || rosterDirty) {
+    if (msg) msg.innerHTML = `<div class="sync-status info">Pushing local changes before pull...</div>`;
+    await syncToSheets(true);
+    const stillPendingLogs = await getPendingLogs();
+    const stillPendingDeletes = await getPendingDeletes();
+    const stillRosterDirty = !!(await dbGetSetting('roster_dirty'));
+    if (stillPendingLogs.length || stillPendingDeletes.length || stillRosterDirty) {
+      if (msg) msg.innerHTML = `<div class="sync-status err">Could not finish pushing local changes. Pull was stopped to avoid conflicts.</div>`;
+      return;
+    }
+  }
+
+  try {
+    if (btn) { btn.disabled = true; btn.textContent = 'Pulling...'; }
+    if (msg) msg.innerHTML = `<div class="sync-status info">Pulling roster and attendance from Google Sheets...</div>`;
+
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'pull', syncSecret, webAppUrl: url, deviceId: await getDeviceId() })
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+    const result = await resp.json();
+    if (!result.success) throw new Error(result.error || 'Pull failed');
+
+    const incomingClasses = Array.isArray(result.classes) ? result.classes : [];
+    const incomingStudents = Array.isArray(result.students) ? result.students : [];
+    const incomingLogs = Array.isArray(result.logs) ? result.logs : [];
+
+    const classMap = new Map(classes.map(c => [c.id, c]));
+    incomingClasses.forEach(c => {
+      if (!c.id || isSystemName(c.name)) return;
+      classMap.set(c.id, { ...(classMap.get(c.id) || {}), ...c });
+    });
+    classes = Array.from(classMap.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+    const studentMap = new Map(students.map(s => [s.id, s]));
+    for (const s of incomingStudents) {
+      if (!s.id || isSystemName(s.name)) continue;
+      const merged = { ...(studentMap.get(s.id) || {}), ...s };
+      studentMap.set(s.id, await ensureStudentQr(merged));
+    }
+    students = Array.from(studentMap.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+    const classByName = new Map(classes.map(c => [c.name, c.id]));
+    const studentByLrn = new Map(students.filter(s => s.lrn).map(s => [s.lrn, s.id]));
+    const studentByName = new Map(students.filter(s => s.name).map(s => [s.name, s.id]));
+    const logMap = new Map(logs.map(l => [logMergeKey(l), l]));
+    incomingLogs.forEach(l => {
+      if (!isValidTimestampValue(l.timestamp) || isSystemName(l.className) || isSystemName(l.studentName)) return;
+      const normalized = {
+        timestamp: l.timestamp,
+        localDate: l.localDate || (l.timestamp ? l.timestamp.slice(0, 10) : todayStr()),
+        classId: l.classId || classByName.get(l.className) || '',
+        className: l.className || '',
+        studentId: l.studentId || studentByLrn.get(l.studentLrn) || studentByName.get(l.studentName) || '',
+        studentName: l.studentName || '',
+        studentLrn: l.studentLrn || '',
+        type: l.type === 'departure' ? 'departure' : 'arrival',
+        isLate: !!l.isLate
+      };
+      if (!logMap.has(logMergeKey(normalized))) logMap.set(logMergeKey(normalized), normalized);
+    });
+
+    logs = Array.from(logMap.values()).sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+
+    await dbClear('classes');  await dbPutAll('classes', classes);
+    await dbClear('students'); await dbPutAll('students', students);
+    await dbClear('logs');
+    const restoredLogs = [];
+    for (const l of logs) {
+      const entry = { ...l };
+      delete entry.id;
+      const id = await dbAdd('logs', entry);
+      entry.id = id;
+      restoredLogs.push(entry);
+    }
+    logs = restoredLogs.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+
+    const newestTimestamp = logs.reduce((max, l) => l.timestamp > max ? l.timestamp : max, '');
+    if (newestTimestamp) await dbSetSetting('last_sync_time', newestTimestamp);
+    if (result.schoolYearStart) {
+      schoolYearStart = result.schoolYearStart;
+      await dbSetSetting('school_year_start', schoolYearStart);
+      refreshTerms();
+    }
+    if (result.rosterUpdatedAt) await dbSetSetting('roster_updated_at', result.rosterUpdatedAt);
+    await dbSetSetting('roster_dirty', false);
+    await clearPendingDeletes();
+
+    populateDropdowns();
+    renderClasses();
+    renderStudents();
+    renderLog(false);
+    renderTodayList();
+    if (document.getElementById('page-summary').classList.contains('active')) renderSummary();
+
+    if (msg) msg.innerHTML = `<div class="sync-status ok">✅ Pull complete: ${incomingClasses.length} class(es), ${incomingStudents.length} student(s), ${incomingLogs.length} log(s). Existing local logs were skipped.</div>`;
+    showToast('Pulled latest data from Google Sheets.', 'ok');
+  } catch (e) {
+    if (msg) msg.innerHTML = `<div class="sync-status err">Pull failed: ${e.message}</div>`;
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '⬇ Pull from Google Sheets'; }
+  }
+}
+
 let pwaInstallPrompt = null;
 
 // Detect iOS environment for install guidance
@@ -3657,8 +4030,7 @@ async function exportData(type = 'all') {
   let payload = {}, filename = '';
 
     if (type === 'all') {
-    const syncUrl = await dbGetSetting('sync_url') || '';
-    payload  = { exportedAt: now.toISOString(), version: 'eduscan-ph-v2', classes, students, logs, settings: { syncUrl } };
+    payload  = { exportedAt: now.toISOString(), version: 'eduscan-ph-v2', classes, students, logs, settings: {} };
     filename = `eduscan-backup-${stamp}.json`;
   } else if (type === 'logs') {
     payload  = { exportedAt: now.toISOString(), logs };
@@ -3721,18 +4093,22 @@ async function importData(event) {
     let importedClasses = 0, importedStudents = 0, importedLogs = 0;
     if (payload.classes?.length) {
       const existingIds = new Set(classes.map(c => c.id));
-      const newClasses  = payload.classes.filter(c => !existingIds.has(c.id));
+      const newClasses  = payload.classes.filter(c => !existingIds.has(c.id)).map(c => ({ ...c, updatedAt: c.updatedAt || nowIso() }));
       classes.push(...newClasses);
       await dbPutAll('classes', classes);
       importedClasses = newClasses.length;
     }
     if (payload.students?.length) {
       const existingIds = new Set(students.map(s => s.id));
-      const newStudents = payload.students.filter(s => !existingIds.has(s.id));
+      const newStudents = payload.students.filter(s => !existingIds.has(s.id)).map(s => ({ ...s, updatedAt: s.updatedAt || nowIso() }));
       students.push(...newStudents);
       students.sort((a, b) => a.name.localeCompare(b.name));
       await dbPutAll('students', students);
       importedStudents = newStudents.length;
+    }
+    if (importedClasses || importedStudents) {
+      await markRosterDirty();
+      scheduleRosterSync();
     }
     if (payload.logs?.length) {
       // Dedupe on the semantic identity of an attendance record — one
@@ -3906,7 +4282,7 @@ function populateTermsDropdown() {
     const sel = document.getElementById('terms-class-select');
     const prev = sel.value;
     sel.innerHTML = `<option value="">— Choose a class —</option>` +
-        classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        classes.map(c => `<option value="${escapeAttr(c.id)}">${escapeHTML(c.name)}</option>`).join('');
     if (prev && classes.find(c => c.id === prev)) sel.value = prev;
 }
 
@@ -3919,11 +4295,11 @@ function renderTermsStudentList() {
     box.innerHTML = list.map(s => {
         const initials = s.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
         return `
-        <div class="terms-student-row" onclick="openTermsModal('${s.id}','${classId}')">
+        <div class="terms-student-row" onclick="openTermsModal('${escapeAttr(s.id)}','${escapeAttr(classId)}')">
             <div class="terms-student-avatar">${initials}</div>
             <div style="flex:1;">
-                <div class="terms-student-name">${s.name}</div>
-                ${s.lrn ? `<div class="terms-student-lrn">LRN: ${s.lrn}</div>` : ''}
+                <div class="terms-student-name">${escapeHTML(s.name)}</div>
+                ${s.lrn ? `<div class="terms-student-lrn">LRN: ${escapeHTML(s.lrn)}</div>` : ''}
             </div>
             <div class="terms-chevron">›</div>
         </div>`;
@@ -4054,16 +4430,16 @@ function showParentContact(studentId, dateStr, isToday) {
     <div style="background:var(--bg); border-radius:10px; padding:1rem; margin-bottom:1rem; border:1px solid var(--border);">
       <div style="display:flex; align-items:center; gap:12px; margin-bottom:1rem;">
         <div class="modal-student-avatar" style="width:48px; height:48px; font-size:1rem; background:var(--danger-bg); color:var(--danger);">
-          ${student.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()}
+          ${escapeHTML(student.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase())}
         </div>
         <div>
-          <div style="font-weight:700; font-size:1.05rem;">${student.name}</div>
-          <div style="font-size:0.8rem; color:var(--text-muted);">${cls ? cls.name : 'Unknown Class'} · LRN: ${student.lrn || 'N/A'}</div>
+          <div style="font-weight:700; font-size:1.05rem;">${escapeHTML(student.name)}</div>
+          <div style="font-size:0.8rem; color:var(--text-muted);">${escapeHTML(cls ? cls.name : 'Unknown Class')} · LRN: ${escapeHTML(student.lrn || 'N/A')}</div>
         </div>
       </div>
       <div style="background:var(--surface); border-radius:8px; padding:0.85rem; border:1px solid var(--border);">
         <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.3rem;">Guardian Name</div>
-        <div style="font-size:1rem; font-weight:600; color:var(--text);">${student.guardian || '<span style="color:var(--danger); font-weight:500;">Not provided</span>'}</div>
+        <div style="font-size:1rem; font-weight:600; color:var(--text);">${student.guardian ? escapeHTML(student.guardian) : '<span style="color:var(--danger); font-weight:500;">Not provided</span>'}</div>
       </div>
     </div>
     <div class="instruction-block" style="margin-bottom:0;">
@@ -4117,11 +4493,11 @@ function showStudentRecord(studentId) {
     <div style="background:var(--bg); border-radius:10px; padding:1rem; margin-bottom:1rem; border:1px solid var(--border);">
       <div style="display:flex; align-items:center; gap:12px; margin-bottom:1rem;">
         <div class="modal-student-avatar" style="width:48px; height:48px; font-size:1rem; background:var(--primary-bg); color:var(--primary);">
-          ${student.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()}
+          ${escapeHTML(student.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase())}
         </div>
         <div>
-          <div style="font-weight:700; font-size:1.05rem;">${student.name}</div>
-          <div style="font-size:0.8rem; color:var(--text-muted);">${cls ? cls.name : 'Unknown Class'} · LRN: ${student.lrn || 'N/A'}</div>
+          <div style="font-weight:700; font-size:1.05rem;">${escapeHTML(student.name)}</div>
+          <div style="font-size:0.8rem; color:var(--text-muted);">${escapeHTML(cls ? cls.name : 'Unknown Class')} · LRN: ${escapeHTML(student.lrn || 'N/A')}</div>
         </div>
       </div>
       <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.5rem;">
@@ -4189,7 +4565,7 @@ function openEditStudentModal(id) {
   
   // Populate class dropdown
   const classOpts = `<option value="">— Choose a class —</option>` + 
-    classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    classes.map(c => `<option value="${escapeAttr(c.id)}">${escapeHTML(c.name)}</option>`).join('');
   document.getElementById('edit-student-class-select').innerHTML = classOpts;
   document.getElementById('edit-student-class-select').value = student.classId;
   
@@ -4228,9 +4604,11 @@ async function saveEditStudent() {
   student.lrn = lrn;
   student.guardian = guardian;
   student.enrolledDate = enrolledDate || student.enrolledDate || '';
+  student.updatedAt = nowIso();
   
   students.sort((a, b) => a.name.localeCompare(b.name));
   await saveStudents();
+  scheduleRosterSync();
   
   closeEditStudentModalDirect();
   renderStudents();
@@ -4873,6 +5251,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   classes  = await dbGetAll('classes');
   students = await dbGetAll('students');
   logs     = await dbGetAll('logs');
+  await removePulledSystemRecords();
 
   // Migrate old logs missing type field
   let needsLogFix = false;
@@ -4904,6 +5283,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   autoSyncEnabled = !!(await dbGetSetting('auto_sync'));
   schoolYearStart = await dbGetSetting('school_year_start') || '';
   refreshTerms();
+  syncPendingWhenOnline('boot');
 
   populateDropdowns();
   initSummaryPeriod();
@@ -4927,6 +5307,7 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   });
 }
+window.addEventListener('online', () => syncPendingWhenOnline('online'));
 </script>
 </body>
 </html>
