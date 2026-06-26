@@ -461,36 +461,109 @@
 }
 
 /* ── LOGS FEED (Mobile-First Design) ── */
+/* ── LOG FEED — premium card layout ── */
 .log-feed-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.85rem 0.5rem;
+  display: grid;
+  grid-template-columns: 4px 1fr auto;
+  grid-template-rows: auto auto;
+  column-gap: 0.75rem;
+  row-gap: 0;
+  padding: 0.8rem 0.75rem;
   border-bottom: 1px solid var(--border);
-  gap: 1rem;
   transition: background 0.15s;
+  position: relative;
 }
 .log-feed-item:hover { background: var(--bg); }
 .log-feed-item:last-child { border-bottom: none; }
 
-.log-feed-time {
+/* Left colour accent bar — spans both rows */
+.log-feed-accent {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  border-radius: 4px;
+  align-self: stretch;
+  flex-shrink: 0;
+}
+.log-feed-accent.arrival   { background: #0369a1; }
+.log-feed-accent.departure { background: #7c3aed; }
+
+/* Top row: name + late chip */
+.log-feed-top {
+  grid-column: 2;
+  grid-row: 1;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  min-width: 50px;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
 }
-.log-feed-time .time { font-weight: 700; font-size: 0.9rem; color: var(--text); line-height: 1.2; }
-.log-feed-time .date { font-size: 0.7rem; color: var(--text-muted); }
-
-.log-feed-info { flex: 1; min-width: 0; }
-.log-feed-name { 
-  font-weight: 600; font-size: 0.95rem; 
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
-  display: flex; align-items: center; gap: 6px;
+.log-feed-name-text {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
-.log-feed-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+.log-chip {
+  display: inline-flex; align-items: center;
+  padding: 1px 7px; border-radius: 20px;
+  font-size: 0.67rem; font-weight: 700;
+  white-space: nowrap; flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+.log-chip-late       { background: #fff7ed; color: #c2410c; border: 1px solid #fdba74; }
+.log-chip-arrival    { background: var(--arrival-bg);   color: var(--arrival);   border: 1px solid var(--arrival-border); }
+.log-chip-departure  { background: var(--departure-bg); color: var(--departure); border: 1px solid var(--departure-border); }
 
-.log-feed-actions { display: flex; align-items: center; gap: 0.5rem; }
+/* Edit button — top-right, subtle */
+.log-feed-edit {
+  grid-column: 3;
+  grid-row: 1 / 3;
+  align-self: center;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8rem; cursor: pointer; color: var(--text-muted);
+  transition: background 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+.log-feed-edit:hover { background: var(--bg); border-color: #cbd5e1; color: var(--text); }
+
+/* Bottom row: class · LRN  +  time right-aligned */
+.log-feed-bottom {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 3px;
+  min-width: 0;
+}
+.log-feed-meta {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.log-feed-time-pill {
+  display: flex; align-items: center; gap: 3px;
+  white-space: nowrap; flex-shrink: 0;
+}
+.log-feed-time-pill .lf-time {
+  font-size: 0.75rem; font-weight: 700; color: var(--text);
+}
+.log-feed-time-pill .lf-date {
+  font-size: 0.7rem; color: var(--text-muted);
+}
+.log-feed-time-pill .lf-sep {
+  font-size: 0.65rem; color: var(--border); margin: 0 1px;
+}
 
 /* ── AUTH SYSTEM OVERLAY ── */
 #auth-overlay {
@@ -602,9 +675,10 @@
 
 /* Trial / Lifetime badge in header */
 #access-badge {
-    font-size: 0.72rem; font-weight: 700; padding: 5px 10px; border-radius: 20px;
+    font-size: 0.72rem; font-weight: 700; padding: 10px 12px; border-radius: 20px;
     display: flex; align-items: center; gap: 5px; white-space: nowrap;
     border: 1px solid transparent;
+    min-height: 44px; min-width: 44px; box-sizing: border-box;
 }
 #access-badge.tier-trial   { background: #fef3c7; color: #92400e; border-color: #fde68a; }
 #access-badge.tier-lifetime{ background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
@@ -616,7 +690,9 @@
     position: fixed; inset: 0; z-index: 9001; display: flex; align-items: flex-end;
     justify-content: center; padding: 16px; background: rgba(0,0,0,0.35);
     backdrop-filter: blur(3px);
+    animation: backdropFadeIn 0.22s ease;
 }
+@keyframes backdropFadeIn { from { opacity: 0; } to { opacity: 1; } }
 #access-info-popup.hidden { display: none !important; }
 #feedback-modal.hidden { display: none !important; }
 #access-info-popup .info-card {
@@ -645,12 +721,14 @@
 #access-info-popup .btn-info-upgrade {
     width: 100%; padding: 13px; border: none; border-radius: 10px;
     background: #22315e; color: #fff; font-size: 0.9rem; font-weight: 700;
-    cursor: pointer; margin-bottom: 8px; transition: background 0.15s;
+    cursor: pointer; margin-bottom: 10px; transition: background 0.15s;
+    display: block;
 }
 #access-info-popup .btn-info-upgrade:hover { background: #1a2647; }
 #access-info-popup .btn-info-close {
     width: 100%; padding: 11px; border: 1.5px solid #e5e7eb; border-radius: 10px;
     background: none; color: #6b7280; font-size: 0.88rem; font-weight: 600; cursor: pointer;
+    display: block;
 }
 #access-info-popup .btn-info-close:hover { background: #f9fafb; }
 
@@ -1294,8 +1372,18 @@
         <h2 style="margin:0;">Attendance log</h2>
         <button class="btn danger sm" onclick="clearLogs()">Clear all</button>
       </div>
-      <!-- NEW: Premium Log Feed Container -->
-      <div id="logs-feed-container" style="overflow-y:auto; max-height:65vh; border-radius:8px; border:1px solid var(--border); margin-top:0.5rem; padding: 0 0.5rem;">
+      <!-- Search bar -->
+      <div style="position:relative; margin-top:0.75rem;">
+        <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:0.4;pointer-events:none;" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="log-search-input"
+          placeholder="Search by name, class, or LRN…"
+          oninput="onLogSearch(this.value)"
+          style="width:100%;padding:0.55rem 0.75rem 0.55rem 2.1rem;border:1px solid var(--border);border-radius:8px;font-size:0.88rem;background:var(--bg);color:var(--text);outline:none;transition:border-color 0.15s;"
+          onfocus="this.style.borderColor='var(--primary-light)'"
+          onblur="this.style.borderColor='var(--border)'">
+      </div>
+      <!-- Log Feed -->
+      <div id="logs-feed-container" style="overflow-y:auto; max-height:65vh; border-radius:8px; border:1px solid var(--border); margin-top:0.6rem; padding: 0 0.5rem;">
         <!-- Content injected by JS -->
       </div>
     </div>
@@ -2571,26 +2659,28 @@ function buildLogRowHTML(l) {
   const timeStr = new Date(l.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const dateStr = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric' });
 
-  const lateTag = (l.type === 'arrival' && l.isLate)
-    ? `<span class="badge badge-late" style="font-size:0.65rem;">⏰ Late</span>` : '';
-
-  const statusBadge = l.type === 'departure'
-    ? `<span class="badge badge-departure" style="font-size:0.7rem;">🌙 Dismissed</span>`
-    : `<span class="badge badge-arrival" style="font-size:0.7rem;">☀️ Arrived</span>`;
+  const accentClass = l.type === 'departure' ? 'departure' : 'arrival';
+  const statusChip  = l.type === 'departure'
+    ? `<span class="log-chip log-chip-departure">🌙 Dismissed</span>`
+    : `<span class="log-chip log-chip-arrival">☀️ Arrived</span>`;
+  const lateChip = (l.type === 'arrival' && l.isLate)
+    ? `<span class="log-chip log-chip-late">⏰ Late</span>` : '';
 
   return `
     <div class="log-feed-item">
-      <div class="log-feed-time">
-        <span class="time">${timeStr}</span>
-        <span class="date">${dateStr}</span>
+      <div class="log-feed-accent ${accentClass}"></div>
+      <div class="log-feed-top">
+        <span class="log-feed-name-text">${escapeHTML(l.studentName)}</span>
+        ${statusChip}${lateChip}
       </div>
-      <div class="log-feed-info">
-        <div class="log-feed-name">${escapeHTML(l.studentName)} ${lateTag}</div>
-        <div class="log-feed-meta">${escapeHTML(l.className || 'Unknown Class')} · LRN ${escapeHTML(l.studentLrn || 'N/A')}</div>
-      </div>
-      <div class="log-feed-actions">
-        ${statusBadge}
-        <button class="btn outline sm" style="padding: 4px 8px; font-size: 0.75rem;" onclick="openEditLogModal(${l.id})">✏️</button>
+      <button class="log-feed-edit" onclick="openEditLogModal(${l.id})" title="Edit">✏️</button>
+      <div class="log-feed-bottom">
+        <span class="log-feed-meta">${escapeHTML(l.className || 'Unknown Class')} · ${escapeHTML(l.studentLrn || 'N/A')}</span>
+        <div class="log-feed-time-pill">
+          <span class="lf-time">${timeStr}</span>
+          <span class="lf-sep">·</span>
+          <span class="lf-date">${dateStr}</span>
+        </div>
       </div>
     </div>`;
 }
@@ -2600,28 +2690,86 @@ function buildLogRowHTML(l) {
 // in place at the SAME page size the user had already scrolled to — used
 // after editing/deleting a single record, so fixing a typo doesn't dump
 // the teacher back to the top of a long list they were scrolled through.
+// ── Log search state ──────────────────────────────────────────────────────
+let _logSearchQuery = '';
+function getFilteredLogs() {
+  if (!_logSearchQuery) return logs;
+  const q = _logSearchQuery.toLowerCase();
+  return logs.filter(l =>
+    (l.studentName || '').toLowerCase().includes(q) ||
+    (l.className   || '').toLowerCase().includes(q) ||
+    (l.studentLrn  || '').toLowerCase().includes(q)
+  );
+}
+
+function onLogSearch(val) {
+  _logSearchQuery = val.trim();
+  renderLog(true);
+}
+
+// reset=true  → full re-render from top (tab open, search change, clear all)
+// reset=false → patch only the single row that changed (edit / delete already
+//               removed from logs[] before this is called)
 function renderLog(reset = true) {
   const container = document.getElementById('logs-feed-container');
-  if (!logs.length) {
+  const filtered  = getFilteredLogs();
+
+  if (!filtered.length) {
     logRenderedCount = 0;
-    container.innerHTML = `<p class="empty" style="padding: 2rem 0;">No logs yet. Scan a student to get started!</p>`;
+    container.innerHTML = logs.length
+      ? `<p class="empty" style="padding:2rem 0;">No results for "<strong>${escapeHTML(_logSearchQuery)}</strong>"</p>`
+      : `<p class="empty" style="padding:2rem 0;">No logs yet. Scan a student to get started!</p>`;
     return;
   }
 
   if (reset) {
     logRenderedCount = LOG_PAGE_SIZE;
-    // Allow a fresh scroll handler to be attached after innerHTML is replaced
     logScrollHandlerAttached = false;
+    logRenderedCount = Math.min(logRenderedCount, filtered.length);
+    container.innerHTML = filtered.slice(0, logRenderedCount).map(buildLogRowHTML).join('');
+    container.scrollTop = 0;
+    _updateLogSentinel(container, filtered.length);
+    attachLogScrollHandler();
+    return;
   }
-  // Defensive clamp: if logs shrank (e.g. a delete) below the previously
-  // rendered count, don't try to slice past the end of the array.
-  logRenderedCount = Math.min(logRenderedCount || LOG_PAGE_SIZE, logs.length);
 
-  const visible = logs.slice(0, logRenderedCount);
-  container.innerHTML = visible.map(buildLogRowHTML).join('');
-
-  if (reset) container.scrollTop = 0;
+  // ── Non-reset: surgically update only rows that are already visible ──
+  // Walk every rendered .log-feed-item and replace it if its log still
+  // exists in the filtered list, or remove it if it was deleted.
+  const itemEls = Array.from(container.querySelectorAll('.log-feed-item'));
+  itemEls.forEach(el => {
+    const btn = el.querySelector('.log-feed-edit');
+    if (!btn) return;
+    const m = btn.getAttribute('onclick').match(/\d+/);
+    if (!m) return;
+    const id = parseInt(m[0]);
+    const log = filtered.find(l => l.id === id);
+    if (log) {
+      // Replace this row's HTML in-place — preserves scroll position perfectly
+      const updated = document.createElement('div');
+      updated.innerHTML = buildLogRowHTML(log).trim();
+      el.replaceWith(updated.firstChild);
+    } else {
+      el.remove(); // was deleted
+    }
+  });
+  _updateLogSentinel(container, filtered.length);
   attachLogScrollHandler();
+}
+
+function _updateLogSentinel(container, totalFiltered) {
+  let sentinel = container.querySelector('.log-feed-sentinel');
+  if (logRenderedCount >= totalFiltered) {
+    if (sentinel) sentinel.remove();
+    return;
+  }
+  if (!sentinel) {
+    sentinel = document.createElement('div');
+    sentinel.className = 'log-feed-sentinel';
+    sentinel.style.cssText = 'text-align:center;padding:0.9rem 0;font-size:0.78rem;color:var(--text-muted);';
+    sentinel.textContent = '↓ Scroll for more';
+    container.appendChild(sentinel);
+  }
 }
 
 function attachLogScrollHandler() {
@@ -2629,20 +2777,19 @@ function attachLogScrollHandler() {
   const container = document.getElementById('logs-feed-container');
   if (!container) return;
   container.addEventListener('scroll', () => {
-    // Load the next page once the user scrolls within ~150px of the
-    // bottom of the already-rendered list.
-    const nearBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 150;
+    const nearBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 200;
     if (!nearBottom) return;
-    if (logRenderedCount >= logs.length) return;
+    const filtered = getFilteredLogs();
+    if (logRenderedCount >= filtered.length) return;
 
-    const prevScrollTop = container.scrollTop;
-    logRenderedCount = Math.min(logRenderedCount + LOG_PAGE_SIZE, logs.length);
-    const visible = logs.slice(0, logRenderedCount);
-    container.innerHTML = visible.map(buildLogRowHTML).join('');
-    // Appending more rows below the fold doesn't move any content above
-    // the user's current scroll position, so just restore it directly —
-    // re-setting innerHTML resets scrollTop to 0 otherwise.
-    container.scrollTop = prevScrollTop;
+    const prevCount = logRenderedCount;
+    logRenderedCount = Math.min(logRenderedCount + LOG_PAGE_SIZE, filtered.length);
+    // APPEND only the new slice — never re-render existing rows
+    const newRows = filtered.slice(prevCount, logRenderedCount).map(buildLogRowHTML).join('');
+    const sentinel = container.querySelector('.log-feed-sentinel');
+    if (sentinel) sentinel.insertAdjacentHTML('beforebegin', newRows);
+    else container.insertAdjacentHTML('beforeend', newRows);
+    _updateLogSentinel(container, filtered.length);
   });
   logScrollHandlerAttached = true;
 }
@@ -4838,7 +4985,16 @@ async function checkAccess(userId, { silent } = {}) {
 let _lastKnownAccess = null; // cached by renderAccessUI so badge click can read it
 
 function handleBadgeClick() {
-    if (!_lastKnownAccess) return;
+    if (!_lastKnownAccess) {
+        console.warn('[EduScan] handleBadgeClick: _lastKnownAccess not yet set — ignoring tap');
+        return;
+    }
+    // Toggle: if popup is already open, close it
+    const popup = document.getElementById('access-info-popup');
+    if (!popup.classList.contains('hidden')) {
+        closeAccessInfoPopup();
+        return;
+    }
     if (_lastKnownAccess.tier === 'expired') {
         showAccessLock(false); // truly expired — show the payment wall
     } else {
@@ -4861,7 +5017,7 @@ function showAccessInfoPopup(access) {
         icon.className = 'info-icon lifetime';
         icon.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
         title.textContent = 'Lifetime Access';
-        sub.textContent   = 'EduScan PH — No expiry';
+        sub.textContent   = 'EduScan PH · No expiry';
         body.textContent  = 'You have permanent access to EduScan PH. All features are unlocked, forever.';
         progress.style.display = 'none';
         upgradeBtn.style.display = 'none';
@@ -4871,13 +5027,13 @@ function showAccessInfoPopup(access) {
         icon.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
         const dl = access.daysLeft;
         title.textContent = `${dl} ${dl === 1 ? 'Day' : 'Days'} Left in Trial`;
-        sub.textContent   = 'Free trial — EduScan PH';
+        sub.textContent   = 'EduScan PH · Free trial';
         body.textContent  = `You're using the full app free for ${TRIAL_DAYS} days. Once your trial ends, upgrade to keep all your data and features.`;
         progress.style.display = 'block';
         const pct = (dl / TRIAL_DAYS) * 100;
         fill.style.width = `${pct}%`;
         fill.style.background = dl <= 2 ? '#ef4444' : dl <= 4 ? '#f59e0b' : '#059669';
-        label.textContent = `${dl} of ${TRIAL_DAYS} days remaining`;
+        label.textContent = `${dl} of ${TRIAL_DAYS} days remaining (${Math.round(pct)}% left)`;
         upgradeBtn.style.display = 'block';
     }
 
