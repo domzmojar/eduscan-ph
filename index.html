@@ -1131,7 +1131,7 @@
       <div class="info-days-bar"><div class="info-days-fill" id="info-days-fill"></div></div>
       <div class="info-days-label" id="info-days-label"></div>
     </div>
-    <button class="btn-info-upgrade" id="info-popup-upgrade-btn" onclick="closeAccessInfoPopup(); showAccessLock(true);">Upgrade to Lifetime — ₱1,499</button>
+    <button class="btn-info-upgrade" id="info-popup-upgrade-btn" onclick="closeAccessInfoPopup(); showAccessLock(true, true);">Upgrade to Lifetime — ₱1,499</button>
     <button class="btn-info-close" onclick="closeAccessInfoPopup()">Close</button>
   </div>
 </div>
@@ -5069,10 +5069,51 @@ function renderAccessUI(access) {
 
 // dismissible=true lets the badge tap open it as an info screen even mid-trial;
 // dismissible=false (trial actually expired) removes that escape hatch.
-function showAccessLock(dismissible) {
-    const overlay = document.getElementById('access-lock-overlay');
+// dismissible=true  → opened from an active trial (badge tap or "Upgrade" button mid-trial)
+// dismissible=false → trial truly expired; blocks all usage
+// fromActiveTrial   → when true, show "upgrade" copy instead of "expired" copy
+function showAccessLock(dismissible, fromActiveTrial) {
+    const overlay  = document.getElementById('access-lock-overlay');
+    const title    = document.getElementById('lock-title');
+    const message  = document.getElementById('lock-message');
+    const lockCard = overlay.querySelector('.lock-card');
+
+    // Swap copy based on context
+    if (fromActiveTrial) {
+        title.textContent   = 'Upgrade to Lifetime Access';
+        message.textContent = 'Unlock permanent access to EduScan PH with a one-time payment. Keep all your data, scanning, reports, and sync — forever.';
+    } else {
+        title.textContent   = 'Your free trial has ended';
+        message.textContent = 'Your 7-day free trial of EduScan PH is over. Upgrade to lifetime access to keep using attendance scanning, reports, and sync.';
+    }
+
+    // Inject or remove the ✕ close button
+    const existingClose = lockCard.querySelector('.lock-close-btn');
+    if (dismissible) {
+        if (!existingClose) {
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'lock-close-btn';
+            closeBtn.setAttribute('aria-label', 'Close');
+            closeBtn.innerHTML = '✕';
+            closeBtn.style.cssText = [
+                'position:absolute', 'top:12px', 'right:14px',
+                'background:none', 'border:none', 'font-size:1.1rem',
+                'color:#9ca3af', 'cursor:pointer', 'line-height:1',
+                'padding:4px 6px', 'border-radius:6px', 'transition:color 0.15s'
+            ].join(';');
+            closeBtn.onmouseenter = () => closeBtn.style.color = '#374151';
+            closeBtn.onmouseleave = () => closeBtn.style.color = '#9ca3af';
+            closeBtn.onclick = (e) => { e.stopPropagation(); overlay.classList.add('hidden'); };
+            lockCard.style.position = 'relative';
+            lockCard.insertBefore(closeBtn, lockCard.firstChild);
+        }
+        overlay.onclick = (e) => { if (e.target === overlay) overlay.classList.add('hidden'); };
+    } else {
+        if (existingClose) existingClose.remove();
+        overlay.onclick = null;
+    }
+
     overlay.classList.remove('hidden');
-    overlay.onclick = dismissible ? (e) => { if (e.target === overlay) overlay.classList.add('hidden'); } : null;
 }
 
 async function recheckAccess(btn) {
