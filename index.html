@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -771,7 +770,64 @@
     transition: all 0.15s;
 }
 #intro-next-btn:hover { background: #e0e7ff; transform: translateY(-1px); }
-  </style>
+  
+/* Email form slide toggle */
+#emailLoginSection {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.4s ease, opacity 0.3s ease;
+}
+#emailLoginSection.expanded {
+    max-height: 600px;
+    opacity: 1;
+}
+#emailToggleBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 500;
+    text-align: center;
+    width: 100%;
+    padding: 4px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: color 0.2s;
+    letter-spacing: 0.01em;
+}
+#emailToggleBtn:hover { color: #22315e; }
+#emailToggleBtn .chevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease;
+}
+#emailToggleBtn.open .chevron {
+    transform: rotate(180deg);
+}
+.email-toggle-divider {
+    display: flex;
+    align-items: center;
+    margin: 20px 0 8px;
+    color: #6b7280;
+    font-size: 13px;
+}
+.email-toggle-divider::before,
+.email-toggle-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e5e7eb;
+}
+.email-toggle-divider button {
+    padding: 0 14px;
+}
+
+</style>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -850,27 +906,41 @@
             <div class="current-date" id="auth-current-date">Loading date…</div>
             <div class="alert alert-error" id="loginError"><span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span id="loginErrorText">Invalid credentials.</span></div>
             <div class="alert alert-success" id="loginSuccess"><span class="checkmark">✓</span><span>Login successful! Redirecting…</span></div>
-            <form onsubmit="handleLogin(event)">
-                <div class="form-group">
-                    <label for="loginEmail">Username or Email</label>
-                    <input type="text" id="loginEmail" placeholder="Enter your username or email" autocomplete="username" required>
-                    <div class="error-message" id="loginEmailError">Please enter your username or email</div>
-                </div>
-                <div class="form-group">
-                    <label for="loginPassword">Password</label>
-                    <input type="password" id="loginPassword" placeholder="Enter your password" autocomplete="current-password" required>
-                    <div class="error-message" id="loginPasswordError">Please enter your password</div>
-                </div>
-                <div class="form-options">
-                    <label class="remember-me"><input type="checkbox" id="rememberMe"><span>Remember me</span></label>
-                    <button type="button" class="forgot-password" onclick="showResetPassword()">Forgot password?</button>
-                </div>
-                <button type="submit" class="btn btn-primary" id="loginBtn"><span>Sign In</span></button>
-            </form>
-            <div class="divider"><span>or</span></div>
-            <button class="btn btn-secondary" onclick="signInWithGoogle()"><span><svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.84 2.09-1.8 2.73v2.27h2.91c1.7-1.57 2.69-3.88 2.69-6.64z" fill="#4285F4"/><path d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.27c-.81.54-1.84.86-3.05.86-2.34 0-4.32-1.58-5.03-3.71H.96v2.34A8.997 8.997 0 0 0 9 18z" fill="#34A853"/><path d="M3.97 10.7A5.4 5.4 0 0 1 3.68 9c0-.59.1-1.17.29-1.7V4.96H.96A8.997 8.997 0 0 0 0 9c0 1.45.35 2.83.96 4.04l3.01-2.34z" fill="#FBBC05"/><path d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.47.89 11.43 0 9 0A8.997 8.997 0 0 0 .96 4.96l3.01 2.34C4.68 5.16 6.66 3.58 9 3.58z" fill="#EA4335"/></svg></span><span>Sign in with Google</span></button>
-            <div class="auth-switch">Don't have an account? <a onclick="showSignup()">Sign up</a></div>
+
+            <!-- PRIMARY: Google -->
+            <button onclick="signInWithGoogle()" style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:10px;background:#fff;color:#111827;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.08);" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.boxShadow='0 1px 4px rgba(0,0,0,0.08)'"><svg width="20" height="20" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.84 2.09-1.8 2.73v2.27h2.91c1.7-1.57 2.69-3.88 2.69-6.64z" fill="#4285F4"/><path d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.27c-.81.54-1.84.86-3.05.86-2.34 0-4.32-1.58-5.03-3.71H.96v2.34A8.997 8.997 0 0 0 9 18z" fill="#34A853"/><path d="M3.97 10.7A5.4 5.4 0 0 1 3.68 9c0-.59.1-1.17.29-1.7V4.96H.96A8.997 8.997 0 0 0 0 9c0 1.45.35 2.83.96 4.04l3.01-2.34z" fill="#FBBC05"/><path d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.47.89 11.43 0 9 0A8.997 8.997 0 0 0 .96 4.96l3.01 2.34C4.68 5.16 6.66 3.58 9 3.58z" fill="#EA4335"/></svg><span>Continue with Google</span></button>
+
+            <!-- TOGGLE DIVIDER -->
+            <div class="email-toggle-divider">
+                <button id="emailToggleBtn" onclick="toggleEmailLogin()">
+                    <span>or sign in with email/password</span>
+                    <span class="chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+                </button>
+            </div>
+
+            <!-- COLLAPSIBLE EMAIL SECTION -->
+            <div id="emailLoginSection">
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="loginEmail">Email</label>
+                        <input type="text" id="loginEmail" placeholder="Enter your email" autocomplete="username" required>
+                        <div class="error-message" id="loginEmailError">Please enter your email</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" placeholder="Enter your password" autocomplete="current-password" required>
+                        <div class="error-message" id="loginPasswordError">Please enter your password</div>
+                    </div>
+                    <div class="form-options">
+                        <label class="remember-me"><input type="checkbox" id="rememberMe"><span>Remember me</span></label>
+                        <button type="button" class="forgot-password" onclick="showResetPassword()">Forgot password?</button>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="loginBtn"><span>Sign In</span></button>
+                </form>
+                <div class="auth-switch" style="margin-top:16px;">Don't have an account? <a onclick="showSignup()">Sign up</a></div>
+            </div>
         </div>
+
 
         <!-- SIGNUP FORM -->
         <div id="signupForm" class="hidden">
@@ -4687,16 +4757,19 @@ supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
 
     // Listen for Auth State Changes
-    supabaseClient.auth.onAuthStateChange((event, session) => {
-        if (event === 'PASSWORD_RECOVERY') {
-            // User clicked the reset link in their email
-            document.getElementById('auth-overlay').classList.remove('hidden');
-            showNewPasswordForm();
-        } else {
-            // Handles INITIAL_SESSION, SIGNED_IN, SIGNED_OUT, etc.
-            updateAuthUI(session);
-        }
-    });
+     supabaseClient.auth.onAuthStateChange((event, session) => {
+         if (event === 'PASSWORD_RECOVERY') {
+             // User clicked the reset link in their email
+             document.getElementById('auth-overlay').classList.remove('hidden');
+             showNewPasswordForm();
+         } else if (event === 'SIGNED_IN' && window._isSigningUp) {
+             // Suppress auto-login during signup — handleSignup redirects to login manually
+             return;
+         } else {
+             // Handles INITIAL_SESSION, SIGNED_IN, SIGNED_OUT, etc.
+             updateAuthUI(session);
+         }
+     });
 }
 
 // ── ACCESS GATING: trial / lifetime status ────────────────────────────────
@@ -4880,6 +4953,24 @@ function showLogin() {
     hideAuthForms();
     document.getElementById('loginForm').classList.remove('hidden');
     clearAuthAlerts();
+    // Always reset email section to collapsed when showing login
+    const section = document.getElementById('emailLoginSection');
+    const btn = document.getElementById('emailToggleBtn');
+    if (section) section.classList.remove('expanded');
+    if (btn) btn.classList.remove('open');
+}
+
+function toggleEmailLogin() {
+    const section = document.getElementById('emailLoginSection');
+    const btn = document.getElementById('emailToggleBtn');
+    const isExpanded = section.classList.contains('expanded');
+    if (isExpanded) {
+        section.classList.remove('expanded');
+        btn.classList.remove('open');
+    } else {
+        section.classList.add('expanded');
+        btn.classList.add('open');
+    }
 }
 
 function showSignup() {
@@ -4994,36 +5085,55 @@ async function handleSignup(event) {
     const signupBtn = document.getElementById('signupBtn');
 
     if (!name) return;
-    if (!isValidEmail(email)) { document.getElementById('signupEmail').classList.add('error'); document.getElementById('signupEmailError').classList.add('show'); return; }
-    if (password !== confirmPassword) { document.getElementById('signupConfirmPassword').classList.add('error'); document.getElementById('signupConfirmError').classList.add('show'); return; }
-    if (password.length < 6) { showToast('Password must be at least 6 characters.', 'err'); return; }
+    if (!isValidEmail(email)) {
+        document.getElementById('signupEmail').classList.add('error');
+        document.getElementById('signupEmailError').classList.add('show');
+        return;
+    }
+    if (password !== confirmPassword) {
+        document.getElementById('signupConfirmPassword').classList.add('error');
+        document.getElementById('signupConfirmError').classList.add('show');
+        return;
+    }
+    if (password.length < 6) {
+        showToast('Password must be at least 6 characters.', 'err');
+        return;
+    }
 
     signupBtn.disabled = true;
     signupBtn.innerHTML = '<div class="spinner"></div><span>Creating account...</span>';
 
-    const { data, error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-        options: {
-            data: { full_name: name }
-        }
-    });
+    // Suppress onAuthStateChange auto-login during signup
+    window._isSigningUp = true;
 
-    signupBtn.disabled = false;
-    signupBtn.innerHTML = '<span>Create Account</span>';
+    try {
+        const { data, error } = await supabaseClient.auth.signUp({
+            email,
+            password,
+            options: { data: { full_name: name } }
+        });
 
-    if (error) {
-        document.getElementById('signupErrorText').textContent = error.message;
-        document.getElementById('signupError').classList.add('show');
-    } else {
-        if (data.session) {
-            // If email confirmation is disabled, they sign in immediately
-            document.getElementById('signupSuccess').classList.add('show');
-        } else {
-            showToast('Account created! Check your email to verify.', 'ok');
+        if (error) throw error;
+
+        if (data.user) {
+            // Sign out silently in case Supabase auto-logged them in
+            await supabaseClient.auth.signOut();
+            showToast('Account created! Please sign in.', 'ok');
             showLogin();
             document.getElementById('loginEmail').value = email;
+        } else {
+            showToast('Something went wrong. Please try again.', 'err');
         }
+
+    } catch (err) {
+        const msg = err?.message || err?.msg || err?.error_description || 'Signup failed. Please try again.';
+        document.getElementById('signupErrorText').textContent = msg;
+        document.getElementById('signupError').classList.add('show');
+        console.error('Signup error:', err);
+    } finally {
+        window._isSigningUp = false;
+        signupBtn.disabled = false;
+        signupBtn.innerHTML = '<span>Create Account</span>';
     }
 }
 
